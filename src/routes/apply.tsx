@@ -28,7 +28,7 @@ export const Route = createFileRoute("/apply")({
 const assurances = [
   { icon: Clock, title: "24-hour response", desc: "Our admissions team replies within one working day." },
   { icon: GraduationCap, title: "Expert tutor match", desc: "We pair you with the ideal specialist for your goals." },
-  { icon: ShieldCheck, title: "Free Demo Available", desc: "Experience our teaching firsthand with a free trial session before enrolling." },
+  { icon: ShieldCheck, title: "No obligation", desc: "Apply freely — there's no commitment to enrol." },
   { icon: HeartHandshake, title: "Scholarships", desc: "Flexible plans and scholarships for deserving students." },
 ];
 

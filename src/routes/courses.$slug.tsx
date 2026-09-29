@@ -129,7 +129,7 @@ function CourseDetail() {
                 <Link
                   to="/apply"
                   search={{
-                    type: "Single Course",
+                    type: course.category === "Academic" ? "Academic Subject" : "Single Course",
                     selected: course.title,
                   }}
                 >

@@ -68,7 +68,7 @@ export const seoPages: SeoPage[] = [
     title: "International Online Academy | TechBuilt Open School",
     description:
       "A premium international online academy offering live tutoring and technical courses for students worldwide, from Grade 5 to MS level. Enrol today.",
-    eyebrow: "Worldwide online learning",
+    eyebrow: "Students in 25+ countries",
     intro:
       "TechBuilt Open School is a premium international online academy bringing world-class tutoring and technical education to students across the globe, with flexible scheduling for every time zone.",
     bullets: [
