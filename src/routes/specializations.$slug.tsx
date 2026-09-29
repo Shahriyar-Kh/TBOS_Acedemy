@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Clock, BarChart3, Briefcase, MessageCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, BarChart3, Briefcase, MessageCircle, Monitor, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { Icon } from "@/components/Icon";
@@ -99,8 +99,11 @@ function SpecializationDetail() {
 
             <Reveal className="mt-10 rounded-2xl bg-muted/60 p-6">
               <h3 className="flex items-center gap-2 text-lg font-bold text-foreground">
-                <Briefcase className="h-5 w-5 text-primary" /> Career opportunities
+                <Briefcase className="h-5 w-5 text-primary" /> Indicative Career Directions & Pathways
               </h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                These represent real-world industry pathways aligned with this curriculum. Outcomes depend on individual dedication, hands-on practice, and portfolio building (no guaranteed job placement).
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {spec.careers.map((c: string) => (
                   <span key={c} className="rounded-full bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-soft">
@@ -122,6 +125,12 @@ function SpecializationDetail() {
                 <li className="flex items-center gap-2.5">
                   <BarChart3 className="h-4 w-4 text-primary" /> {spec.level}
                 </li>
+                <li className="flex items-center gap-2.5">
+                  <Monitor className="h-4 w-4 text-primary" /> Live Online Classes
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <Users className="h-4 w-4 text-primary" /> One-to-one or cohort batches
+                </li>
               </ul>
               <Button asChild variant="hero" size="lg" className="mt-6 w-full">
                 <Link to="/apply" search={{ type: "Specialization", selected: spec.title }}>
@@ -129,8 +138,12 @@ function SpecializationDetail() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="mt-3 w-full">
-                <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" /> Ask a question
+                <a
+                  href={whatsappLink(`Hello TechBuilt Open School, I would like to inquire about the ${spec.title} specialization track.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="h-4 w-4" /> Inquire via WhatsApp
                 </a>
               </Button>
             </div>

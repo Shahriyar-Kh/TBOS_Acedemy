@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Clock, BarChart3, Monitor, Users, MessageCircle } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, BarChart3, Monitor, Users, MessageCircle, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { Icon } from "@/components/Icon";
@@ -74,6 +74,19 @@ function CourseDetail() {
               </p>
             </Reveal>
 
+            {course.prerequisites && course.prerequisites.length > 0 && (
+              <Reveal className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-soft">
+                <h3 className="text-lg font-bold text-foreground">Prerequisites</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {course.prerequisites.map((p: string) => (
+                    <Badge key={p} variant="outline" className="px-3 py-1 text-sm font-medium">
+                      {p}
+                    </Badge>
+                  ))}
+                </div>
+              </Reveal>
+            )}
+
             <Reveal className="mt-10">
               <h2 className="text-2xl font-bold text-foreground">What you'll achieve</h2>
               <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -122,14 +135,14 @@ function CourseDetail() {
                   <Monitor className="h-4 w-4 text-primary" /> {course.mode}
                 </li>
                 <li className="flex items-center gap-2.5">
-                  <Users className="h-4 w-4 text-primary" /> One-to-one or group
+                  <Users className="h-4 w-4 text-primary" /> {course.availability}
                 </li>
               </ul>
               <Button asChild variant="hero" size="lg" className="mt-6 w-full">
                 <Link
                   to="/apply"
                   search={{
-                    type: course.category === "Academic" ? "Academic Subject" : "Single Course",
+                    type: "Single Course",
                     selected: course.title,
                   }}
                 >
@@ -137,8 +150,17 @@ function CourseDetail() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="mt-3 w-full">
+                <a
+                  href={whatsappLink(`Hello TechBuilt Open School, I would like to request a Free Demo session for ${course.title}.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo
+                </a>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="mt-1 w-full text-muted-foreground hover:text-foreground">
                 <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-4 w-4" /> Ask a question
+                  <MessageCircle className="h-3.5 w-3.5" /> Have questions? Ask on WhatsApp
                 </a>
               </Button>
             </div>
