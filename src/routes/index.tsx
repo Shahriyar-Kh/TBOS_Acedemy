@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   CheckCircle2,
-  Star,
   ShieldCheck,
   Globe2,
   Sparkles,
@@ -29,14 +28,14 @@ import { site } from "@/data/site";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: buildMeta({
-      title: `${site.fullName} | Online Courses & Tutoring (Grade 5 to MS)`,
+      title: `${site.fullName} | Programming Courses & Academic Tutoring`,
       description: site.description,
       keywords: [
         "international online academy",
         "online tutor service pakistan",
-        "online classes for students",
+        "python course online",
         "web development course online",
-        "maths physics computer science tutor",
+        "maths physics tutor online",
       ],
     }),
     links: [{ rel: "canonical", href: "/" }],
@@ -46,9 +45,9 @@ export const Route = createFileRoute("/")({
 });
 
 const trustPoints = [
-  "Grade 5 to MS level",
-  "Live one-to-one classes",
-  "Academic & technical courses",
+  "Grade 5 to University level",
+  "Live 1-on-1 & small batches",
+  "Free Demo session available",
 ];
 
 function Home() {
@@ -68,9 +67,9 @@ function Home() {
               <span className="text-gradient-gold">ambitious students</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/80">
-              Live online tutoring and technical courses for students from Grade 5 to MS level —
-              across Pakistan and worldwide. Learn academic subjects and in-demand tech skills
-              from expert tutors, your way.
+              Live online technical courses and personalized tutoring from Grade 5 to University level —
+              across Pakistan and worldwide. Learn practical programming and academic subjects
+              from expert instructors, your way.
             </p>
 
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
@@ -92,15 +91,11 @@ function Home() {
               </Button>
             </div>
 
-            <div className="mt-9 flex items-center gap-4 text-sm text-primary-foreground/75">
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-gold text-gold" />
-                ))}
-              </div>
-              <span>
-                <strong className="text-primary-foreground">4.9/5</strong> from 2,500+ students
+            <div className="mt-9 flex items-center gap-3 text-sm text-primary-foreground/90">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-foreground/15 px-3 py-1 text-xs font-semibold text-gold">
+                <Sparkles className="h-3.5 w-3.5" /> Free Demo Available
               </span>
+              <span>Experience our live classroom before enrolling</span>
             </div>
           </div>
 
@@ -128,8 +123,8 @@ function Home() {
                 <Globe2 className="h-6 w-6" />
               </span>
               <div>
-                <p className="text-sm font-bold text-foreground">25+ countries</p>
-                <p className="text-xs text-muted-foreground">Worldwide learners</p>
+                <p className="text-sm font-bold text-foreground">Worldwide reach</p>
+                <p className="text-xs text-muted-foreground">Flexible time zones</p>
               </div>
             </div>
           </Reveal>
@@ -149,15 +144,15 @@ function Home() {
               World-class teaching, a personal touch
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground sm:text-lg">
-              TechBuilt Open School is a premium international online academy on a mission to make
+              TechBuilt Open School is an international online academy on a mission to make
               high-quality education accessible to every ambitious student. We blend expert
-              tutoring, modern technology and genuine care to help learners excel — academically
+              instruction, modern technology and genuine care to help learners excel — academically
               and professionally.
             </p>
             <ul className="mt-6 space-y-3">
               {[
-                "Curriculum-aligned tutoring for every grade and board",
-                "Career-focused technical courses and specializations",
+                "Curriculum-aligned tutoring for school, college and university",
+                "Practical, project-based programming courses and specializations",
                 "Dedicated support for parents and international families",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-foreground/90">
@@ -192,8 +187,8 @@ function Home() {
         <div className="mx-auto max-w-7xl container-px py-16 sm:py-20">
           <SectionHeading
             eyebrow="Popular courses"
-            title="Academic subjects & technical skills"
-            description="From maths, physics and computer science to Python, JavaScript and web development — taught live by experts."
+            title="Programming & Technology Courses"
+            description="From Python and JavaScript to HTML/CSS, PHP, and Java — practical, instructor-led coding courses."
           />
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featuredCourses.map((c, i) => (
@@ -215,9 +210,9 @@ function Home() {
       {/* Specializations */}
       <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
         <SectionHeading
-          eyebrow="Career tracks"
-          title="Specializations that build careers"
-          description="Structured, mentor-led learning paths that take you from fundamentals to job-ready expertise."
+          eyebrow="Developer tracks"
+          title="Professional Specializations"
+          description="Structured, mentor-led learning paths that take you from fundamentals to practical software engineering mastery."
         />
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featuredSpecializations.map((s, i) => (

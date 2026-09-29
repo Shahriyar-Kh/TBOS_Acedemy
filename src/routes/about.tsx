@@ -79,10 +79,10 @@ function AboutPage() {
               back by distance, cost or crowded classrooms — and set out to change that.
             </p>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Today we support thousands of students across Pakistan and worldwide with live,
-              one-to-one and small-group classes. From core school subjects to in-demand technical
-              skills, our expert tutors deliver a premium, personalised experience that builds both
-              grades and confidence.
+              Today we support learners across Pakistan and worldwide with live,
+              one-to-one and small-group classes. From core academic tutoring to in-demand technical
+              skills, our instructors deliver a premium, personalised experience that builds both
+              conceptual depth and confidence.
             </p>
             <ul className="mt-6 space-y-3">
               {[

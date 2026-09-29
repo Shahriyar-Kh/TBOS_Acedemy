@@ -38,9 +38,9 @@ const resources: Resource[] = [
   {
     icon: Map,
     tag: "Career",
-    title: "Web developer roadmap: from beginner to job-ready",
+    title: "Web developer roadmap: from beginner to practical projects",
     excerpt:
-      "The exact skills, projects and milestones that take you from your first webpage to a professional web development career.",
+      "The exact skills, projects and milestones that take you from your first webpage to building real-world web applications.",
     to: "/web-development-course-online",
   },
   {
@@ -61,7 +61,7 @@ const resources: Resource[] = [
   },
   {
     icon: Lightbulb,
-    tag: "Maths",
+    tag: "Maths Tutoring",
     title: "Making maths simple: building real understanding",
     excerpt:
       "Why so many students fear maths — and the step-by-step approach our tutors use to turn confusion into confidence.",
@@ -69,7 +69,7 @@ const resources: Resource[] = [
   },
   {
     icon: BookOpen,
-    tag: "Physics",
+    tag: "Physics Tutoring",
     title: "Understanding physics instead of memorising it",
     excerpt:
       "How connecting physics to the real world helps students master concepts and solve numericals with ease.",

@@ -8,10 +8,10 @@ import { buildMeta } from "@/lib/seo";
 export const Route = createFileRoute("/testimonials")({
   head: () => ({
     meta: buildMeta({
-      title: "Testimonials | What Students & Parents Say | TechBuilt Open School",
+      title: "Academy Standards & Quality Commitments | TechBuilt Open School",
       description:
-        "Read real reviews from students and parents who learn with TechBuilt Open School. Trusted results in academic tutoring and technical courses worldwide.",
-      keywords: ["online academy reviews", "tutoring testimonials", "student success stories"],
+        "Learn about TechBuilt Open School's educational standards, interactive methodology, and commitments to quality learning across programming courses and tutoring.",
+      keywords: ["academy standards", "learning methodology", "online tutoring quality", "learning commitments"],
     }),
     links: [{ rel: "canonical", href: "/testimonials" }],
   }),
@@ -22,10 +22,10 @@ function TestimonialsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Success stories"
-        title="Trusted by students & parents"
-        description="Real results and honest reviews from learners across Pakistan and around the world."
-        breadcrumb={[{ label: "Testimonials" }]}
+        eyebrow="Our Standards"
+        title="Academy Standards & Commitments"
+        description="Our pedagogical methodology, student-first philosophy, and quality standards for learners worldwide."
+        breadcrumb={[{ label: "Standards & Commitments" }]}
       />
       <StatsStrip />
       <TestimonialsSection />

@@ -10,13 +10,14 @@ import { buildMeta } from "@/lib/seo";
 export const Route = createFileRoute("/specializations/")({
   head: () => ({
     meta: buildMeta({
-      title: "Specializations | Career Learning Tracks | TechBuilt Open School",
+      title: "Technology Specializations | Developer Learning Tracks | TechBuilt Open School",
       description:
-        "Structured, mentor-led specializations in Full Stack, Web, Frontend, Backend and Python development, plus Academic Support. Become job-ready online.",
+        "Structured, mentor-led specializations in Full Stack, Web, Frontend, Backend and Python development. Master professional engineering skills online.",
       keywords: [
         "full stack development course",
         "web development specialization",
         "python development course",
+        "developer tracks",
       ],
     }),
     links: [{ rel: "canonical", href: "/specializations" }],
@@ -28,9 +29,9 @@ function SpecializationsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Career tracks"
-        title="Specializations that build careers"
-        description="Go beyond single courses with complete, structured learning paths that take you from fundamentals to job-ready expertise — guided by expert mentors."
+        eyebrow="Developer Pathways"
+        title="Professional Technology Specializations"
+        description="Go beyond single courses with complete, structured learning paths that take you from fundamentals to real-world software engineering — guided by expert mentors."
         breadcrumb={[{ label: "Specializations" }]}
       />
 
