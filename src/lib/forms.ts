@@ -12,6 +12,7 @@
 export type FormType =
   | "Single Course"
   | "Specialization"
+  | "Live Group Offer"
   | "Academic Subject"
   | "Tutor Service"
   | "Other Inquiry"
@@ -86,6 +87,7 @@ export async function submitForm(payload: SubmissionPayload): Promise<SubmitResu
 export const courseTypeOptions = [
   "Single Course",
   "Specialization",
+  "Live Group Offer",
   "Academic Subject",
   "Tutor Service",
   "Other Inquiry",

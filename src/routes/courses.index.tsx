@@ -161,6 +161,28 @@ function CoursesPage() {
           </div>
         )}
 
+        {/* Live Batches Callout */}
+        <Reveal className="mt-14 rounded-2xl border border-primary/25 bg-gradient-soft p-6 sm:p-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <Sparkles className="h-3.5 w-3.5 text-gold-foreground" /> Scheduled Group Programs
+              </span>
+              <h3 className="mt-2 text-lg font-bold text-foreground">
+                Looking for active group batches with special cohort pricing?
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                While every catalog course is available for 1-on-1 personalized instruction, our active cohort programs feature live group learning, structured roadmaps, and Free Demo trial sessions.
+              </p>
+            </div>
+            <Button asChild variant="hero" size="sm" className="shrink-0">
+              <Link to="/live-batches">
+                View Active Live Batches <ArrowRight className="ml-1 h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </Reveal>
+
         {/* Academic & Islamic Tutoring Banner */}
         <Reveal className="mt-16 rounded-2xl border border-border bg-muted/40 p-8 text-center sm:p-10">
           <div className="mx-auto max-w-2xl">
