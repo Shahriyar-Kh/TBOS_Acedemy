@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/Reveal";
 import { SectionHeading } from "@/components/SectionHeading";
 import { CourseCard } from "@/components/CourseCard";
+import { LiveOfferCard } from "@/components/LiveOfferCard";
 import { SpecializationCard } from "@/components/SpecializationCard";
 import { StatsStrip } from "@/components/sections/StatsStrip";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
@@ -21,6 +22,7 @@ import { FaqSection } from "@/components/sections/FaqSection";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { featuredCourses } from "@/data/courses";
 import { featuredSpecializations } from "@/data/specializations";
+import { activeLiveOffers } from "@/data/liveOffers";
 import { faqs } from "@/data/faqs";
 import { buildMeta, faqJsonLd } from "@/lib/seo";
 import { site } from "@/data/site";
@@ -179,6 +181,36 @@ function Home() {
               />
             </div>
           </Reveal>
+        </div>
+      </section>
+
+      {/* Current Live Group Programs */}
+      <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-gold-foreground">
+              Scheduled Cohorts
+            </span>
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              Current Live Group Programs
+            </h2>
+            <p className="mt-3 max-w-2xl text-base text-muted-foreground">
+              Join active group cohorts with live interactive instruction, step-by-step milestones, and special group pricing. Every program includes a Free Demo trial session.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="lg" className="shrink-0">
+            <Link to="/live-batches">
+              View All Batches <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+
+        <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {activeLiveOffers.map((offer, i) => (
+            <Reveal key={offer.slug} delay={i * 80}>
+              <LiveOfferCard offer={offer} />
+            </Reveal>
+          ))}
         </div>
       </section>
 

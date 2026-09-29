@@ -3,6 +3,7 @@ export type NavItem = { label: string; to: string };
 export const mainNav: NavItem[] = [
   { label: "Home", to: "/" },
   { label: "Courses", to: "/courses" },
+  { label: "Live Batches", to: "/live-batches" },
   { label: "Specializations", to: "/specializations" },
   { label: "Tutoring", to: "/tutoring" },
   { label: "About", to: "/about" },
@@ -19,6 +20,7 @@ export const footerLinks = {
   ],
   learn: [
     { label: "All Courses", to: "/courses" },
+    { label: "Live Batches", to: "/live-batches" },
     { label: "Specializations", to: "/specializations" },
     { label: "Online Tutoring", to: "/tutoring" },
     { label: "Apply Now", to: "/apply" },

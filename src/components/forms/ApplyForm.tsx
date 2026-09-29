@@ -19,6 +19,7 @@ import {
 } from "@/lib/forms";
 import { courses } from "@/data/courses";
 import { specializations } from "@/data/specializations";
+import { liveOffers } from "@/data/liveOffers";
 
 const schema = z.object({
   fullName: z.string().trim().min(2, "Please enter your full name").max(100),
@@ -215,6 +216,9 @@ export function ApplyForm({
           {...register("selected")}
         />
         <datalist id="selectable-options">
+          {liveOffers.map((o) => (
+            <option key={`o-${o.slug}`} value={o.title} />
+          ))}
           {courses.map((c) => (
             <option key={`c-${c.slug}`} value={c.title} />
           ))}
