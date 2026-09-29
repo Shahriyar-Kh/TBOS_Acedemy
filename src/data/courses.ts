@@ -1,7 +1,14 @@
+export type CourseCategory =
+  | "Programming"
+  | "Web Development"
+  | "Database"
+  | "Data & AI"
+  | "Computer Science";
+
 export type Course = {
   slug: string;
   title: string;
-  category: "Academic" | "Technical";
+  category: CourseCategory;
   level: string;
   duration: string;
   mode: string;
@@ -21,7 +28,7 @@ export const courses: Course[] = [
   {
     slug: "html-css",
     title: "HTML & CSS",
-    category: "Technical",
+    category: "Web Development",
     level: "Beginner",
     duration: "6 weeks",
     mode: "Live online · 1-to-1 or group",
@@ -53,120 +60,120 @@ export const courses: Course[] = [
   {
     slug: "javascript",
     title: "JavaScript",
-    category: "Technical",
+    category: "Programming",
     level: "Beginner to Intermediate",
     duration: "8 weeks",
     mode: "Live online · 1-to-1 or group",
     tagline: "Add interactivity and logic to the web.",
     summary:
-      "Learn the programming language of the web. From variables to DOM manipulation and APIs, build dynamic, interactive applications.",
+      "Learn modern JavaScript from core syntax to async programming, DOM manipulation and building interactive web apps.",
     description:
-      "JavaScript powers the modern web. In this course you will learn core programming concepts, work with the DOM, handle events, fetch data from APIs, and build interactive projects. Designed to take complete beginners to a confident, job-ready foundation in front-end programming.",
+      "JavaScript powers the modern web. In this comprehensive course, you learn ES6+ JavaScript from variable scope and arrays to closures, async/await, API integration and event-driven programming. Build real browser games and interactive apps with live tutor support.",
     outcomes: [
-      "Understand core programming logic and data structures",
+      "Deep understanding of modern ES6+ JavaScript",
       "Manipulate the DOM and handle user events",
-      "Work with APIs and asynchronous JavaScript",
-      "Build interactive web applications",
+      "Work with APIs, fetch and asynchronous code",
+      "Build interactive front-end web applications",
     ],
     curriculum: [
       "Variables, data types & operators",
-      "Functions, arrays & objects",
-      "DOM manipulation & events",
-      "ES6+ modern JavaScript",
-      "Fetch, promises & async/await",
-      "Capstone: interactive web app",
+      "Functions, scope & closures",
+      "Arrays, objects & modern ES6 features",
+      "DOM manipulation & event handling",
+      "Async JavaScript, Promises & Fetch API",
+      "Capstone: interactive web application",
     ],
-    audience: "Learners who know basic HTML/CSS and want to add interactivity.",
+    audience: "Learners who know basic HTML/CSS and want to add logic and programming.",
     priceNote: "Flexible monthly plans · Scholarships available",
-    icon: "Braces",
+    icon: "FileCode",
     keywords: ["javascript course online", "learn javascript"],
     featured: true,
   },
   {
     slug: "python",
-    title: "Python Programming",
-    category: "Technical",
-    level: "Beginner to Advanced",
-    duration: "10 weeks",
+    title: "Python",
+    category: "Programming",
+    level: "Beginner to Intermediate",
+    duration: "8 weeks",
     mode: "Live online · 1-to-1 or group",
-    tagline: "The world's most popular language for beginners and pros.",
+    tagline: "The world's most versatile, beginner-friendly language.",
     summary:
-      "Learn Python from fundamentals to real projects — perfect for programming beginners, automation, data, and AI foundations.",
+      "Start coding with Python. Build strong foundations in logic, functions, data structures and object-oriented programming.",
     description:
-      "Python is the ideal first language and a powerful tool for automation, data science, and AI. This course covers programming fundamentals, problem solving, working with files and data, and building practical projects. Taught with patient, one-to-one guidance for every level.",
+      "Python is the ideal first language and an essential tool for web development, data analysis, automation and AI. This course teaches clean, pythonic code from scratch — focusing on problem-solving, real-world mini-projects and best programming practices.",
     outcomes: [
-      "Master Python syntax and programming logic",
-      "Work with files, data and libraries",
-      "Solve real problems with clean code",
-      "Build a portfolio Python project",
+      "Write clean, idiomatic Python code",
+      "Solve algorithmic problems with confidence",
+      "Understand object-oriented programming (OOP)",
+      "Build command-line tools and practical automation scripts",
     ],
     curriculum: [
-      "Python basics & control flow",
-      "Functions, modules & error handling",
-      "Data structures: lists, dicts, sets",
-      "Working with files & libraries",
-      "Intro to automation & data",
-      "Capstone project",
+      "Python setup, syntax & core data types",
+      "Control flow, loops & conditionals",
+      "Functions, modules & packages",
+      "Data structures: lists, dicts, sets, tuples",
+      "Object-oriented programming (OOP)",
+      "Capstone: practical Python project",
     ],
-    audience: "Beginners and students preparing for development or data careers.",
+    audience: "School/college students and professionals starting programming.",
     priceNote: "Flexible monthly plans · Scholarships available",
     icon: "Terminal",
-    keywords: ["python course online", "learn python"],
+    keywords: ["python course online", "learn python pakistan", "python coding class"],
     featured: true,
   },
   {
     slug: "php",
-    title: "PHP & MySQL",
-    category: "Technical",
+    title: "PHP & Backend",
+    category: "Web Development",
     level: "Intermediate",
     duration: "8 weeks",
     mode: "Live online · 1-to-1 or group",
-    tagline: "Build dynamic, database-driven websites.",
+    tagline: "Build dynamic, database-driven web applications.",
     summary:
-      "Learn server-side development with PHP and MySQL to build dynamic websites, login systems, and complete web applications.",
+      "Learn server-side programming with modern PHP. Work with MySQL databases, forms, authentication and MVC architecture.",
     description:
-      "PHP powers a huge share of the web. This course teaches server-side programming, working with MySQL databases, building secure forms and authentication, and creating dynamic, data-driven web applications from the ground up.",
+      "PHP runs a huge part of the web. This course takes you behind the scenes of websites to handle form submissions, query MySQL databases, manage user sessions and build secure dynamic web applications with clean architecture.",
     outcomes: [
-      "Write server-side PHP applications",
-      "Design and query MySQL databases",
-      "Build secure forms and authentication",
-      "Deploy a dynamic web application",
+      "Build dynamic server-side web applications",
+      "Perform MySQL database CRUD operations",
+      "Implement user authentication & sessions",
+      "Understand MVC patterns and secure coding",
     ],
     curriculum: [
-      "PHP fundamentals & syntax",
-      "Forms & request handling",
-      "MySQL database design",
-      "CRUD operations",
-      "Sessions & authentication",
-      "Capstone: dynamic web app",
+      "PHP syntax & server-side basics",
+      "Working with forms & GET/POST data",
+      "MySQL database design & PDO queries",
+      "User authentication, sessions & security",
+      "Object-oriented PHP & MVC fundamentals",
+      "Capstone: dynamic database-driven app",
     ],
-    audience: "Learners comfortable with HTML who want back-end skills.",
+    audience: "Students with basic HTML/CSS/JS ready for backend development.",
     priceNote: "Flexible monthly plans · Scholarships available",
-    icon: "Database",
-    keywords: ["php course online", "php mysql"],
+    icon: "Server",
+    keywords: ["php course online", "learn backend development"],
   },
   {
     slug: "java",
-    title: "Java Programming",
-    category: "Technical",
-    level: "Beginner to Intermediate",
+    title: "Java",
+    category: "Programming",
+    level: "Intermediate",
     duration: "10 weeks",
     mode: "Live online · 1-to-1 or group",
-    tagline: "Master object-oriented programming with Java.",
+    tagline: "Master enterprise OOP and strong software fundamentals.",
     summary:
-      "Learn Java and object-oriented programming — a strong foundation for software engineering, university courses, and careers.",
+      "Build a rock-solid foundation in object-oriented programming, data structures, and enterprise software concepts using Java.",
     description:
-      "Java is a cornerstone of computer science education and enterprise software. This course builds a strong foundation in object-oriented programming, problem solving, and clean code — ideal for students preparing for university or a software engineering path.",
+      "Java is the backbone of university computer science programmes and enterprise software worldwide. This course teaches strict typing, classes, inheritance, interfaces, polymorphism, collections and clean code principles.",
     outcomes: [
-      "Understand object-oriented programming",
-      "Write clean, structured Java code",
-      "Solve algorithmic problems",
-      "Build console and small app projects",
+      "Master core Java and object-oriented design",
+      "Work with Java Collections and generics",
+      "Write maintainable, robust code with unit tests",
+      "Prepare for university CS coursework and tech roles",
     ],
     curriculum: [
-      "Java syntax & data types",
-      "Control flow & methods",
-      "Classes, objects & OOP",
+      "Java syntax, types & control structures",
+      "Classes, objects & constructors",
+      "Inheritance, interfaces & polymorphism",
       "Collections & generics",
       "Exception handling",
       "Capstone project",
@@ -176,105 +183,10 @@ export const courses: Course[] = [
     icon: "Coffee",
     keywords: ["java course online", "learn java"],
   },
-  {
-    slug: "computer-science",
-    title: "Computer Science",
-    category: "Academic",
-    level: "Grade 5 – MS",
-    duration: "Ongoing · per term",
-    mode: "Live online tutoring",
-    tagline: "Concept-clear computer science tutoring for every grade.",
-    summary:
-      "Personalised computer science tutoring covering school, college and university syllabi with clear concepts and exam preparation.",
-    description:
-      "Our computer science tutoring follows your school, college or university curriculum while building deep conceptual understanding. From programming basics to algorithms, databases and theory, our tutors prepare students for exams and real-world skills with one-to-one attention.",
-    outcomes: [
-      "Strong conceptual clarity in CS topics",
-      "Improved grades and exam confidence",
-      "Practical coding and problem-solving skills",
-      "Curriculum-aligned, personalised lessons",
-    ],
-    curriculum: [
-      "Programming fundamentals",
-      "Data structures & algorithms",
-      "Databases & SQL",
-      "Computer systems & networks",
-      "Exam-focused practice",
-      "Project & assignment support",
-    ],
-    audience: "School, college and university students (Grade 5 to MS).",
-    priceNote: "Per-term plans · Curriculum aligned",
-    icon: "Cpu",
-    keywords: ["computer science tutoring", "cs tutor online"],
-    featured: true,
-  },
-  {
-    slug: "maths",
-    title: "Mathematics",
-    category: "Academic",
-    level: "Grade 5 – MS",
-    duration: "Ongoing · per term",
-    mode: "Live online tutoring",
-    tagline: "Build confidence and top grades in maths.",
-    summary:
-      "Expert online maths tutoring from Grade 5 to university level — clear explanations, practice, and exam-focused preparation.",
-    description:
-      "Mathematics becomes simple with the right tutor. Our maths specialists teach from Grade 5 through university level, breaking down difficult topics into clear steps, building strong fundamentals, and preparing students for board, college and entrance exams.",
-    outcomes: [
-      "Master core and advanced maths topics",
-      "Improve speed and accuracy",
-      "Excel in school and entrance exams",
-      "Develop strong problem-solving habits",
-    ],
-    curriculum: [
-      "Arithmetic & algebra",
-      "Geometry & trigonometry",
-      "Calculus foundations",
-      "Statistics & probability",
-      "Past-paper & exam practice",
-      "Homework & assignment support",
-    ],
-    audience: "Students from Grade 5 to MS level needing maths support.",
-    priceNote: "Per-term plans · Curriculum aligned",
-    icon: "Sigma",
-    keywords: ["maths tutor online", "math tutoring pakistan"],
-    featured: true,
-  },
-  {
-    slug: "physics",
-    title: "Physics",
-    category: "Academic",
-    level: "Grade 8 – MS",
-    duration: "Ongoing · per term",
-    mode: "Live online tutoring",
-    tagline: "Understand physics, not just memorise it.",
-    summary:
-      "Engaging online physics tutoring that turns difficult concepts into clear understanding, with exam and numerical practice.",
-    description:
-      "Physics is best learned by understanding, not memorising. Our tutors use real-world examples, diagrams and numerical practice to make mechanics, electricity, waves and modern physics genuinely clear — preparing students for school, board and entrance exams.",
-    outcomes: [
-      "Deep understanding of physics concepts",
-      "Confident numerical problem solving",
-      "Strong board and entrance-exam preparation",
-      "Curriculum-aligned, personalised lessons",
-    ],
-    curriculum: [
-      "Mechanics & motion",
-      "Electricity & magnetism",
-      "Waves, light & sound",
-      "Thermodynamics",
-      "Modern physics",
-      "Numerical & exam practice",
-    ],
-    audience: "Students from Grade 8 to MS level needing physics support.",
-    priceNote: "Per-term plans · Curriculum aligned",
-    icon: "Atom",
-    keywords: ["physics tutor online", "physics tutoring"],
-    featured: true,
-  },
 ];
 
 export const getCourse = (slug: string) => courses.find((c) => c.slug === slug);
-export const academicCourses = courses.filter((c) => c.category === "Academic");
-export const technicalCourses = courses.filter((c) => c.category === "Technical");
+export const technicalCourses = courses;
+export const allCourses = courses;
 export const featuredCourses = courses.filter((c) => c.featured);
+export const academicCourses: Course[] = []; // Deprecated: academic subjects moved to src/data/tutoring.ts

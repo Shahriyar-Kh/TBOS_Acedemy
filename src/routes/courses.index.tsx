@@ -1,23 +1,26 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRight, BookOpen } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { SectionHeading } from "@/components/SectionHeading";
 import { CourseCard } from "@/components/CourseCard";
 import { CtaSection } from "@/components/sections/CtaSection";
-import { academicCourses, technicalCourses } from "@/data/courses";
+import { Button } from "@/components/ui/button";
+import { courses } from "@/data/courses";
 import { buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/courses/")({
   head: () => ({
     meta: buildMeta({
-      title: "Online Courses | Academic & Technical | TechBuilt Open School",
+      title: "Programming & Technology Courses | TechBuilt Open School",
       description:
-        "Explore live online courses in maths, physics, computer science, Python, JavaScript, web development and more. Expert tutors, flexible plans, Grade 5 to MS.",
+        "Explore live online technical courses in Python, JavaScript, HTML & CSS, PHP, Java, and software development. Live instructor-led, project-driven learning.",
       keywords: [
-        "online courses",
+        "programming courses online",
         "python course online",
         "web development course",
-        "maths physics computer science",
+        "learn javascript",
+        "coding courses",
       ],
     }),
     links: [{ rel: "canonical", href: "/courses" }],
@@ -29,45 +32,48 @@ function CoursesPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Our courses"
-        title="Live online courses for every learner"
-        description="Choose from academic subject tutoring and in-demand technical skills — all taught live by expert tutors, one-to-one or in small groups."
+        eyebrow="Technology Catalog"
+        title="Programming & Technology Courses"
+        description="Master modern software development with live, instructor-led technical courses designed around practical projects and clean code."
         breadcrumb={[{ label: "Courses" }]}
       />
 
       <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
         <SectionHeading
           align="left"
-          eyebrow="Academic"
-          title="Academic subject tutoring"
-          description="Curriculum-aligned tutoring that builds clear concepts, confidence and top grades — from Grade 5 to MS."
+          eyebrow="Core Technologies"
+          title="All Technical Courses"
+          description="Instructor-led courses that build practical, portfolio-ready skills in programming and software development."
         />
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {academicCourses.map((c, i) => (
+          {courses.map((c, i) => (
             <Reveal key={c.slug} delay={i * 70}>
               <CourseCard course={c} />
             </Reveal>
           ))}
         </div>
 
-        <div className="mt-16">
-          <SectionHeading
-            align="left"
-            eyebrow="Technical"
-            title="Technical & coding courses"
-            description="Practical, project-based courses that build real, career-ready skills in programming and web development."
-          />
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {technicalCourses.map((c, i) => (
-              <Reveal key={c.slug} delay={i * 70}>
-                <CourseCard course={c} />
-              </Reveal>
-            ))}
+        <Reveal className="mt-16 rounded-2xl border border-border bg-muted/40 p-8 text-center sm:p-10">
+          <div className="mx-auto max-w-2xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+              <BookOpen className="h-3.5 w-3.5" /> Academic & Islamic Tutoring
+            </span>
+            <h3 className="mt-3 text-xl font-bold text-foreground sm:text-2xl">
+              Looking for School Subjects or Quran Tutoring?
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We provide dedicated 1-on-1 and small group academic tutoring in Mathematics, Physics, Chemistry, Biology, Computer Science, and Quran & Islamic Studies under our separate Tutoring service.
+            </p>
+            <Button asChild variant="outline" className="mt-5">
+              <Link to="/tutoring">
+                Explore Tutoring Services <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      <CtaSection title="Not sure which course is right for you?" description="Apply or message us and our team will recommend the perfect course and plan for your goals." />
+      <CtaSection />
     </>
   );
 }
