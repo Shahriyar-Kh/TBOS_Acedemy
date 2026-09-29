@@ -25,7 +25,7 @@ const details = [
   { icon: MessageCircle, label: "WhatsApp", value: "Chat with us", href: whatsappLink() },
   { icon: Phone, label: "Phone", value: site.phoneDisplay, href: `tel:${site.phoneDisplay.replace(/\s/g, "")}` },
   { icon: Clock, label: "Working hours", value: site.workingHours },
-  { icon: MapPin, label: "Serving", value: "Pakistan & 25+ countries (online)" },
+  { icon: MapPin, label: "Serving", value: "Pakistan & Worldwide (online)" },
 ];
 
 function ContactPage() {

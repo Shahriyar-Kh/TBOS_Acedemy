@@ -30,7 +30,7 @@ export const learningCommitments = [
   },
   {
     icon: ShieldCheck,
-    title: "Free Demo Guarantee",
+    title: "Free Demo Trial Session",
     desc: "Experience our teaching standard, classroom environment, and curriculum firsthand before committing to any paid enrollment.",
   },
 ];

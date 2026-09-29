@@ -23,7 +23,7 @@ const reasons = [
   {
     icon: Globe2,
     title: "International reach",
-    desc: "Serving students across Pakistan and 25+ countries, with flexible scheduling for every time zone.",
+    desc: "Serving students across Pakistan and international learners worldwide, with flexible scheduling for every time zone.",
   },
   {
     icon: ShieldCheck,
