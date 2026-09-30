@@ -14,7 +14,7 @@ export interface AdmissionsRequestRecord {
   phone: string;
   country: string;
   city?: string | null;
-  age?: string | null;
+  age?: number | null;
   education_level: string;
   institution?: string | null;
   skill_level?: string | null;
@@ -41,7 +41,7 @@ export interface AdmissionsRequestRecord {
 let cachedClient: SupabaseClient | null = null;
 
 /**
- * Server-only Supabase client using privileged SUPABASE_SERVICE_ROLE_KEY.
+ * Server-only Supabase client using elevated SUPABASE_SECRET_KEY.
  * Evaluates credentials at request time so build-time execution does not crash.
  */
 export function getSupabaseServerClient(): {
@@ -50,7 +50,7 @@ export function getSupabaseServerClient(): {
 } {
   const config = getServerConfig();
   const url = config.supabaseUrl?.trim();
-  const key = config.supabaseServiceRoleKey?.trim();
+  const key = config.supabaseSecretKey?.trim();
 
   if (!url || !key) {
     return { client: null, configured: false };

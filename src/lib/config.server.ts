@@ -20,6 +20,6 @@ export function getServerConfig() {
   return {
     nodeEnv: process.env.NODE_ENV,
     supabaseUrl: process.env.SUPABASE_URL,
-    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    supabaseSecretKey: process.env.SUPABASE_SECRET_KEY,
   };
 }

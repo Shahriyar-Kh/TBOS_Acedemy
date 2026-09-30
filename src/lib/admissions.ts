@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { getAllProgramOptions, isMinorLearner, normalizeApplicationType } from "./programs";
+import {
+  type ApplicationType,
+  getAllProgramOptions,
+  isMinorLearner,
+  normalizeApplicationType,
+} from "./programs";
 
 export const admissionsSubmissionSchema = z.object({
   submissionKind: z.enum(["application", "demo"]),
@@ -18,7 +23,20 @@ export const admissionsSubmissionSchema = z.object({
     .regex(/^[+0-9\s-]+$/, "Use digits, +, spaces, or dashes only"),
   country: z.string().trim().min(2, "Country is required").max(60),
   city: z.string().trim().max(60).optional().or(z.literal("")),
-  age: z.string().trim().max(3).optional().or(z.literal("")),
+  age: z
+    .string()
+    .trim()
+    .max(3)
+    .optional()
+    .or(z.literal(""))
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        const num = Number(val);
+        return !isNaN(num) && Number.isInteger(num) && num >= 4 && num <= 100;
+      },
+      { message: "Please enter a valid age between 4 and 100" },
+    ),
   educationLevel: z.string().min(1, "Education level is required"),
   institution: z.string().trim().max(120).optional().or(z.literal("")),
   skillLevel: z.string().trim().max(100).optional().or(z.literal("")),
@@ -36,7 +54,8 @@ export const admissionsSubmissionSchema = z.object({
 
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
   sourcePage: z.string().trim().max(100).optional().or(z.literal("")),
-  company: z.string().max(0).optional(), // Honeypot field
+  // Honeypot field: bounded optional string so bots don't fail Zod parsing
+  company: z.string().trim().max(100).optional().or(z.literal("")),
 });
 
 export type AdmissionsSubmissionInput = z.infer<typeof admissionsSubmissionSchema>;
@@ -47,50 +66,97 @@ export interface AdmissionsApiResponse {
   error?: string;
 }
 
-/**
- * Resolves program metadata (slug, canonical title, category) from real catalog data.
- */
-export function resolveProgramMetadata(
-  programName?: string,
-  rawType?: string,
-): {
-  slug: string | null;
-  title: string;
-  category: string;
-} {
-  const normType = normalizeApplicationType(rawType);
-  const cleanName = (programName ?? "").trim();
+export interface ResolvedProgramResult {
+  valid: boolean;
+  applicationType: ApplicationType;
+  selectedProgramTitle: string;
+  selectedProgramSlug: string | null;
+  selectedProgramCategory: string | null;
+  error?: string;
+}
 
-  if (!cleanName || cleanName === "General Admissions Inquiry") {
+/**
+ * Validates selected program against real repository catalog data
+ * and resolves program metadata while strictly maintaining the normalized application_type.
+ */
+export function resolveAndValidateProgram(
+  selectedProgram: string,
+  rawAppType?: string,
+): ResolvedProgramResult {
+  const normAppType = normalizeApplicationType(rawAppType);
+  const cleanName = (selectedProgram ?? "").trim();
+  const lowerName = cleanName.toLowerCase();
+
+  // Special Case 1: General Admissions Inquiry (no specific catalog program required)
+  if (normAppType === "General Admissions Inquiry") {
     return {
-      slug: null,
-      title: cleanName || "General Admissions Inquiry",
-      category: normType,
+      valid: true,
+      applicationType: normAppType,
+      selectedProgramTitle: cleanName || "General Admissions Inquiry",
+      selectedProgramSlug: null,
+      selectedProgramCategory: "General Inquiry",
     };
   }
 
-  const all = getAllProgramOptions();
-  const lowerName = cleanName.toLowerCase();
+  // Special Case 2: One-to-One Learning without specific course requirement
+  if (normAppType === "One-to-One Learning") {
+    if (
+      !cleanName ||
+      lowerName === "one-to-one learning" ||
+      lowerName === "1-on-1 tutoring" ||
+      lowerName === "general one-to-one inquiry" ||
+      lowerName === "tutor service"
+    ) {
+      return {
+        valid: true,
+        applicationType: normAppType,
+        selectedProgramTitle: cleanName || "One-to-One Learning",
+        selectedProgramSlug: null,
+        selectedProgramCategory: "Personalized Tutoring",
+      };
+    }
+  }
 
+  const all = getAllProgramOptions();
+
+  // Match against real catalog entries
   const found = all.find(
     (p) =>
       p.value.toLowerCase() === lowerName ||
       p.label.toLowerCase() === lowerName ||
-      (p.slug && p.slug.toLowerCase() === lowerName),
+      (p.slug && p.slug.toLowerCase() === lowerName) ||
+      (lowerName.includes(p.value.toLowerCase()) && p.value.length > 3),
   );
 
   if (found) {
     return {
-      slug: found.slug ?? null,
-      title: found.value,
-      category: found.group,
+      valid: true,
+      applicationType: normAppType,
+      selectedProgramTitle: found.value,
+      selectedProgramSlug: found.slug ?? null,
+      selectedProgramCategory: found.group,
     };
   }
 
+  // Allow custom learning requirements for One-to-One Learning inquiries
+  if (normAppType === "One-to-One Learning" && cleanName.length >= 3) {
+    return {
+      valid: true,
+      applicationType: normAppType,
+      selectedProgramTitle: cleanName,
+      selectedProgramSlug: null,
+      selectedProgramCategory: "Personalized Tutoring",
+    };
+  }
+
+  // Catalog-tied application types must match an actual offering in the repository
   return {
-    slug: null,
-    title: cleanName,
-    category: normType,
+    valid: false,
+    applicationType: normAppType,
+    selectedProgramTitle: cleanName,
+    selectedProgramSlug: null,
+    selectedProgramCategory: null,
+    error: `Please select a valid program or course from our catalog for ${normAppType}.`,
   };
 }
 
@@ -100,12 +166,7 @@ export function resolveProgramMetadata(
 export function validateAdmissionsPayload(
   payload: AdmissionsSubmissionInput,
 ): { valid: true } | { valid: false; error: string } {
-  // 1. Honeypot abuse check
-  if (payload.company && payload.company.trim().length > 0) {
-    return { valid: false, error: "Spam detected." };
-  }
-
-  // 2. Minor / Guardian requirement check
+  // 1. Minor / Guardian requirement check
   const isMinor = isMinorLearner(payload.age, payload.educationLevel, payload.selectedProgram);
   if (isMinor) {
     if (!payload.guardianName || payload.guardianName.trim().length < 2) {
@@ -122,7 +183,7 @@ export function validateAdmissionsPayload(
     }
   }
 
-  // 3. Demo schedule preference check
+  // 2. Demo schedule preference check
   if (payload.submissionKind === "demo") {
     if (!payload.preferredDays || payload.preferredDays.trim().length === 0) {
       return {

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getSupabaseServerClient, type AdmissionsRequestRecord } from "@/lib/supabase.server";
 import {
   admissionsSubmissionSchema,
-  resolveProgramMetadata,
+  resolveAndValidateProgram,
   validateAdmissionsPayload,
 } from "@/lib/admissions";
 
@@ -58,7 +58,22 @@ export const Route = createFileRoute("/api/admissions")({
           );
         }
 
-        // 5. Request-time Supabase configuration check
+        // 5. Validate selected program against real repository catalog
+        const programValidation = resolveAndValidateProgram(
+          data.selectedProgram,
+          data.applicationType,
+        );
+        if (!programValidation.valid) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: programValidation.error || "Please select a valid program from our catalog.",
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // 6. Request-time Supabase configuration check
         const { client: supabase, configured } = getSupabaseServerClient();
         if (!configured || !supabase) {
           console.warn("Admissions submission received but Supabase server credentials are not configured.");
@@ -74,25 +89,26 @@ export const Route = createFileRoute("/api/admissions")({
           );
         }
 
-        // 6. Resolve canonical program details
-        const programMeta = resolveProgramMetadata(data.selectedProgram, data.applicationType);
-
         // 7. Initial CRM status
         const initialStatus = data.submissionKind === "demo" ? "demo_requested" : "new";
 
+        // Parse age to numeric or null
+        const numericAge =
+          data.age && data.age.trim() !== "" ? parseInt(data.age.trim(), 10) : null;
+
         const row: AdmissionsRequestRecord = {
           submission_kind: data.submissionKind,
-          application_type: programMeta.category || data.applicationType,
-          selected_program_slug: data.selectedProgramSlug || programMeta.slug,
-          selected_program_title: programMeta.title,
-          selected_program_category: programMeta.category,
+          application_type: programValidation.applicationType,
+          selected_program_slug: data.selectedProgramSlug || programValidation.selectedProgramSlug,
+          selected_program_title: programValidation.selectedProgramTitle,
+          selected_program_category: programValidation.selectedProgramCategory,
 
           student_name: data.studentName.trim(),
           email: data.email.trim().toLowerCase(),
           phone: data.phone.trim(),
           country: data.country.trim(),
           city: data.city?.trim() || null,
-          age: data.age?.trim() || null,
+          age: numericAge,
           education_level: data.educationLevel.trim(),
           institution: data.institution?.trim() || null,
           skill_level: data.skillLevel?.trim() || null,
@@ -114,7 +130,7 @@ export const Route = createFileRoute("/api/admissions")({
           status: initialStatus,
         };
 
-        // 8. Insert into PostgreSQL via Supabase service-role client
+        // 8. Insert into PostgreSQL via Supabase elevated secret-key client
         const { data: inserted, error: insertError } = await supabase
           .from("admissions_requests")
           .insert(row)

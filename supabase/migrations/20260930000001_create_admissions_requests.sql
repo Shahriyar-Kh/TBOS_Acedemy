@@ -18,7 +18,7 @@ create table if not exists public.admissions_requests (
   phone text not null,
   country text not null,
   city text,
-  age text,
+  age smallint check (age is null or (age >= 4 and age <= 120)),
   education_level text not null,
   institution text,
   skill_level text,

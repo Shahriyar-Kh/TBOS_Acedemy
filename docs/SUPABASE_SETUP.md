@@ -7,7 +7,7 @@ This document details the configuration and operational setup for Supabase Postg
 ## 1. Architecture Overview
 
 - **Primary Source of Truth**: Supabase PostgreSQL table `public.admissions_requests`.
-- **Server Endpoint**: `POST /api/admissions` validates input, verifies minor/guardian constraints, resolves program metadata, and inserts via a server-only Supabase client with the service-role key.
+- **Server Endpoint**: `POST /api/admissions` validates input, verifies minor/guardian constraints, validates programs against real catalog data, and inserts via a server-only Supabase client with the elevated secret key.
 - **Secondary Mirror**: Google Apps Script / Google Sheets (`VITE_GOOGLE_SCRIPT_URL`) runs as an asynchronous, best-effort backup. If the backup fails, user admissions success is never blocked or reverted.
 - **Security & RLS**: Row Level Security (RLS) is enabled with all public permissions revoked. Anonymous browser visitors cannot read, list, update, or delete admissions records.
 
@@ -20,34 +20,43 @@ Configure these variables in your deployment environment or local `.env.local` (
 ```bash
 # Supabase Project Settings -> API
 SUPABASE_URL="https://your-project-id.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY="your-service-role-secret-key"
+
+# Modern elevated server key (sb_secret_...):
+# Grants full service-role privileges while keeping secrets secure.
+SUPABASE_SECRET_KEY="sb_secret_your_secret_key"
 
 # Secondary Mirror (Optional)
 VITE_GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/your-deployment-id/exec"
 ```
 
 > [!CAUTION]
-> Never prefix `SUPABASE_SERVICE_ROLE_KEY` with `VITE_`. It must remain strictly server-side.
+> Never prefix `SUPABASE_SECRET_KEY` with `VITE_`. It must remain strictly server-side.
 
 ---
 
-## 3. Database Migration
+## 3. Database Migration Workflow
 
-The schema definition is located at:
+The schema definition is version-controlled at:
 [`supabase/migrations/20260930000001_create_admissions_requests.sql`](file:///D:/Client_Projects/TBOS_Acedemy/supabase/migrations/20260930000001_create_admissions_requests.sql)
 
-### Applying via Supabase SQL Editor:
+### Recommended Deployment Workflow (Supabase CLI):
+To ensure reproducible environments and audit-safe schema history, always apply migrations through version control / CLI rather than manual creation in the Table Editor UI:
+
+```bash
+# 1. Link to your remote Supabase project
+supabase link --project-ref your-project-id
+
+# 2. Push version-controlled migrations
+supabase db push
+```
+
+### Alternative: Supabase SQL Editor
+If the CLI is not configured, execute the version-controlled script directly:
 1. Open the Supabase Dashboard for your project.
 2. Navigate to **SQL Editor** -> **New Query**.
-3. Copy and paste the contents of `supabase/migrations/20260930000001_create_admissions_requests.sql`.
+3. Paste the contents of `supabase/migrations/20260930000001_create_admissions_requests.sql`.
 4. Click **Run**.
-
-### Applying via Supabase CLI:
-```bash
-supabase db push
-# or
-supabase migration up
-```
+5. Do *not* manually create or edit tables through the Table Editor UI to avoid schema divergence.
 
 ---
 
@@ -57,9 +66,10 @@ supabase migration up
 In the Supabase Dashboard, navigate to **Database** -> **Tables** -> `admissions_requests`:
 - Confirm RLS is marked **Enabled**.
 - Confirm no policies allow public `anon` access to `SELECT`, `UPDATE`, or `DELETE`.
+- Confirm role `service_role` has full table privileges.
 
 ### B. Verify Anonymous Access is Blocked
-You can verify that anonymous clients cannot read records by running this in the browser console or cURL with your public `anon` key:
+Verify that anonymous clients cannot read records by running this in terminal or cURL with your public `anon` key:
 ```bash
 curl -X GET 'https://your-project-id.supabase.co/rest/v1/admissions_requests' \
   -H "apikey: your-public-anon-key" \
@@ -73,6 +83,8 @@ curl -X GET 'https://your-project-id.supabase.co/rest/v1/admissions_requests' \
 3. Check **Table Editor** -> `admissions_requests` in Supabase:
    - Row exists with the student's name, email, and selected program.
    - `submission_kind` is `"application"` or `"demo"`.
+   - `application_type` contains the normalized application type.
+   - `selected_program_category` contains the catalog grouping.
    - `status` is `"new"` or `"demo_requested"`.
    - `created_at` timestamp is populated.
 
