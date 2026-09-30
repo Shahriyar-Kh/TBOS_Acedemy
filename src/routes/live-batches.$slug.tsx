@@ -18,22 +18,30 @@ import { Badge } from "@/components/ui/badge";
 import { LiveOfferCard } from "@/components/LiveOfferCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { getLiveOffer, activeLiveOffers } from "@/data/liveOffers";
+import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
 import { whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/live-batches/$slug")({
-  loader: ({ params }) => {
-    const offer = getLiveOffer(params.slug);
+  loader: async ({ params }) => {
+    let offer = null;
+    try {
+      offer = await getCmsLiveOfferBySlugFn({ data: params.slug });
+    } catch {
+      offer = getLiveOffer(params.slug);
+    }
     if (!offer) throw notFound();
     return { offer };
   },
   head: ({ loaderData }) => {
     const offer = loaderData?.offer;
     if (!offer) return { meta: buildMeta({ title: "Live Batch", description: "Program details." }) };
+    const title = offer.seoTitle || `${offer.title} | Live Group Online Batch | TechBuilt Open School`;
+    const description = offer.seoDescription || `${offer.summary} Current offer: Rs ${offer.offerFee.toLocaleString()}/${offer.billingPeriod}. Free Demo session available.`;
     return {
       meta: buildMeta({
-        title: `${offer.title} | Live Group Online Batch | TechBuilt Open School`,
-        description: `${offer.summary} Current offer: Rs ${offer.offerFee.toLocaleString()}/${offer.billingPeriod}. Free Demo session available.`,
+        title,
+        description,
         keywords: offer.keywords,
         type: "article",
       }),

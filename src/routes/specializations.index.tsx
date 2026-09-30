@@ -5,9 +5,19 @@ import { SpecializationCard } from "@/components/SpecializationCard";
 import { HowItWorks } from "@/components/sections/HowItWorks";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { specializations } from "@/data/specializations";
+import { getCmsSpecializationsFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/specializations/")({
+  loader: async () => {
+    try {
+      const data = await getCmsSpecializationsFn();
+      if (data && data.length > 0) return { specializations: data };
+    } catch {
+      // Fallback
+    }
+    return { specializations };
+  },
   head: () => ({
     meta: buildMeta({
       title: "Technology Specializations | Developer Learning Tracks | TechBuilt Open School",
@@ -26,6 +36,9 @@ export const Route = createFileRoute("/specializations/")({
 });
 
 function SpecializationsPage() {
+  const { specializations: loadedSpecs } = Route.useLoaderData();
+  const allSpecs = loadedSpecs && loadedSpecs.length > 0 ? loadedSpecs : specializations;
+
   return (
     <>
       <PageHeader
@@ -37,7 +50,7 @@ function SpecializationsPage() {
 
       <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {specializations.map((s, i) => (
+          {allSpecs.map((s, i) => (
             <Reveal key={s.slug} delay={i * 70}>
               <SpecializationCard spec={s} />
             </Reveal>

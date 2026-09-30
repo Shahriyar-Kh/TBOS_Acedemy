@@ -34,6 +34,8 @@ export interface LiveOffer {
   icon: string;
   featured?: boolean;
   keywords: string[];
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 export const liveOffers: LiveOffer[] = [

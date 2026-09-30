@@ -40,10 +40,14 @@ import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as ApiAdmissionsRouteImport } from './routes/api.admissions'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDemosRouteImport } from './routes/admin.demos'
+import { Route as AdminContentRouteImport } from './routes/admin.content'
 import { Route as AdminAdmissionsRouteImport } from './routes/admin.admissions'
+import { Route as ApiContentKindRouteImport } from './routes/api.content.$kind'
 import { Route as ApiAdminMeRouteImport } from './routes/api.admin.me'
 import { Route as ApiAdminAdmissionsRouteImport } from './routes/api.admin.admissions'
+import { Route as ApiAdminContentKindRouteImport } from './routes/api.admin.content.$kind'
 import { Route as ApiAdminAdmissionsIdRouteImport } from './routes/api.admin.admissions.$id'
+import { Route as ApiAdminContentKindIdRouteImport } from './routes/api.admin.content.$kind.$id'
 
 const WebDevelopmentCourseOnlineRoute =
   WebDevelopmentCourseOnlineRouteImport.update({
@@ -205,9 +209,19 @@ const AdminDemosRoute = AdminDemosRouteImport.update({
   path: '/admin/demos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/admin/content',
+  path: '/admin/content',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAdmissionsRoute = AdminAdmissionsRouteImport.update({
   id: '/admin/admissions',
   path: '/admin/admissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContentKindRoute = ApiContentKindRouteImport.update({
+  id: '/api/content/$kind',
+  path: '/api/content/$kind',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminMeRoute = ApiAdminMeRouteImport.update({
@@ -220,10 +234,20 @@ const ApiAdminAdmissionsRoute = ApiAdminAdmissionsRouteImport.update({
   path: '/api/admin/admissions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminContentKindRoute = ApiAdminContentKindRouteImport.update({
+  id: '/api/admin/content/$kind',
+  path: '/api/admin/content/$kind',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminAdmissionsIdRoute = ApiAdminAdmissionsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiAdminAdmissionsRoute,
+} as any)
+const ApiAdminContentKindIdRoute = ApiAdminContentKindIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminContentKindRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -248,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
@@ -261,7 +286,10 @@ export interface FileRoutesByFullPath {
   '/tutoring/': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -285,6 +313,7 @@ export interface FileRoutesByTo {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
@@ -298,7 +327,10 @@ export interface FileRoutesByTo {
   '/tutoring': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -323,6 +355,7 @@ export interface FileRoutesById {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/content': typeof AdminContentRoute
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
@@ -336,7 +369,10 @@ export interface FileRoutesById {
   '/tutoring/': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -362,6 +398,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/content'
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
@@ -375,7 +412,10 @@ export interface FileRouteTypes {
     | '/tutoring/'
     | '/api/admin/admissions'
     | '/api/admin/me'
+    | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/content/$kind'
+    | '/api/admin/content/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -399,6 +439,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/content'
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
@@ -412,7 +453,10 @@ export interface FileRouteTypes {
     | '/tutoring'
     | '/api/admin/admissions'
     | '/api/admin/me'
+    | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/content/$kind'
+    | '/api/admin/content/$kind/$id'
   id:
     | '__root__'
     | '/'
@@ -436,6 +480,7 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/content'
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
@@ -449,7 +494,10 @@ export interface FileRouteTypes {
     | '/tutoring/'
     | '/api/admin/admissions'
     | '/api/admin/me'
+    | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/content/$kind'
+    | '/api/admin/content/$kind/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -474,6 +522,7 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   WebDevelopmentCourseOnlineRoute: typeof WebDevelopmentCourseOnlineRoute
   AdminAdmissionsRoute: typeof AdminAdmissionsRoute
+  AdminContentRoute: typeof AdminContentRoute
   AdminDemosRoute: typeof AdminDemosRoute
   AdminLoginRoute: typeof AdminLoginRoute
   ApiAdmissionsRoute: typeof ApiAdmissionsRoute
@@ -487,6 +536,8 @@ export interface RootRouteChildren {
   TutoringIndexRoute: typeof TutoringIndexRoute
   ApiAdminAdmissionsRoute: typeof ApiAdminAdmissionsRouteWithChildren
   ApiAdminMeRoute: typeof ApiAdminMeRoute
+  ApiContentKindRoute: typeof ApiContentKindRoute
+  ApiAdminContentKindRoute: typeof ApiAdminContentKindRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -708,11 +759,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDemosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/content': {
+      id: '/admin/content'
+      path: '/admin/content'
+      fullPath: '/admin/content'
+      preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/admissions': {
       id: '/admin/admissions'
       path: '/admin/admissions'
       fullPath: '/admin/admissions'
       preLoaderRoute: typeof AdminAdmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/content/$kind': {
+      id: '/api/content/$kind'
+      path: '/api/content/$kind'
+      fullPath: '/api/content/$kind'
+      preLoaderRoute: typeof ApiContentKindRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/me': {
@@ -729,12 +794,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAdmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/content/$kind': {
+      id: '/api/admin/content/$kind'
+      path: '/api/admin/content/$kind'
+      fullPath: '/api/admin/content/$kind'
+      preLoaderRoute: typeof ApiAdminContentKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/admissions/$id': {
       id: '/api/admin/admissions/$id'
       path: '/$id'
       fullPath: '/api/admin/admissions/$id'
       preLoaderRoute: typeof ApiAdminAdmissionsIdRouteImport
       parentRoute: typeof ApiAdminAdmissionsRoute
+    }
+    '/api/admin/content/$kind/$id': {
+      id: '/api/admin/content/$kind/$id'
+      path: '/$id'
+      fullPath: '/api/admin/content/$kind/$id'
+      preLoaderRoute: typeof ApiAdminContentKindIdRouteImport
+      parentRoute: typeof ApiAdminContentKindRoute
     }
   }
 }
@@ -749,6 +828,17 @@ const ApiAdminAdmissionsRouteChildren: ApiAdminAdmissionsRouteChildren = {
 
 const ApiAdminAdmissionsRouteWithChildren =
   ApiAdminAdmissionsRoute._addFileChildren(ApiAdminAdmissionsRouteChildren)
+
+interface ApiAdminContentKindRouteChildren {
+  ApiAdminContentKindIdRoute: typeof ApiAdminContentKindIdRoute
+}
+
+const ApiAdminContentKindRouteChildren: ApiAdminContentKindRouteChildren = {
+  ApiAdminContentKindIdRoute: ApiAdminContentKindIdRoute,
+}
+
+const ApiAdminContentKindRouteWithChildren =
+  ApiAdminContentKindRoute._addFileChildren(ApiAdminContentKindRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -772,6 +862,7 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   WebDevelopmentCourseOnlineRoute: WebDevelopmentCourseOnlineRoute,
   AdminAdmissionsRoute: AdminAdmissionsRoute,
+  AdminContentRoute: AdminContentRoute,
   AdminDemosRoute: AdminDemosRoute,
   AdminLoginRoute: AdminLoginRoute,
   ApiAdmissionsRoute: ApiAdmissionsRoute,
@@ -785,6 +876,8 @@ const rootRouteChildren: RootRouteChildren = {
   TutoringIndexRoute: TutoringIndexRoute,
   ApiAdminAdmissionsRoute: ApiAdminAdmissionsRouteWithChildren,
   ApiAdminMeRoute: ApiAdminMeRoute,
+  ApiContentKindRoute: ApiContentKindRoute,
+  ApiAdminContentKindRoute: ApiAdminContentKindRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

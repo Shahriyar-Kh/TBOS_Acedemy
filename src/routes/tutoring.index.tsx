@@ -9,11 +9,21 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { FaqSection } from "@/components/sections/FaqSection";
 import { CtaSection } from "@/components/sections/CtaSection";
-import { academicTutoring, quranTutoring } from "@/data/tutoring";
+import { academicTutoring, quranTutoring, tutoringSubjects } from "@/data/tutoring";
+import { getCmsTutoringFn } from "@/lib/cmsFunctions";
 import { faqs } from "@/data/faqs";
 import { buildMeta, faqJsonLd } from "@/lib/seo";
 
 export const Route = createFileRoute("/tutoring/")({
+  loader: async () => {
+    try {
+      const data = await getCmsTutoringFn();
+      if (data && data.length > 0) return { tutoring: data };
+    } catch {
+      // Fallback
+    }
+    return { tutoring: tutoringSubjects };
+  },
   head: () => ({
     meta: buildMeta({
       title: "Online Tutoring Service | Academic & Quran Tutoring | TechBuilt Open School",
@@ -50,6 +60,11 @@ const popular = [
 ];
 
 function TutoringPage() {
+  const { tutoring: loadedTutoring } = Route.useLoaderData();
+  const allTutoring = loadedTutoring && loadedTutoring.length > 0 ? loadedTutoring : tutoringSubjects;
+  const academicList = allTutoring.filter((s) => s.category === "Academic");
+  const quranList = allTutoring.filter((s) => s.category === "Quran & Islamic Studies");
+
   return (
     <>
       <PageHeader
@@ -138,7 +153,7 @@ function TutoringPage() {
           />
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {academicTutoring.map((subject, i) => (
+            {academicList.map((subject, i) => (
               <Reveal
                 key={subject.slug}
                 delay={i * 60}
@@ -190,7 +205,7 @@ function TutoringPage() {
           />
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {quranTutoring.map((subject, i) => (
+            {quranList.map((subject, i) => (
               <Reveal
                 key={subject.slug}
                 delay={i * 60}
