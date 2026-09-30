@@ -11,6 +11,8 @@ export type TutoringSubject = {
   icon: string;
   keywords: string[];
   featured?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 export const tutoringSubjects: TutoringSubject[] = [

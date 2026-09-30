@@ -8,22 +8,33 @@ import { Badge } from "@/components/ui/badge";
 import { SpecializationCard } from "@/components/SpecializationCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { getSpecialization, specializations } from "@/data/specializations";
+import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
 import { whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/specializations/$slug")({
-  loader: ({ params }) => {
-    const spec = getSpecialization(params.slug);
+  loader: async ({ params }) => {
+    let spec = null;
+    try {
+      spec = await getCmsSpecializationBySlugFn({ data: params.slug });
+    } catch {
+      spec = null;
+    }
+    if (!spec) {
+      spec = getSpecialization(params.slug);
+    }
     if (!spec) throw notFound();
     return { spec };
   },
   head: ({ loaderData }) => {
     const spec = loaderData?.spec;
     if (!spec) return { meta: buildMeta({ title: "Specialization", description: "Details." }) };
+    const title = spec.seoTitle || `${spec.title} Specialization | TechBuilt Open School`;
+    const description = spec.seoDescription || spec.summary;
     return {
       meta: buildMeta({
-        title: `${spec.title} Specialization | TechBuilt Open School`,
-        description: spec.summary,
+        title,
+        description,
         keywords: spec.keywords,
         type: "article",
       }),

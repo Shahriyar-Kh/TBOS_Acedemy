@@ -23,6 +23,8 @@ export type Course = {
   icon: string;
   keywords: string[];
   featured?: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 export const courses: Course[] = [

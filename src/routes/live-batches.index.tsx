@@ -7,9 +7,19 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { activeLiveOffers } from "@/data/liveOffers";
+import { getCmsLiveOffersFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/live-batches/")({
+  loader: async () => {
+    try {
+      const data = await getCmsLiveOffersFn();
+      if (data && data.length > 0) return { offers: data };
+    } catch {
+      // Fallback
+    }
+    return { offers: activeLiveOffers };
+  },
   head: () => ({
     meta: buildMeta({
       title: "Active Live Group Classes & Batches | TechBuilt Open School",
@@ -30,6 +40,8 @@ export const Route = createFileRoute("/live-batches/")({
 });
 
 export function LiveBatchesPage() {
+  const { offers: loadedOffers } = Route.useLoaderData();
+  const allOffers = loadedOffers && loadedOffers.length > 0 ? loadedOffers : activeLiveOffers;
   return (
     <>
       <PageHeader
@@ -96,12 +108,12 @@ export function LiveBatchesPage() {
             </p>
           </div>
           <span className="hidden sm:inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
-            {activeLiveOffers.length} Active Programs
+            {allOffers.length} Active Programs
           </span>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {activeLiveOffers.map((offer) => (
+          {allOffers.map((offer) => (
             <Reveal key={offer.slug}>
               <LiveOfferCard offer={offer} />
             </Reveal>

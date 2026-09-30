@@ -10,7 +10,18 @@ import { Input } from "@/components/ui/input";
 import { courses, type CourseCategory } from "@/data/courses";
 import { buildMeta } from "@/lib/seo";
 
+import { getCmsCoursesFn } from "@/lib/cmsFunctions";
+
 export const Route = createFileRoute("/courses/")({
+  loader: async () => {
+    try {
+      const data = await getCmsCoursesFn();
+      if (data && data.length > 0) return { courses: data };
+    } catch {
+      // Fallback handled below
+    }
+    return { courses };
+  },
   head: () => ({
     meta: buildMeta({
       title: "Programming & Technology Courses Catalog | TechBuilt Open School",
@@ -40,12 +51,14 @@ const CATEGORIES: Array<"All" | CourseCategory> = [
 ];
 
 function CoursesPage() {
+  const { courses: loadedCourses } = Route.useLoaderData();
+  const allCourses = loadedCourses && loadedCourses.length > 0 ? loadedCourses : courses;
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<"All" | CourseCategory>("All");
 
   const filteredCourses = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return courses.filter((c) => {
+    return allCourses.filter((c) => {
       const matchesCategory = selectedCategory === "All" || c.category === selectedCategory;
       if (!matchesCategory) return false;
 
@@ -57,7 +70,7 @@ function CoursesPage() {
 
       return titleMatch || categoryMatch || summaryMatch || keywordsMatch;
     });
-  }, [search, selectedCategory]);
+  }, [allCourses, search, selectedCategory]);
 
   const clearFilters = () => {
     setSearch("");

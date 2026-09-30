@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { courses } from "../data/courses";
-import { specializations } from "../data/specializations";
-import { liveOffers } from "../data/liveOffers";
+import { getCmsCourses, getCmsSpecializations, getCmsLiveOffers } from "@/lib/cms.server";
 import { seoPages } from "../data/seoPages";
 
 // TODO: set this to your live domain once published, e.g. https://techbuiltopenschool.com
@@ -12,6 +10,12 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const [activeCourses, activeSpecs, activeOffers] = await Promise.all([
+          getCmsCourses(),
+          getCmsSpecializations(),
+          getCmsLiveOffers(),
+        ]);
+
         const staticPaths = [
           "/",
           "/about",
@@ -31,9 +35,9 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const paths = [
           ...staticPaths,
-          ...courses.map((c) => `/courses/${c.slug}`),
-          ...specializations.map((s) => `/specializations/${s.slug}`),
-          ...liveOffers.map((o) => `/live-batches/${o.slug}`),
+          ...activeCourses.map((c) => `/courses/${c.slug}`),
+          ...activeSpecs.map((s) => `/specializations/${s.slug}`),
+          ...activeOffers.map((o) => `/live-batches/${o.slug}`),
           ...seoPages.map((p) => `/${p.slug}`),
         ];
 

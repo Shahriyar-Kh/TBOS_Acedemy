@@ -191,6 +191,12 @@ function AdminDemosPage() {
               >
                 Demo Pipeline
               </Link>
+              <Link
+                to="/admin/content"
+                className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+              >
+                Content CMS
+              </Link>
             </nav>
           </div>
 

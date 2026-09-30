@@ -8,22 +8,33 @@ import { Badge } from "@/components/ui/badge";
 import { CourseCard } from "@/components/CourseCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { getCourse, courses } from "@/data/courses";
+import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
 import { whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/courses/$slug")({
-  loader: ({ params }) => {
-    const course = getCourse(params.slug);
+  loader: async ({ params }) => {
+    let course = null;
+    try {
+      course = await getCmsCourseBySlugFn({ data: params.slug });
+    } catch {
+      course = null;
+    }
+    if (!course) {
+      course = getCourse(params.slug);
+    }
     if (!course) throw notFound();
     return { course };
   },
   head: ({ loaderData }) => {
     const course = loaderData?.course;
     if (!course) return { meta: buildMeta({ title: "Course", description: "Course details." }) };
+    const title = course.seoTitle || `${course.title} Course Online | TechBuilt Open School`;
+    const description = course.seoDescription || `${course.summary} ${course.priceNote}.`;
     return {
       meta: buildMeta({
-        title: `${course.title} Course Online | TechBuilt Open School`,
-        description: `${course.summary} ${course.priceNote}.`,
+        title,
+        description,
         keywords: course.keywords,
         type: "article",
       }),
