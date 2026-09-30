@@ -65,11 +65,19 @@ export async function getCmsCourseBySlug(slug: string): Promise<Course | null> {
       .from("cms_courses")
       .select("*")
       .eq("slug", slug)
-      .eq("published", true)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.warn(`getCmsCourseBySlug(${slug}) db error, falling back to static catalog:`, error);
       return getCourse(slug) || null;
+    }
+
+    if (!data) {
+      return getCourse(slug) || null;
+    }
+
+    if (!data.published) {
+      return null;
     }
 
     return mapCmsCourseToCourse(data as CmsCourseRecord);
@@ -110,11 +118,19 @@ export async function getCmsSpecializationBySlug(slug: string): Promise<Speciali
       .from("cms_specializations")
       .select("*")
       .eq("slug", slug)
-      .eq("published", true)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.warn(`getCmsSpecializationBySlug(${slug}) db error, falling back to static catalog:`, error);
       return getSpecialization(slug) || null;
+    }
+
+    if (!data) {
+      return getSpecialization(slug) || null;
+    }
+
+    if (!data.published) {
+      return null;
     }
 
     return mapCmsSpecializationToSpec(data as CmsSpecializationRecord);
@@ -155,11 +171,19 @@ export async function getCmsLiveOfferBySlug(slug: string): Promise<LiveOffer | n
       .from("cms_live_offers")
       .select("*")
       .eq("slug", slug)
-      .eq("published", true)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.warn(`getCmsLiveOfferBySlug(${slug}) db error, falling back to static catalog:`, error);
       return getLiveOffer(slug) || null;
+    }
+
+    if (!data) {
+      return getLiveOffer(slug) || null;
+    }
+
+    if (!data.published) {
+      return null;
     }
 
     return mapCmsLiveOfferToOffer(data as CmsLiveOfferRecord);
@@ -200,11 +224,19 @@ export async function getCmsTutoringBySlug(slug: string): Promise<TutoringSubjec
       .from("cms_tutoring")
       .select("*")
       .eq("slug", slug)
-      .eq("published", true)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      console.warn(`getCmsTutoringBySlug(${slug}) db error, falling back to static catalog:`, error);
       return getTutoringBySlug(slug) || null;
+    }
+
+    if (!data) {
+      return getTutoringBySlug(slug) || null;
+    }
+
+    if (!data.published) {
+      return null;
     }
 
     return mapCmsTutoringToSubject(data as CmsTutoringRecord);

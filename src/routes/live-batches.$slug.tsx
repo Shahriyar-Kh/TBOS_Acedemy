@@ -28,9 +28,6 @@ export const Route = createFileRoute("/live-batches/$slug")({
     try {
       offer = await getCmsLiveOfferBySlugFn({ data: params.slug });
     } catch {
-      offer = null;
-    }
-    if (!offer) {
       offer = getLiveOffer(params.slug);
     }
     if (!offer) throw notFound();

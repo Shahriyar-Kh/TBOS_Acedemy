@@ -18,9 +18,6 @@ export const Route = createFileRoute("/specializations/$slug")({
     try {
       spec = await getCmsSpecializationBySlugFn({ data: params.slug });
     } catch {
-      spec = null;
-    }
-    if (!spec) {
       spec = getSpecialization(params.slug);
     }
     if (!spec) throw notFound();

@@ -110,17 +110,17 @@ async function main() {
   }
 
   // -----------------------------------------------------------------
-  // 3. DRAFT VISIBILITY TEST
+  // 3. DRAFT VISIBILITY & LIFECYCLE TEST
   // -----------------------------------------------------------------
-  console.log("--- 3. Draft Visibility Test ---");
-  const draftSlug = "tbos-phase8-verification-draft";
+  console.log("--- 3. Draft Visibility & Lifecycle Test ---");
+  const draftSlug = "tbos-phase8-recovery-verification";
 
   // Clean up any stale draft first
   await supabase.from("cms_courses").delete().eq("slug", draftSlug);
 
   const draftPayload = {
     slug: draftSlug,
-    title: "TBOS Phase 8 Draft Test Course",
+    title: "TBOS Phase 8 Recovery Verification Course",
     category: "Web Development",
     level: "Intermediate",
     duration: "4 weeks",
@@ -159,6 +159,34 @@ async function main() {
     console.log(" PASS: Draft item correctly isolated (visible to Admin, hidden from Public).");
   } else {
     console.error(" FAIL: Draft visibility rule violated.");
+    allPassed = false;
+  }
+
+  // Update draft
+  await updateAdminCmsItem("courses", createdDraft.id, {
+    summary: "Updated draft summary for verification.",
+  });
+  console.log(" PASS: Updated draft content successfully.");
+
+  // Publish draft
+  console.log("Toggling draft to published: true...");
+  await updateAdminCmsItem("courses", createdDraft.id, { published: true });
+  const publishedSingle = await getCmsCourseBySlug(draftSlug);
+  if (publishedSingle && publishedSingle.slug === draftSlug) {
+    console.log(" PASS: Published course is now visible to Public getCmsCourseBySlug().");
+  } else {
+    console.error(" FAIL: Course did not become visible after publishing.");
+    allPassed = false;
+  }
+
+  // Unpublish back to draft
+  console.log("Toggling back to published: false...");
+  await updateAdminCmsItem("courses", createdDraft.id, { published: false });
+  const unpublishedSingle = await getCmsCourseBySlug(draftSlug);
+  if (!unpublishedSingle) {
+    console.log(" PASS: Unpublished course is hidden again from Public getCmsCourseBySlug().");
+  } else {
+    console.error(" FAIL: Course remained visible after unpublishing.");
     allPassed = false;
   }
 

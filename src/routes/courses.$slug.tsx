@@ -18,9 +18,6 @@ export const Route = createFileRoute("/courses/$slug")({
     try {
       course = await getCmsCourseBySlugFn({ data: params.slug });
     } catch {
-      course = null;
-    }
-    if (!course) {
       course = getCourse(params.slug);
     }
     if (!course) throw notFound();
