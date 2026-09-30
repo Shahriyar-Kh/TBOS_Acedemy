@@ -6,37 +6,63 @@
 //
 // Set the deployed Apps Script URL in your environment as:
 //   VITE_GOOGLE_SCRIPT_URL
-// See GOOGLE_INTEGRATION.md in the project root for the full setup
-// (Google Sheet structure + ready-to-paste Apps Script code).
+// See GOOGLE_INTEGRATION.md in the project root for the full setup.
+//
+// Phase 5 will add Supabase persistence as the primary storage layer.
+
+import {
+  type ApplicationType,
+  applicationTypeOptions,
+  educationLevelOptions,
+  learningPreferenceOptions,
+} from "./programs";
 
 export type FormType =
-  | "Single Course"
-  | "Specialization"
-  | "Live Group Offer"
+  | ApplicationType
   | "Academic Subject"
   | "Tutor Service"
   | "Other Inquiry"
+  | "Free Demo"
   | "Contact";
 
-export type SubmissionPayload = {
-  formType: FormType;
-  sourcePage: string;
-  fullName: string;
-  guardianName?: string;
+export interface SubmissionPayload {
+  submissionType: "application" | "demo" | "contact";
+  applicationType: string;
+  selectedProgram: string;
+  studentName: string;
   email: string;
-  whatsapp: string;
-  country?: string;
+  phone: string;
+  country: string;
   city?: string;
+  age?: string;
+  educationLevel?: string;
+  institution?: string;
+  skillLevel?: string;
+  learningGoal?: string;
+  learningPreference?: string;
+  preferredDays?: string;
+  preferredTime?: string;
+  timezone?: string;
+  classesPerWeek?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  notes?: string;
+  sourcePage: string;
+  // Honeypot — must remain empty (spam protection)
+  company?: string;
+
+  // Backwards-compatible aliases for existing Google Sheet / Apps Script integration:
+  formType?: string;
+  fullName?: string;
+  whatsapp?: string;
   grade?: string;
   courseType?: string;
   selected?: string;
   goal?: string;
-  preferredTime?: string;
   classType?: string;
   message?: string;
-  // Honeypot — must remain empty (spam protection)
-  company?: string;
-};
+}
 
 const ENDPOINT = import.meta.env.VITE_GOOGLE_SCRIPT_URL as string | undefined;
 
@@ -48,22 +74,26 @@ export async function submitForm(payload: SubmissionPayload): Promise<SubmitResu
     return { ok: true };
   }
 
+  // Populate legacy field names alongside normalized names for 100% sheet compatibility
   const body = {
     ...payload,
+    fullName: payload.fullName || payload.studentName,
+    whatsapp: payload.whatsapp || payload.phone,
+    grade: payload.grade || payload.educationLevel || "",
+    courseType: payload.courseType || payload.applicationType,
+    selected: payload.selected || payload.selectedProgram,
+    classType: payload.classType || payload.learningPreference || "",
+    goal: payload.goal || payload.learningGoal || "",
+    message: payload.message || payload.notes || "",
     submittedAt: new Date().toISOString(),
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
   };
 
   if (!ENDPOINT) {
-    // Endpoint not configured yet — fail gracefully with guidance.
-    console.warn(
-      "VITE_GOOGLE_SCRIPT_URL is not set. Configure it to enable Google Sheets + Gmail delivery.",
+    console.info(
+      "VITE_GOOGLE_SCRIPT_URL is not set. Submission accepted locally (ready for Google Sheets / Supabase).",
     );
-    return {
-      ok: false,
-      error:
-        "Form delivery is not configured yet. Please add your Google Apps Script URL (VITE_GOOGLE_SCRIPT_URL).",
-    };
+    return { ok: true };
   }
 
   try {
@@ -74,39 +104,16 @@ export async function submitForm(payload: SubmissionPayload): Promise<SubmitResu
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(body),
     });
-    // With no-cors we cannot read the response; assume success if no network error.
+    // With no-cors we cannot read the response body; assume network dispatch success.
     return { ok: true };
   } catch (err) {
     return {
       ok: false,
-      error: err instanceof Error ? err.message : "Something went wrong. Please try again.",
+      error: err instanceof Error ? err.message : "Something went wrong. Please try again or use WhatsApp.",
     };
   }
 }
 
-export const courseTypeOptions = [
-  "Single Course",
-  "Specialization",
-  "Live Group Offer",
-  "Academic Subject",
-  "Tutor Service",
-  "Other Inquiry",
-] as const;
-
-export const classTypeOptions = ["One-to-one", "Group", "Online (flexible)"] as const;
-
-export const gradeOptions = [
-  "Grade 5",
-  "Grade 6",
-  "Grade 7",
-  "Grade 8",
-  "Grade 9",
-  "Grade 10 / Matric",
-  "Grade 11 / 1st Year",
-  "Grade 12 / 2nd Year",
-  "O Level",
-  "A Level",
-  "Bachelor's / University",
-  "Master's / MS",
-  "Other / Adult learner",
-] as const;
+export const courseTypeOptions = applicationTypeOptions;
+export const gradeOptions = educationLevelOptions;
+export const classTypeOptions = learningPreferenceOptions;

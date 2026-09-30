@@ -150,16 +150,22 @@ function CourseDetail() {
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="mt-3 w-full">
+                <Link
+                  to="/free-demo"
+                  search={{
+                    type: "Single Course",
+                    selected: course.title,
+                  }}
+                >
+                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="mt-1 w-full text-muted-foreground hover:text-foreground">
                 <a
-                  href={whatsappLink(`Hello TechBuilt Open School, I would like to request a Free Demo session for ${course.title}.`)}
+                  href={whatsappLink(`Hello TechBuilt Open School, I have a question about the ${course.title} course.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo
-                </a>
-              </Button>
-              <Button asChild variant="ghost" size="sm" className="mt-1 w-full text-muted-foreground hover:text-foreground">
-                <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="h-3.5 w-3.5" /> Have questions? Ask on WhatsApp
                 </a>
               </Button>

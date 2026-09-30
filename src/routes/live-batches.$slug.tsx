@@ -285,9 +285,15 @@ function LiveOfferDetail() {
                 </Button>
 
                 <Button asChild variant="outline" size="lg" className="w-full">
-                  <a href={whatsappLink(whatsappInquiryText)} target="_blank" rel="noopener noreferrer">
-                    <Sparkles className="h-4 w-4 text-gold-foreground" /> Book Free Demo on WhatsApp
-                  </a>
+                  <Link
+                    to="/free-demo"
+                    search={{
+                      type: "Live Group Offer",
+                      selected: offer.title,
+                    }}
+                  >
+                    <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo Session
+                  </Link>
                 </Button>
 
                 <Button asChild variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground">
