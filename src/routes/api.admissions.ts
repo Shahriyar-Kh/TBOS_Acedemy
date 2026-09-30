@@ -5,6 +5,7 @@ import {
   resolveAndValidateProgram,
   validateAdmissionsPayload,
 } from "@/lib/admissions";
+import { runAdmissionsIntegrations } from "@/lib/admissionsIntegrations.server";
 
 export const Route = createFileRoute("/api/admissions")({
   server: {
@@ -134,7 +135,7 @@ export const Route = createFileRoute("/api/admissions")({
         const { data: inserted, error: insertError } = await supabase
           .from("admissions_requests")
           .insert(row)
-          .select("id")
+          .select("id, created_at")
           .single();
 
         if (insertError) {
@@ -154,6 +155,20 @@ export const Route = createFileRoute("/api/admissions")({
         // 9. Generate safe public reference ID
         const rawId = inserted?.id ? String(inserted.id) : "";
         const shortRef = rawId ? `TBOS-${rawId.slice(0, 8).toUpperCase()}` : undefined;
+
+        // 10. Secondary post-submission integrations (Email & Google Sheets mirror)
+        if (rawId) {
+          const insertedRecord: AdmissionsRequestRecord = {
+            ...row,
+            id: rawId,
+            created_at: inserted?.created_at,
+          };
+          try {
+            await runAdmissionsIntegrations(rawId, insertedRecord, shortRef);
+          } catch (intErr) {
+            console.warn("Secondary integrations encountered error (safe ignore):", intErr);
+          }
+        }
 
         return new Response(
           JSON.stringify({

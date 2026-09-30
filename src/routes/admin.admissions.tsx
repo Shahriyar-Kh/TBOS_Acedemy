@@ -2,7 +2,11 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { useAdminAuth } from "@/lib/adminAuthContext";
 import { CRM_STATUS_OPTIONS, type CrmStatus, getFollowUpStatus } from "@/lib/adminCrm";
-import type { AdmissionsRequestRecord, AdmissionsActivityRecord } from "@/lib/supabase.server";
+import type {
+  AdmissionsRequestRecord,
+  AdmissionsActivityRecord,
+  AdmissionsDeliveryLogRecord,
+} from "@/lib/supabase.server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +86,7 @@ function AdminAdmissionsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailData, setDetailData] = useState<AdmissionsRequestRecord | null>(null);
   const [activities, setActivities] = useState<AdmissionsActivityRecord[]>([]);
+  const [deliveryLogs, setDeliveryLogs] = useState<AdmissionsDeliveryLogRecord[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -151,6 +156,7 @@ function AdminAdmissionsPage() {
       if (json.ok && json.admission) {
         setDetailData(json.admission);
         setActivities(json.activities || []);
+        setDeliveryLogs(json.deliveryLogs || []);
         setEditStatus((json.admission.status as CrmStatus) || "new");
         setEditAdminNotes(json.admission.admin_notes || "");
         setEditFollowUp(json.admission.next_follow_up_at ? json.admission.next_follow_up_at.slice(0, 16) : "");
@@ -1054,6 +1060,78 @@ function AdminAdmissionsPage() {
                   <div className="pt-2 text-[10px] text-slate-400 flex items-center justify-between border-t border-slate-100">
                     <span>Source: {detailData.source_page || "Direct Form"}</span>
                     <span>Created: {detailData.created_at ? new Date(detailData.created_at).toLocaleString() : "—"}</span>
+                  </div>
+                </div>
+
+                {/* Delivery & Integrations (Phase 7) */}
+                <div className="space-y-3 pt-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 border-b border-slate-100 pb-1">
+                    <Mail className="h-3.5 w-3.5" />
+                    Delivery &amp; Integrations ({deliveryLogs.length})
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {[
+                      {
+                        channel: "admin_email",
+                        label: "Admin Email",
+                        desc: "Admissions notification",
+                      },
+                      {
+                        channel: "learner_email",
+                        label: "Learner / Guardian Email",
+                        desc: "Acknowledgement receipt",
+                      },
+                      {
+                        channel: "google_sheet",
+                        label: "Google Sheet Mirror",
+                        desc: "Secondary backup sheet",
+                      },
+                    ].map((item) => {
+                      const log = deliveryLogs.find((l) => l.channel === item.channel);
+                      const status = log?.status || "skipped";
+
+                      let badgeText = "Not Configured / Skipped";
+                      let badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
+
+                      if (status === "success") {
+                        badgeText = "Sent";
+                        badgeClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                      } else if (status === "failed") {
+                        badgeText = "Failed";
+                        badgeClass = "bg-rose-50 text-rose-700 border-rose-200";
+                      }
+
+                      return (
+                        <div
+                          key={item.channel}
+                          className="rounded-lg border border-slate-200 bg-white p-3 space-y-1.5 shadow-xs"
+                        >
+                          <div className="flex items-start justify-between gap-1">
+                            <span className="font-semibold text-slate-800 text-xs leading-tight">
+                              {item.label}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeClass}`}
+                            >
+                              {badgeText}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500">{item.desc}</p>
+                          {log?.created_at && (
+                            <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-50 flex items-center justify-between">
+                              <span>Timestamp</span>
+                              <span>{new Date(log.created_at).toLocaleString()}</span>
+                            </div>
+                          )}
+                          {status === "failed" && log?.error_summary && (
+                            <p className="text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded border border-rose-100">
+                              Reason: {log.error_summary}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

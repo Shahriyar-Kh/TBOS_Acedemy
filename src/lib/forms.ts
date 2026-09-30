@@ -1,6 +1,6 @@
 // Admissions persistence architecture for TechBuilt Open School:
 //   Primary: Supabase / PostgreSQL via secure server endpoint (/api/admissions)
-//   Secondary: Google Apps Script / Google Sheets as best-effort backup mirror
+//   Secondary: Google Apps Script / Google Sheets server mirror (via /api/admissions)
 
 import {
   type ApplicationType,
@@ -18,13 +18,13 @@ export type FormType =
   | "Contact";
 
 export interface SubmissionPayload {
-  submissionType: "application" | "demo" | "contact";
-  applicationType: string;
-  selectedProgram: string;
-  studentName: string;
+  submissionType?: "application" | "demo" | "contact";
+  applicationType?: string;
+  selectedProgram?: string;
+  studentName?: string;
   email: string;
-  phone: string;
-  country: string;
+  phone?: string;
+  country?: string;
   city?: string;
   age?: string;
   educationLevel?: string;
@@ -44,7 +44,7 @@ export interface SubmissionPayload {
   // Honeypot — must remain empty (spam protection)
   company?: string;
 
-  // Backwards-compatible aliases for existing Google Sheet / Apps Script integration:
+  // Backwards-compatible aliases:
   formType?: string;
   fullName?: string;
   whatsapp?: string;
@@ -56,49 +56,13 @@ export interface SubmissionPayload {
   message?: string;
 }
 
-const GOOGLE_SCRIPT_ENDPOINT = import.meta.env.VITE_GOOGLE_SCRIPT_URL as string | undefined;
-
 export type SubmitResult = { ok: boolean; referenceId?: string; error?: string };
 
 /**
- * Secondary best-effort mirror to Google Sheets via Google Apps Script.
- * Failures here NEVER cause user-facing submission errors or revert database records.
- */
-async function mirrorToGoogleSheets(payload: SubmissionPayload): Promise<void> {
-  if (!GOOGLE_SCRIPT_ENDPOINT) {
-    return;
-  }
-
-  try {
-    const body = {
-      ...payload,
-      fullName: payload.fullName || payload.studentName,
-      whatsapp: payload.whatsapp || payload.phone,
-      grade: payload.grade || payload.educationLevel || "",
-      courseType: payload.courseType || payload.applicationType,
-      selected: payload.selected || payload.selectedProgram,
-      classType: payload.classType || payload.learningPreference || "",
-      goal: payload.goal || payload.learningGoal || "",
-      message: payload.message || payload.notes || "",
-      submittedAt: new Date().toISOString(),
-      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
-    };
-
-    await fetch(GOOGLE_SCRIPT_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    console.warn("Secondary Google Sheets mirror failed (best-effort):", err);
-  }
-}
-
-/**
  * Universal submission handler:
- * 1. Submits to primary Supabase server endpoint (/api/admissions)
- * 2. On confirmed database success, fires best-effort Google Sheets mirror
+ * Routes all admissions, demo, and contact inquiries through the primary server
+ * endpoint (/api/admissions), where Supabase persists the primary record and then
+ * orchestrates secondary notifications and Google Sheets server mirroring.
  */
 export async function submitForm(payload: SubmissionPayload): Promise<SubmitResult> {
   // Honeypot spam check
@@ -106,78 +70,76 @@ export async function submitForm(payload: SubmissionPayload): Promise<SubmitResu
     return { ok: true, referenceId: "TBOS-OK" };
   }
 
-  // Admissions and Free Demo flows route through the primary Supabase endpoint
-  if (payload.submissionType === "application" || payload.submissionType === "demo") {
-    try {
-      const response = await fetch("/api/admissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          submissionKind: payload.submissionType,
-          applicationType: payload.applicationType,
-          selectedProgram: payload.selectedProgram,
-          studentName: payload.studentName,
-          email: payload.email,
-          phone: payload.phone,
-          country: payload.country,
-          city: payload.city,
-          age: payload.age,
-          educationLevel: payload.educationLevel,
-          institution: payload.institution,
-          skillLevel: payload.skillLevel,
-          learningGoal: payload.learningGoal,
-          learningPreference: payload.learningPreference,
-          preferredDays: payload.preferredDays,
-          preferredTime: payload.preferredTime,
-          timezone: payload.timezone,
-          guardianName: payload.guardianName,
-          guardianPhone: payload.guardianPhone,
-          guardianEmail: payload.guardianEmail,
-          notes: payload.notes,
-          sourcePage: payload.sourcePage,
-          company: payload.company,
-        }),
-      });
+  const isDemo = payload.submissionType === "demo" || payload.formType === "Free Demo";
+  const studentName = (payload.studentName || payload.fullName || "").trim();
+  const phone = (payload.phone || payload.whatsapp || "").trim();
+  const applicationType = (payload.applicationType || payload.courseType || "General Admissions Inquiry").trim();
+  const selectedProgram = (payload.selectedProgram || payload.selected || "General Admissions Inquiry").trim();
+  const educationLevel = (payload.educationLevel || payload.grade || "Other / Not Specified").trim();
+  const country = (payload.country || "Pakistan").trim();
+  const notes = (payload.notes || payload.message || "").trim();
 
-      const data = (await response.json()) as {
-        ok?: boolean;
-        referenceId?: string;
-        error?: string;
-      };
+  try {
+    const response = await fetch("/api/admissions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        submissionKind: isDemo ? "demo" : "application",
+        applicationType,
+        selectedProgram,
+        studentName,
+        email: payload.email.trim(),
+        phone,
+        country,
+        city: payload.city?.trim() || "",
+        age: payload.age?.trim() || "",
+        educationLevel,
+        institution: payload.institution?.trim() || "",
+        skillLevel: payload.skillLevel?.trim() || "",
+        learningGoal: (payload.learningGoal || payload.goal)?.trim() || "",
+        learningPreference: (payload.learningPreference || payload.classType)?.trim() || "",
+        preferredDays: payload.preferredDays?.trim() || "",
+        preferredTime: payload.preferredTime?.trim() || "",
+        timezone: payload.timezone?.trim() || "",
+        guardianName: payload.guardianName?.trim() || "",
+        guardianPhone: payload.guardianPhone?.trim() || "",
+        guardianEmail: payload.guardianEmail?.trim() || "",
+        notes,
+        sourcePage: payload.sourcePage,
+        company: payload.company || "",
+      }),
+    });
 
-      if (!response.ok || !data.ok) {
-        return {
-          ok: false,
-          error:
-            data.error ||
-            (payload.submissionType === "demo"
-              ? "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp."
-              : "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp."),
-        };
-      }
+    const data = (await response.json()) as {
+      ok?: boolean;
+      referenceId?: string;
+      error?: string;
+    };
 
-      // Supabase insertion succeeded! Trigger secondary Google Sheets mirror in background (best-effort)
-      mirrorToGoogleSheets(payload).catch(() => {});
-
-      return {
-        ok: true,
-        referenceId: data.referenceId,
-      };
-    } catch (err) {
-      console.error("Admissions server request failed:", err);
+    if (!response.ok || !data.ok) {
       return {
         ok: false,
         error:
-          payload.submissionType === "demo"
+          data.error ||
+          (isDemo
             ? "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp."
-            : "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp.",
+            : "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp."),
       };
     }
-  }
 
-  // Fallback for contact inquiries: trigger mirror directly
-  await mirrorToGoogleSheets(payload);
-  return { ok: true };
+    return {
+      ok: true,
+      referenceId: data.referenceId,
+    };
+  } catch (err) {
+    console.error("Admissions server request failed:", err);
+    return {
+      ok: false,
+      error: isDemo
+        ? "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp."
+        : "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp.",
+    };
+  }
 }
 
 export const courseTypeOptions = applicationTypeOptions;
