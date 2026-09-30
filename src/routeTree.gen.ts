@@ -33,10 +33,17 @@ import { Route as TutoringIndexRouteImport } from './routes/tutoring.index'
 import { Route as SpecializationsIndexRouteImport } from './routes/specializations.index'
 import { Route as LiveBatchesIndexRouteImport } from './routes/live-batches.index'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as SpecializationsSlugRouteImport } from './routes/specializations.$slug'
 import { Route as LiveBatchesSlugRouteImport } from './routes/live-batches.$slug'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as ApiAdmissionsRouteImport } from './routes/api.admissions'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminDemosRouteImport } from './routes/admin.demos'
+import { Route as AdminAdmissionsRouteImport } from './routes/admin.admissions'
+import { Route as ApiAdminMeRouteImport } from './routes/api.admin.me'
+import { Route as ApiAdminAdmissionsRouteImport } from './routes/api.admin.admissions'
+import { Route as ApiAdminAdmissionsIdRouteImport } from './routes/api.admin.admissions.$id'
 
 const WebDevelopmentCourseOnlineRoute =
   WebDevelopmentCourseOnlineRouteImport.update({
@@ -163,6 +170,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpecializationsSlugRoute = SpecializationsSlugRouteImport.update({
   id: '/specializations/$slug',
   path: '/specializations/$slug',
@@ -182,6 +194,36 @@ const ApiAdmissionsRoute = ApiAdmissionsRouteImport.update({
   id: '/api/admissions',
   path: '/api/admissions',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDemosRoute = AdminDemosRouteImport.update({
+  id: '/admin/demos',
+  path: '/admin/demos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAdmissionsRoute = AdminAdmissionsRouteImport.update({
+  id: '/admin/admissions',
+  path: '/admin/admissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminMeRoute = ApiAdminMeRouteImport.update({
+  id: '/api/admin/me',
+  path: '/api/admin/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAdmissionsRoute = ApiAdminAdmissionsRouteImport.update({
+  id: '/api/admin/admissions',
+  path: '/api/admin/admissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAdmissionsIdRoute = ApiAdminAdmissionsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminAdmissionsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -205,14 +247,21 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
   '/specializations/': typeof SpecializationsIndexRoute
   '/tutoring/': typeof TutoringIndexRoute
+  '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -235,14 +284,21 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/live-batches': typeof LiveBatchesIndexRoute
   '/specializations': typeof SpecializationsIndexRoute
   '/tutoring': typeof TutoringIndexRoute
+  '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -266,14 +322,21 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/demos': typeof AdminDemosRoute
+  '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
   '/specializations/': typeof SpecializationsIndexRoute
   '/tutoring/': typeof TutoringIndexRoute
+  '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -298,14 +361,21 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/admin/admissions'
+    | '/admin/demos'
+    | '/admin/login'
     | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/admin/'
     | '/courses/'
     | '/live-batches/'
     | '/specializations/'
     | '/tutoring/'
+    | '/api/admin/admissions'
+    | '/api/admin/me'
+    | '/api/admin/admissions/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -328,14 +398,21 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/admin/admissions'
+    | '/admin/demos'
+    | '/admin/login'
     | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/admin'
     | '/courses'
     | '/live-batches'
     | '/specializations'
     | '/tutoring'
+    | '/api/admin/admissions'
+    | '/api/admin/me'
+    | '/api/admin/admissions/$id'
   id:
     | '__root__'
     | '/'
@@ -358,14 +435,21 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/admin/admissions'
+    | '/admin/demos'
+    | '/admin/login'
     | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/admin/'
     | '/courses/'
     | '/live-batches/'
     | '/specializations/'
     | '/tutoring/'
+    | '/api/admin/admissions'
+    | '/api/admin/me'
+    | '/api/admin/admissions/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -389,14 +473,20 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TestimonialsRoute: typeof TestimonialsRoute
   WebDevelopmentCourseOnlineRoute: typeof WebDevelopmentCourseOnlineRoute
+  AdminAdmissionsRoute: typeof AdminAdmissionsRoute
+  AdminDemosRoute: typeof AdminDemosRoute
+  AdminLoginRoute: typeof AdminLoginRoute
   ApiAdmissionsRoute: typeof ApiAdmissionsRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   LiveBatchesSlugRoute: typeof LiveBatchesSlugRoute
   SpecializationsSlugRoute: typeof SpecializationsSlugRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   LiveBatchesIndexRoute: typeof LiveBatchesIndexRoute
   SpecializationsIndexRoute: typeof SpecializationsIndexRoute
   TutoringIndexRoute: typeof TutoringIndexRoute
+  ApiAdminAdmissionsRoute: typeof ApiAdminAdmissionsRouteWithChildren
+  ApiAdminMeRoute: typeof ApiAdminMeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -569,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/specializations/$slug': {
       id: '/specializations/$slug'
       path: '/specializations/$slug'
@@ -597,8 +694,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/demos': {
+      id: '/admin/demos'
+      path: '/admin/demos'
+      fullPath: '/admin/demos'
+      preLoaderRoute: typeof AdminDemosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/admissions': {
+      id: '/admin/admissions'
+      path: '/admin/admissions'
+      fullPath: '/admin/admissions'
+      preLoaderRoute: typeof AdminAdmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/me': {
+      id: '/api/admin/me'
+      path: '/api/admin/me'
+      fullPath: '/api/admin/me'
+      preLoaderRoute: typeof ApiAdminMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/admissions': {
+      id: '/api/admin/admissions'
+      path: '/api/admin/admissions'
+      fullPath: '/api/admin/admissions'
+      preLoaderRoute: typeof ApiAdminAdmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/admissions/$id': {
+      id: '/api/admin/admissions/$id'
+      path: '/$id'
+      fullPath: '/api/admin/admissions/$id'
+      preLoaderRoute: typeof ApiAdminAdmissionsIdRouteImport
+      parentRoute: typeof ApiAdminAdmissionsRoute
+    }
   }
 }
+
+interface ApiAdminAdmissionsRouteChildren {
+  ApiAdminAdmissionsIdRoute: typeof ApiAdminAdmissionsIdRoute
+}
+
+const ApiAdminAdmissionsRouteChildren: ApiAdminAdmissionsRouteChildren = {
+  ApiAdminAdmissionsIdRoute: ApiAdminAdmissionsIdRoute,
+}
+
+const ApiAdminAdmissionsRouteWithChildren =
+  ApiAdminAdmissionsRoute._addFileChildren(ApiAdminAdmissionsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -621,14 +771,20 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TestimonialsRoute: TestimonialsRoute,
   WebDevelopmentCourseOnlineRoute: WebDevelopmentCourseOnlineRoute,
+  AdminAdmissionsRoute: AdminAdmissionsRoute,
+  AdminDemosRoute: AdminDemosRoute,
+  AdminLoginRoute: AdminLoginRoute,
   ApiAdmissionsRoute: ApiAdmissionsRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   LiveBatchesSlugRoute: LiveBatchesSlugRoute,
   SpecializationsSlugRoute: SpecializationsSlugRoute,
+  AdminIndexRoute: AdminIndexRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   LiveBatchesIndexRoute: LiveBatchesIndexRoute,
   SpecializationsIndexRoute: SpecializationsIndexRoute,
   TutoringIndexRoute: TutoringIndexRoute,
+  ApiAdminAdmissionsRoute: ApiAdminAdmissionsRouteWithChildren,
+  ApiAdminMeRoute: ApiAdminMeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

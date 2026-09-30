@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -16,6 +17,7 @@ import { Footer } from "../components/Footer";
 import { WhatsAppButton } from "../components/WhatsAppButton";
 import { Toaster } from "../components/ui/sonner";
 import { site } from "../data/site";
+import { AdminAuthProvider } from "../lib/adminAuthContext";
 
 function NotFoundComponent() {
   return (
@@ -142,19 +144,23 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col">
-        <Header />
-        <main className="flex-1">
-          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-          <Outlet />
-        </main>
-        <Footer />
-      </div>
-      <WhatsAppButton />
-      <Toaster position="top-center" richColors />
+      <AdminAuthProvider>
+        <div className="flex min-h-screen flex-col">
+          {!isAdminRoute && <Header />}
+          <main className="flex-1">
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </main>
+          {!isAdminRoute && <Footer />}
+        </div>
+        {!isAdminRoute && <WhatsAppButton />}
+        <Toaster position="top-center" richColors />
+      </AdminAuthProvider>
     </QueryClientProvider>
   );
 }

@@ -33,9 +33,43 @@ export interface AdmissionsRequestRecord {
   notes?: string | null;
   source_page?: string | null;
 
+  // Internal CRM Fields (Phase 6)
+  admin_notes?: string | null;
+  next_follow_up_at?: string | null;
+  demo_scheduled_at?: string | null;
+  demo_meeting_link?: string | null;
+  last_contacted_at?: string | null;
+  closed_reason?: string | null;
+
   status?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AdminUserRecord {
+  id: string;
+  email: string;
+  role: "owner" | "admin" | "admissions";
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdmissionsActivityRecord {
+  id: string;
+  admission_id: string;
+  admin_user_id?: string | null;
+  action_type:
+    | "status_changed"
+    | "note_updated"
+    | "demo_scheduled"
+    | "follow_up_set"
+    | "contacted"
+    | "closed_reason_updated";
+  old_status?: string | null;
+  new_status?: string | null;
+  note?: string | null;
+  created_at: string;
 }
 
 let cachedClient: SupabaseClient | null = null;
