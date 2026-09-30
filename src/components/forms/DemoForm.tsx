@@ -89,6 +89,7 @@ export function DemoForm({
     studentName: string;
     selectedProgram: string;
     preferredTime: string;
+    referenceId?: string;
   } | null>(null);
 
   const initialType: ApplicationType = normalizeApplicationType(defaultType);
@@ -181,16 +182,17 @@ export function DemoForm({
         studentName: values.studentName,
         selectedProgram: values.selectedProgram,
         preferredTime: `${values.preferredDays}, ${values.preferredTime}`,
+        referenceId: result.referenceId,
       });
       reset();
       toast.success("Demo request received! Our admissions team will contact you to confirm the session.");
     } else {
-      toast.error(result.error ?? "Submission failed. Please try again or reach out on WhatsApp.");
+      toast.error(result.error ?? "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp.");
     }
   };
 
   if (submittedData) {
-    const whatsappFollowup = `Hello TechBuilt Open School, I would like to request a Free Demo for ${submittedData.selectedProgram}.`;
+    const whatsappFollowup = `Hello TechBuilt Open School, I would like to request a Free Demo for ${submittedData.selectedProgram}${submittedData.referenceId ? ` (Ref: ${submittedData.referenceId})` : ""}.`;
 
     return (
       <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center sm:p-10">
@@ -198,6 +200,11 @@ export function DemoForm({
           <CalendarCheck className="h-7 w-7" />
         </div>
         <h3 className="mt-5 text-2xl font-bold text-foreground">Demo Request Received</h3>
+        {submittedData.referenceId && (
+          <p className="mt-2 text-xs font-mono font-semibold text-primary">
+            Request Reference: {submittedData.referenceId}
+          </p>
+        )}
         <p className="mt-3 text-muted-foreground">
           Thank you, <strong className="text-foreground">{submittedData.studentName}</strong>. Your trial demo request for{" "}
           <strong className="text-foreground">{submittedData.selectedProgram}</strong> has been logged.

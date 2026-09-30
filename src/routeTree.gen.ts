@@ -36,6 +36,7 @@ import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as SpecializationsSlugRouteImport } from './routes/specializations.$slug'
 import { Route as LiveBatchesSlugRouteImport } from './routes/live-batches.$slug'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
+import { Route as ApiAdmissionsRouteImport } from './routes/api.admissions'
 
 const WebDevelopmentCourseOnlineRoute =
   WebDevelopmentCourseOnlineRouteImport.update({
@@ -177,6 +178,11 @@ const CoursesSlugRoute = CoursesSlugRouteImport.update({
   path: '/courses/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdmissionsRoute = ApiAdmissionsRouteImport.update({
+  id: '/api/admissions',
+  path: '/api/admissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -199,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
@@ -228,6 +235,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
@@ -258,6 +266,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
+  '/api/admissions': typeof ApiAdmissionsRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/testimonials'
     | '/web-development-course-online'
+    | '/api/admissions'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
@@ -377,6 +389,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TestimonialsRoute: typeof TestimonialsRoute
   WebDevelopmentCourseOnlineRoute: typeof WebDevelopmentCourseOnlineRoute
+  ApiAdmissionsRoute: typeof ApiAdmissionsRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   LiveBatchesSlugRoute: typeof LiveBatchesSlugRoute
   SpecializationsSlugRoute: typeof SpecializationsSlugRoute
@@ -577,6 +590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admissions': {
+      id: '/api/admissions'
+      path: '/api/admissions'
+      fullPath: '/api/admissions'
+      preLoaderRoute: typeof ApiAdmissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -601,6 +621,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TestimonialsRoute: TestimonialsRoute,
   WebDevelopmentCourseOnlineRoute: WebDevelopmentCourseOnlineRoute,
+  ApiAdmissionsRoute: ApiAdmissionsRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   LiveBatchesSlugRoute: LiveBatchesSlugRoute,
   SpecializationsSlugRoute: SpecializationsSlugRoute,
