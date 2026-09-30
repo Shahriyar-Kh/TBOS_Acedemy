@@ -88,6 +88,7 @@ export function ApplyForm({
   const [submittedData, setSubmittedData] = useState<{
     studentName: string;
     selectedProgram: string;
+    referenceId?: string;
   } | null>(null);
 
   const initialType: ApplicationType = normalizeApplicationType(
@@ -185,21 +186,27 @@ export function ApplyForm({
       setSubmittedData({
         studentName: values.studentName,
         selectedProgram: values.selectedProgram,
+        referenceId: result.referenceId,
       });
       reset();
       toast.success("Application received! Our admissions team will review your application and contact you.");
     } else {
-      toast.error(result.error ?? "Submission failed. Please try again or reach out on WhatsApp.");
+      toast.error(result.error ?? "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp.");
     }
   };
 
   if (submittedData) {
-    const whatsappFollowup = `Hello TechBuilt Open School, I have submitted an application for ${submittedData.selectedProgram} and would like more information.`;
+    const whatsappFollowup = `Hello TechBuilt Open School, I have submitted an application for ${submittedData.selectedProgram}${submittedData.referenceId ? ` (Ref: ${submittedData.referenceId})` : ""} and would like more information.`;
 
     return (
       <div className="rounded-2xl border border-success/30 bg-success/5 p-8 text-center sm:p-10">
         <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
         <h3 className="mt-4 text-2xl font-bold text-foreground">Application Received!</h3>
+        {submittedData.referenceId && (
+          <p className="mt-2 text-xs font-mono font-semibold text-primary">
+            Application Reference: {submittedData.referenceId}
+          </p>
+        )}
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
           Thank you, <strong>{submittedData.studentName}</strong>. Your application for{" "}
           <strong>{submittedData.selectedProgram}</strong> has been registered. Our admissions team
