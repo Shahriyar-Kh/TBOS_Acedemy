@@ -47,12 +47,12 @@ function doPost(e) {
 
 ## 3. Connect it to the site
 
-Add an environment variable (Vercel/Netlify or `.env`):
+Add the server-only environment variable to your `.env.local` or hosting provider:
 
+```env
+GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/XXXXXXXX/exec
 ```
-VITE_GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/XXXXXXXX/exec
-```
 
-Also update real contact details in `src/data/site.ts` (email, WhatsApp number, phone, socials).
+*(Note: The legacy client-side `VITE_GOOGLE_SCRIPT_URL` is deprecated and no longer exposed to browser code. All Google Sheet mirroring is executed securely server-side as a best-effort secondary mirror after Supabase persistence.)*
 
-That's it — submissions now flow into Google Sheets with Gmail notifications.
+See `docs/INTEGRATIONS_SETUP.md` for full instructions.

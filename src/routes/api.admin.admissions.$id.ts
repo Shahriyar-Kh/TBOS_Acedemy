@@ -46,11 +46,19 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           .eq("admission_id", admissionId)
           .order("created_at", { ascending: false });
 
+        // 3. Fetch delivery integration logs for this admission only
+        const { data: deliveryLogs } = await client
+          .from("admissions_delivery_log")
+          .select("*")
+          .eq("admission_id", admissionId)
+          .order("created_at", { ascending: true });
+
         return new Response(
           JSON.stringify({
             ok: true,
             admission,
             activities: activities || [],
+            deliveryLogs: deliveryLogs || [],
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );

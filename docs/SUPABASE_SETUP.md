@@ -8,7 +8,7 @@ This document details the configuration and operational setup for Supabase Postg
 
 - **Primary Source of Truth**: Supabase PostgreSQL table `public.admissions_requests`.
 - **Server Endpoint**: `POST /api/admissions` validates input, verifies minor/guardian constraints, validates programs against real catalog data, and inserts via a server-only Supabase client with the elevated secret key.
-- **Secondary Mirror**: Google Apps Script / Google Sheets (`VITE_GOOGLE_SCRIPT_URL`) runs as an asynchronous, best-effort backup. If the backup fails, user admissions success is never blocked or reverted.
+- **Secondary Mirror**: Google Apps Script / Google Sheets (`GOOGLE_SCRIPT_URL`) runs as an asynchronous, best-effort server backup. If the backup fails, user admissions success is never blocked or reverted.
 - **Security & RLS**: Row Level Security (RLS) is enabled with all public permissions revoked. Anonymous browser visitors cannot read, list, update, or delete admissions records.
 
 ---
@@ -25,8 +25,8 @@ SUPABASE_URL="https://your-project-id.supabase.co"
 # Grants full service-role privileges while keeping secrets secure.
 SUPABASE_SECRET_KEY="sb_secret_your_secret_key"
 
-# Secondary Mirror (Optional)
-VITE_GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/your-deployment-id/exec"
+# Secondary Mirror (Server-Side Only, Optional)
+GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/your-deployment-id/exec"
 ```
 
 > [!CAUTION]

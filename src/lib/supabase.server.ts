@@ -72,6 +72,16 @@ export interface AdmissionsActivityRecord {
   created_at: string;
 }
 
+export interface AdmissionsDeliveryLogRecord {
+  id: string;
+  admission_id: string;
+  channel: "admin_email" | "learner_email" | "google_sheet";
+  recipient_type?: "admin" | "learner" | "guardian" | "google_sheet" | null;
+  status: "success" | "failed" | "skipped";
+  error_summary?: string | null;
+  created_at: string;
+}
+
 let cachedClient: SupabaseClient | null = null;
 
 /**
