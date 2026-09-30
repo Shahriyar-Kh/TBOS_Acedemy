@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Clock, BarChart3, Briefcase, MessageCircle, Monitor, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, Clock, BarChart3, Briefcase, MessageCircle, Monitor, Users, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { Icon } from "@/components/Icon";
@@ -137,13 +137,18 @@ function SpecializationDetail() {
                   Apply for this track <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="mt-3 w-full">
+              <Button asChild variant="outline" size="lg" className="mt-2.5 w-full">
+                <Link to="/free-demo" search={{ type: "Specialization", selected: spec.title }}>
+                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo / Consultation
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="mt-1 w-full text-muted-foreground hover:text-foreground">
                 <a
                   href={whatsappLink(`Hello TechBuilt Open School, I would like to inquire about the ${spec.title} specialization track.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <MessageCircle className="h-4 w-4" /> Inquire via WhatsApp
+                  <MessageCircle className="h-3.5 w-3.5" /> Have questions? Ask on WhatsApp
                 </a>
               </Button>
             </div>

@@ -58,7 +58,10 @@ export function Header() {
           >
             <MessageCircle className="h-5 w-5" />
           </a>
-          <Button asChild variant="hero" size="lg">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/free-demo">Free Demo</Link>
+          </Button>
+          <Button asChild variant="hero" size="sm">
             <Link to="/apply">Apply Now</Link>
           </Button>
         </div>
@@ -88,12 +91,15 @@ export function Header() {
               </Link>
             ))}
             <div className="mt-2 flex flex-col gap-2">
-              <Button asChild variant="hero" size="xl">
+              <Button asChild variant="hero" size="lg">
                 <Link to="/apply">Apply Now</Link>
               </Button>
-              <Button asChild variant="outline" size="xl">
+              <Button asChild variant="outline" size="lg">
+                <Link to="/free-demo">Request Free Demo</Link>
+              </Button>
+              <Button asChild variant="ghost" size="lg">
                 <a href={whatsappLink()} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="h-5 w-5" /> Chat on WhatsApp
+                  <MessageCircle className="h-5 w-5 text-success" /> Chat on WhatsApp
                 </a>
               </Button>
             </div>

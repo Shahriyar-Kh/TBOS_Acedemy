@@ -21,6 +21,7 @@ import { Route as OnlineClassesForStudentsRouteImport } from './routes/online-cl
 import { Route as MathsTutorRouteImport } from './routes/maths-tutor'
 import { Route as InternationalOnlineAcademyRouteImport } from './routes/international-online-academy'
 import { Route as Grade5ToMsOnlineLearningRouteImport } from './routes/grade-5-to-ms-online-learning'
+import { Route as FreeDemoRouteImport } from './routes/free-demo'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ComputerScienceTutoringRouteImport } from './routes/computer-science-tutoring'
@@ -101,6 +102,11 @@ const Grade5ToMsOnlineLearningRoute =
     path: '/grade-5-to-ms-online-learning',
     getParentRoute: () => rootRouteImport,
   } as any)
+const FreeDemoRoute = FreeDemoRouteImport.update({
+  id: '/free-demo',
+  path: '/free-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/free-demo'
     | '/grade-5-to-ms-online-learning'
     | '/international-online-academy'
     | '/maths-tutor'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/free-demo'
     | '/grade-5-to-ms-online-learning'
     | '/international-online-academy'
     | '/maths-tutor'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/free-demo'
     | '/grade-5-to-ms-online-learning'
     | '/international-online-academy'
     | '/maths-tutor'
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   ComputerScienceTutoringRoute: typeof ComputerScienceTutoringRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
+  FreeDemoRoute: typeof FreeDemoRoute
   Grade5ToMsOnlineLearningRoute: typeof Grade5ToMsOnlineLearningRoute
   InternationalOnlineAcademyRoute: typeof InternationalOnlineAcademyRoute
   MathsTutorRoute: typeof MathsTutorRoute
@@ -457,6 +470,13 @@ declare module '@tanstack/react-router' {
       path: '/grade-5-to-ms-online-learning'
       fullPath: '/grade-5-to-ms-online-learning'
       preLoaderRoute: typeof Grade5ToMsOnlineLearningRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/free-demo': {
+      id: '/free-demo'
+      path: '/free-demo'
+      fullPath: '/free-demo'
+      preLoaderRoute: typeof FreeDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -568,6 +588,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComputerScienceTutoringRoute: ComputerScienceTutoringRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
+  FreeDemoRoute: FreeDemoRoute,
   Grade5ToMsOnlineLearningRoute: Grade5ToMsOnlineLearningRoute,
   InternationalOnlineAcademyRoute: InternationalOnlineAcademyRoute,
   MathsTutorRoute: MathsTutorRoute,

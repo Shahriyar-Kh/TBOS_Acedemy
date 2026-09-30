@@ -105,15 +105,16 @@ export function LiveOfferCard({ offer }: { offer: LiveOffer }) {
               Apply Now
             </Link>
           </Button>
-          <Button asChild variant="ghost" size="sm" className="text-xs">
-            <a
-              href={whatsappLink(whatsappDemoText)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground"
+          <Button asChild variant="secondary" size="sm">
+            <Link
+              to="/free-demo"
+              search={{
+                type: "Live Group Offer",
+                selected: offer.title,
+              }}
             >
-              <MessageCircle className="h-3.5 w-3.5 mr-1" /> Free Demo
-            </a>
+              Free Demo
+            </Link>
           </Button>
         </div>
       </div>

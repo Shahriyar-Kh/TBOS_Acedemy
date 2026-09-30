@@ -86,8 +86,13 @@ function TutoringPage() {
             </ul>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button asChild variant="hero" size="lg">
-                <Link to="/apply" search={{ type: "Tutor Service" }}>
-                  Book a Free Demo <ArrowRight className="h-4 w-4" />
+                <Link to="/apply" search={{ type: "One-to-One Learning" }}>
+                  Request a Tutor <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/free-demo" search={{ type: "Academic Tutoring" }}>
+                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Book a Free Demo
                 </Link>
               </Button>
             </div>
@@ -156,10 +161,14 @@ function TutoringPage() {
                     </span>
                   ))}
                 </div>
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">{subject.audience}</span>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link to="/apply" search={{ type: "Academic Subject", selected: subject.title }}>
+                <div className="mt-6 pt-4 border-t border-border flex items-center justify-between gap-2">
+                  <Button asChild size="sm" variant="outline" className="text-xs">
+                    <Link to="/free-demo" search={{ type: "Academic Tutoring", selected: subject.title }}>
+                      Free Demo
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="hero" className="text-xs">
+                    <Link to="/apply" search={{ type: "Academic Tutoring", selected: subject.title }}>
                       Request Tutor <ArrowRight className="ml-1 h-3.5 w-3.5" />
                     </Link>
                   </Button>
@@ -192,10 +201,15 @@ function TutoringPage() {
                 </span>
                 <h3 className="mt-4 text-lg font-bold text-foreground">{subject.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subject.summary}</p>
-                <div className="mt-6 pt-4 border-t border-border mt-auto">
-                  <Button asChild size="sm" className="w-full">
-                    <Link to="/apply" search={{ type: "Tutor Service", selected: subject.title }}>
-                      Enroll in Classes
+                <div className="mt-6 pt-4 border-t border-border mt-auto grid grid-cols-2 gap-2">
+                  <Button asChild size="sm" variant="outline" className="text-xs">
+                    <Link to="/free-demo" search={{ type: "Quran & Islamic Studies", selected: subject.title }}>
+                      Free Demo
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="hero" className="text-xs">
+                    <Link to="/apply" search={{ type: "Quran & Islamic Studies", selected: subject.title }}>
+                      Enrol
                     </Link>
                   </Button>
                 </div>
