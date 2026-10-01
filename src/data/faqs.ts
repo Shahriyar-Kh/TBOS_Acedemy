@@ -24,12 +24,12 @@ export const faqs: Faq[] = [
   {
     question: "How much do classes cost?",
     answer:
-      "We offer flexible monthly and per-term plans to suit different budgets, with scholarships available for deserving students. Submit an application and our team will share a personalised plan based on your goals.",
+      "We offer transparent, accessible monthly fees and structured term options tailored to individual learners and group cohorts. Submit an application and our team will share the complete fee details based on your chosen program.",
   },
   {
     question: "How do I enrol?",
     answer:
-      "Simply fill out the Apply Now form for your chosen course, specialization or tutoring subject. Our admissions team will contact you to confirm your schedule, tutor and plan — usually within 24 hours.",
+      "Simply fill out the Apply Now form for your chosen course, specialization or tutoring subject. Our admissions team will review your application and reach out to confirm your schedule and enrollment.",
   },
   {
     question: "Are the tutors qualified?",

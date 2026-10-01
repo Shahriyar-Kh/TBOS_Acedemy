@@ -8,7 +8,7 @@ export const site = {
   tagline: "International Online Academy",
   description:
     "Premium international online academy offering live tutoring and technical courses for students from Grade 5 to MS level — across Pakistan and worldwide.",
-  url: "", // e.g. https://techbuiltopenschool.com (used for SEO when available)
+  url: "https://techbuiltos.online",
   email: "admissions@techbuiltopenschool.com",
   phoneDisplay: "+92 329 5448590",
   // WhatsApp number in international format without "+" or spaces.
@@ -17,15 +17,15 @@ export const site = {
     "Hello TechBuilt Open School, I would like information about your courses, live batches, tutoring, or Free Demo.",
   workingHours: "Mon – Sat · 9:00 AM – 9:00 PM (PKT)",
   social: {
-    facebook: "https://facebook.com",
-    instagram: "https://instagram.com",
-    youtube: "https://youtube.com",
-    linkedin: "https://linkedin.com",
+    facebook: "",
+    instagram: "",
+    youtube: "",
+    linkedin: "",
   },
 } as const;
 
-export const whatsappLink = () =>
-  `https://wa.me/${site.whatsappNumber}?text=${encodeURIComponent(site.whatsappMessage)}`;
+export const whatsappLink = (customMessage?: string) =>
+  `https://wa.me/${site.whatsappNumber}?text=${encodeURIComponent(customMessage || site.whatsappMessage)}`;
 
 export const stats = [
   { value: "Live & Interactive", label: "Instructor-led online classes" },

@@ -11,7 +11,7 @@ const steps = [
   {
     icon: UserCheck,
     title: "Get matched",
-    desc: "We match you with the ideal expert tutor and share a personalised plan within 24 hours.",
+    desc: "Our academic team reviews your profile, recommends suitable options, and helps arrange your schedule.",
   },
   {
     icon: CalendarClock,

@@ -19,7 +19,7 @@ export function LiveOfferCard({ offer }: { offer: LiveOffer }) {
             <Icon name={offer.icon} className="h-6 w-6" />
           </span>
           <div className="flex flex-col items-end gap-1.5">
-            <Badge variant="hero" className="text-xs font-semibold">
+            <Badge variant="default" className="text-xs font-semibold">
               Live Group Batch
             </Badge>
             <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold-foreground">
@@ -63,10 +63,10 @@ export function LiveOfferCard({ offer }: { offer: LiveOffer }) {
             <span className="text-xs text-muted-foreground">Monthly Fee:</span>
             <div className="text-right">
               <span className="text-xs text-muted-foreground line-through mr-2">
-                Rs {offer.regularFee.toLocaleString()}/{offer.billingPeriod}
+                Rs {typeof offer.regularFee === "number" ? offer.regularFee.toLocaleString() : (offer.regularFee ?? "0")}/{offer.billingPeriod}
               </span>
               <span className="text-base font-extrabold text-foreground">
-                Rs {offer.offerFee.toLocaleString()}
+                Rs {typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0")}
                 <span className="text-xs font-normal text-muted-foreground">/{offer.billingPeriod}</span>
               </span>
             </div>
@@ -88,7 +88,7 @@ export function LiveOfferCard({ offer }: { offer: LiveOffer }) {
       </div>
 
       <div className="mt-6 flex flex-col gap-2 pt-2 border-t border-border/60">
-        <Button asChild variant="hero" size="sm" className="w-full">
+        <Button asChild variant="default" size="sm" className="w-full">
           <Link to="/live-batches/$slug" params={{ slug: offer.slug }}>
             View Full Program & Roadmap <ArrowRight className="h-3.5 w-3.5" />
           </Link>

@@ -30,7 +30,7 @@ export const seoPages: SeoPage[] = [
       "Live one-to-one and group classes",
       "Qualified Pakistani and international tutors",
       "Flexible timing for every city and schedule",
-      "Affordable plans with scholarships available",
+      "Affordable, transparent monthly plans",
     ],
     sections: [
       {
