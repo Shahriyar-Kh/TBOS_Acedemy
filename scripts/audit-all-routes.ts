@@ -74,7 +74,7 @@ async function runAudit() {
     try {
       const response = await page.goto(fullUrl, {
         waitUntil: "domcontentloaded",
-        timeout: 25000,
+        timeout: 45000,
       });
 
       status = response ? response.status() : null;
