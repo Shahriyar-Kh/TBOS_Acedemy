@@ -17,8 +17,9 @@ export const site = {
     "Hello TechBuilt Open School, I would like information about your courses, live batches, tutoring, or Free Demo.",
   workingHours: "Mon – Sat · 9:00 AM – 9:00 PM (PKT)",
   social: {
-    facebook: "",
-    instagram: "",
+    facebook: "https://www.facebook.com/profile.php?id=61589216685624",
+    instagram: "https://www.instagram.com/techbuiltopenschool/",
+    tiktok: "https://www.tiktok.com/@techbuiltopenschool",
     youtube: "",
     linkedin: "",
   },
