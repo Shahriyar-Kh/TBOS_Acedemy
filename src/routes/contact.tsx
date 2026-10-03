@@ -62,7 +62,7 @@ function ContactPage() {
                         href={d.href}
                         target={d.href.startsWith("http") ? "_blank" : undefined}
                         rel="noopener noreferrer"
-                        className="font-medium text-foreground hover:text-primary"
+                        className="break-all font-medium text-foreground hover:text-primary sm:break-normal"
                       >
                         {d.value}
                       </a>
