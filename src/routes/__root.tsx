@@ -18,6 +18,10 @@ import { WhatsAppButton } from "../components/WhatsAppButton";
 import { Toaster } from "../components/ui/sonner";
 import { site } from "../data/site";
 import { AdminAuthProvider } from "../lib/adminAuthContext";
+import {
+  captureMarketingAttribution,
+  trackMetaPageView,
+} from "../lib/marketing";
 
 function NotFoundComponent() {
   return (
@@ -95,6 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#1c2a52" },
     ],
     links: [
+      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -146,6 +151,12 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    if (isAdminRoute) return;
+    captureMarketingAttribution();
+    trackMetaPageView();
+  }, [isAdminRoute, location.href]);
 
   return (
     <QueryClientProvider client={queryClient}>
