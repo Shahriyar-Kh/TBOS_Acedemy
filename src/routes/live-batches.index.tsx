@@ -114,7 +114,7 @@ export function LiveBatchesPage() {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {allOffers.map((offer) => (
-            <Reveal key={offer.slug}>
+            <Reveal key={offer.slug} className="min-w-0">
               <LiveOfferCard offer={offer} />
             </Reveal>
           ))}

@@ -81,8 +81,12 @@ test.describe("TBOS Phase10B closure coverage", () => {
     const menuTrigger = page
       .locator('button[aria-label="Toggle menu"], button[aria-label="Open menu"]')
       .first();
+    await expect(menuTrigger).toBeVisible();
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "false");
     await menuTrigger.click();
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "true");
     const mobileNav = page.locator('nav[aria-label="Mobile navigation"]');
+    await expect(mobileNav).toBeVisible();
     await expect(mobileNav.getByRole("link", { name: "Courses", exact: true })).toBeVisible();
     await expect(mobileNav.getByRole("link", { name: "Apply Now", exact: true })).toBeVisible();
     await expect(
