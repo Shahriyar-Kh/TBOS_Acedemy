@@ -24,7 +24,12 @@ async function loginAndGetToken(page: Page) {
   await page.locator("#email").fill(process.env.TBOS_E2E_ADMIN_EMAIL!);
   await page.locator("#password").fill(process.env.TBOS_E2E_ADMIN_PASSWORD!);
   await page.getByRole("button", { name: /sign in to admin portal/i }).click();
-  await page.waitForURL(/\/admin\//, { timeout: 15000 });
+  await page.waitForURL(/\/admin\/admissions(?:$|\?)/, { timeout: 15000 });
+  await page.waitForFunction(() =>
+    Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).some(
+      (key) => key?.includes("auth-token"),
+    ),
+  );
 
   return page.evaluate(() => {
     for (let index = 0; index < localStorage.length; index += 1) {
@@ -193,7 +198,7 @@ test.describe("TBOS Phase10B closure coverage", () => {
       expect(response.status()).toBe(201);
       const json = await response.json();
       expect(json.referenceId).toMatch(/^TBOS-/);
-      await expect(page.getByText(/application received!/i)).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
     } finally {
       await cleanupEmail(email);
     }
@@ -228,7 +233,7 @@ test.describe("TBOS Phase10B closure coverage", () => {
       );
       await page.getByRole("button", { name: /submit application/i }).click();
       expect((await responsePromise).status()).toBe(201);
-      await expect(page.getByText(/application received!/i)).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
     } finally {
       await cleanupEmail(email);
     }
@@ -261,7 +266,7 @@ test.describe("TBOS Phase10B closure coverage", () => {
       await page.getByRole("button", { name: /request free demo session/i }).click();
       const response = await responsePromise;
       expect(response.status()).toBe(201);
-      await expect(page.getByText(/demo request received/i)).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Demo Request Received" })).toBeVisible();
       if (hasSupabaseServerCreds) {
         const { createClient } = await import("@supabase/supabase-js");
         const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
