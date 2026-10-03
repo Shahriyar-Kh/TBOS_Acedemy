@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
   ArrowRight,
@@ -21,6 +22,8 @@ import { getLiveOffer, activeLiveOffers } from "@/data/liveOffers";
 import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
+import studentsLearning from "@/assets/students-learning.jpg";
+import { trackMetaViewContent } from "@/lib/marketing";
 
 export const Route = createFileRoute("/live-batches/$slug")({
   loader: async ({ params }) => {
@@ -45,6 +48,8 @@ export const Route = createFileRoute("/live-batches/$slug")({
         description,
         keywords: offer.keywords,
         type: "article",
+        path: `/live-batches/${offer.slug}`,
+        image: studentsLearning,
       }),
       links: [{ rel: "canonical", href: `${site.url}/live-batches/${offer.slug}` }],
     };
@@ -64,6 +69,15 @@ export const Route = createFileRoute("/live-batches/$slug")({
 function LiveOfferDetail() {
   const { offer } = Route.useLoaderData();
   const relatedOffers = activeLiveOffers.filter((o) => o.slug !== offer.slug);
+
+  useEffect(() => {
+    trackMetaViewContent({
+      contentName: offer.title,
+      contentCategory: "Live Group Offer",
+      value: typeof offer.offerFee === "number" ? offer.offerFee : undefined,
+      currency: offer.currency,
+    });
+  }, [offer.currency, offer.offerFee, offer.slug, offer.title]);
 
   const whatsappInquiryText = `Hello TechBuilt Open School, I would like information about the ${offer.title} live group program and Free Demo.`;
 
