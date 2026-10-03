@@ -106,23 +106,50 @@ test.describe("Phase 11 Meta Ads launch readiness", () => {
     await installFbqSpy(page);
     await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    let calls = await page.evaluate(() => window.__tbosFbqCalls || []);
-    expect(calls.some((call) => call[0] === "init" && call[1] === pixelId)).toBeTruthy();
-    expect(calls.some((call) => call[0] === "track" && call[1] === "PageView")).toBeTruthy();
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(
+            (expectedPixelId) =>
+              (window.__tbosFbqCalls || []).some(
+                (call) => call[0] === "init" && call[1] === expectedPixelId,
+              ),
+            pixelId,
+          ),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            (window.__tbosFbqCalls || []).some(
+              (call) => call[0] === "track" && call[1] === "PageView",
+            ),
+          ),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
 
     await page.goto("/live-batches/python-young-developers", {
       waitUntil: "domcontentloaded",
     });
 
-    calls = await page.evaluate(() => window.__tbosFbqCalls || []);
-    expect(
-      calls.some(
-        (call) =>
-          call[0] === "track" &&
-          call[1] === "ViewContent" &&
-          (call[2] as Record<string, unknown> | undefined)?.content_name ===
-            "Python Young Developers",
-      ),
-    ).toBeTruthy();
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            (window.__tbosFbqCalls || []).some(
+              (call) =>
+                call[0] === "track" &&
+                call[1] === "ViewContent" &&
+                (call[2] as Record<string, unknown> | undefined)?.content_name ===
+                  "Python Young Developers",
+            ),
+          ),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
   });
 });
