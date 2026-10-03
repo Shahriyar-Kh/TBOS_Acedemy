@@ -36,6 +36,8 @@
   --color-gold-foreground: var(--gold-foreground);
   --color-navy: var(--navy);
   --color-navy-foreground: var(--navy-foreground);
+  --color-navy-deep: var(--navy-deep);
+  --color-cyan: var(--cyan);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
@@ -68,6 +70,12 @@
   --animate-fade-up: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-fade-in: fade-in 0.8s ease both;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-float-slow: float-slow 9s ease-in-out infinite;
+  --animate-drift: drift 14s ease-in-out infinite;
+  --animate-orb: orb 18s ease-in-out infinite;
+  --animate-pulse-dot: pulse-dot 2.2s ease-out infinite;
+  --animate-flow: flow 1.4s linear infinite;
+  --animate-caret: caret 1.1s steps(1) infinite;
 }
 
 :root {
@@ -100,6 +108,10 @@
   --gold: oklch(0.79 0.13 78);
   --gold-foreground: oklch(0.27 0.05 70);
 
+  /* Tech accents (Phase 12A) */
+  --navy-deep: oklch(0.20 0.06 262);
+  --cyan: oklch(0.80 0.12 210);
+
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.99 0.004 250);
 
@@ -128,6 +140,7 @@
   --gradient-hero: linear-gradient(155deg, oklch(0.26 0.08 262) 0%, oklch(0.33 0.09 260) 55%, oklch(0.40 0.1 258) 100%);
   --gradient-gold: linear-gradient(135deg, oklch(0.83 0.12 85) 0%, oklch(0.76 0.14 70) 100%);
   --gradient-soft: linear-gradient(180deg, oklch(0.99 0.004 250) 0%, oklch(0.96 0.012 255) 100%);
+  --gradient-tech: linear-gradient(135deg, oklch(0.80 0.12 210) 0%, oklch(0.62 0.16 250) 100%);
 }
 
 .dark {
@@ -149,6 +162,8 @@
   --navy-foreground: oklch(0.98 0.004 250);
   --gold: oklch(0.79 0.13 78);
   --gold-foreground: oklch(0.22 0.05 262);
+  --navy-deep: oklch(0.16 0.05 262);
+  --cyan: oklch(0.80 0.12 210);
   --destructive: oklch(0.62 0.22 27);
   --destructive-foreground: oklch(0.98 0.004 250);
   --success: oklch(0.62 0.15 150);
@@ -230,5 +245,120 @@
   }
   @media (min-width: 1280px) {
     padding-inline: 2.5rem;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Phase 12A — premium homepage motion + surface utilities             */
+/* ------------------------------------------------------------------ */
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(0.4deg); }
+}
+
+@keyframes drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(8px, -10px, 0); }
+}
+
+@keyframes orb {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(28px, -20px, 0) scale(1.08); }
+}
+
+@keyframes pulse-dot {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--success) 55%, transparent); }
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+@keyframes flow {
+  to { background-position: 16px 0; }
+}
+
+@keyframes caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@utility bg-gradient-tech {
+  background-image: var(--gradient-tech);
+}
+
+@utility text-gradient-cyan {
+  background-image: var(--gradient-tech);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Line grid for dark surfaces */
+@utility bg-tech-grid {
+  background-image:
+    linear-gradient(to right, oklch(1 0 0 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(1 0 0 / 0.06) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Line grid for light surfaces */
+@utility bg-tech-grid-light {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--navy) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--navy) 7%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+@utility bg-dots {
+  background-image: radial-gradient(color-mix(in oklab, var(--navy) 16%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+@utility mask-fade-radial {
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+@utility mask-fade-b {
+  -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent);
+  mask-image: linear-gradient(to bottom, #000 55%, transparent);
+}
+
+/* Translucent surfaces */
+@utility glass {
+  background-color: oklch(1 0 0 / 0.09);
+  border: 1px solid oklch(1 0 0 / 0.16);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+@utility glass-light {
+  background-color: oklch(1 0 0 / 0.82);
+  border: 1px solid oklch(1 0 0 / 0.7);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* Anchored sections clear the sticky header */
+@layer base {
+  html {
+    scroll-padding-top: 5rem;
+  }
+}
+
+/* Honour reduced-motion everywhere: no movement, instant state changes. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
   }
 }
