@@ -26,6 +26,7 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_META_PIXEL_ID: ${{ vars.VITE_META_PIXEL_ID }}
       TBOS_E2E_ALLOW_LIVE_FORMS: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && '1' || '0' }}
       TBOS_E2E_ADMIN_EMAIL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && secrets.TBOS_E2E_ADMIN_EMAIL || '' }}
       TBOS_E2E_ADMIN_PASSWORD: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && secrets.TBOS_E2E_ADMIN_PASSWORD || '' }}
