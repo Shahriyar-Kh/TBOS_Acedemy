@@ -8,6 +8,19 @@ const hasAdminCreds = Boolean(
 
 const liveFormMode = process.env.TBOS_E2E_ALLOW_LIVE_FORMS === "1";
 
+async function cleanupEmail(email: string) {
+  if (!hasSupabaseServerCreds) return;
+  const { createClient } = await import("@supabase/supabase-js");
+  const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!);
+  const { data: rows } = await supabase.from("admissions_requests").select("id").eq("email", email);
+  const ids = (rows || []).map((row) => row.id).filter(Boolean);
+  if (ids.length > 0) {
+    await supabase.from("admissions_activity").delete().in("admission_id", ids);
+    await supabase.from("admissions_delivery_log").delete().in("admission_id", ids);
+    await supabase.from("admissions_requests").delete().in("id", ids);
+  }
+}
+
 const publicContentEndpoints = [
   ["/api/content/courses", "courses"],
   ["/api/content/specializations", "specializations"],
@@ -60,13 +73,19 @@ test.describe("TBOS Phase10B functional coverage", () => {
       return;
     }
 
-    await page.locator("#c-name").fill("TBOS Contact Live Check");
-    await page.locator("#c-email").fill("tbos-live-contact@example.com");
-    await page.locator("#c-wa").fill("+92 300 0000000");
-    await page.locator("#c-cat").selectOption("Course enquiry");
-    await page.locator("#c-msg").fill("Live production verification submission test.");
-    await page.getByRole("button", { name: /send message/i }).click();
-    await expect(page.getByText(/message received|thank you for reaching out/i)).toBeVisible();
+    const email = "tbos-live-contact@example.com";
+    try {
+      await cleanupEmail(email);
+      await page.locator("#c-name").fill("TBOS Contact Live Check");
+      await page.locator("#c-email").fill(email);
+      await page.locator("#c-wa").fill("+92 300 0000000");
+      await page.locator("#c-cat").selectOption("Course enquiry");
+      await page.locator("#c-msg").fill("Live production verification submission test.");
+      await page.getByRole("button", { name: /send message/i }).click();
+      await expect(page.getByRole("heading", { name: "Message received!" })).toBeVisible();
+    } finally {
+      await cleanupEmail(email);
+    }
   });
 
   test("apply page accepts a valid adult submission and retains the selected program", async ({
@@ -85,42 +104,54 @@ test.describe("TBOS Phase10B functional coverage", () => {
       return;
     }
 
-    await page.locator("#studentName").fill("TBOS Apply Live Verification");
-    await page.locator("#email").fill("tbos-live-apply@example.com");
-    await page.locator("#phone").fill("+92 300 0000000");
-    await page.locator("#country").fill("Pakistan");
-    await page.locator("#city").fill("Lahore");
-    await page.locator("#age").fill("25");
-    await page.locator("#educationLevel").selectOption("Undergraduate / University Student");
-    await page
-      .locator("#learningPreference")
-      .selectOption("One-to-One (Personalized Private Tuition)");
-    await page.locator("#consent").check();
-    await page.getByRole("button", { name: /submit application/i }).click();
-    await expect(page.getByText(/application received!/i)).toBeVisible();
+    const email = "tbos-live-apply@example.com";
+    try {
+      await cleanupEmail(email);
+      await page.locator("#studentName").fill("TBOS Apply Live Verification");
+      await page.locator("#email").fill(email);
+      await page.locator("#phone").fill("+92 300 0000000");
+      await page.locator("#country").fill("Pakistan");
+      await page.locator("#city").fill("Lahore");
+      await page.locator("#age").fill("25");
+      await page.locator("#educationLevel").selectOption("Undergraduate / University Student");
+      await page
+        .locator("#learningPreference")
+        .selectOption("One-to-One (Personalized Private Tuition)");
+      await page.locator("#consent").check();
+      await page.getByRole("button", { name: /submit application/i }).click();
+      await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
+    } finally {
+      await cleanupEmail(email);
+    }
   });
 
   test("minor guardian validation prevents submission until the guardian details are added", async ({
     page,
   }) => {
     await page.goto("/apply", { waitUntil: "domcontentloaded" });
-    await page.locator("#studentName").fill("TBOS Minor Guard Validation");
-    await page.locator("#email").fill("tbos-minor-validation@example.com");
-    await page.locator("#phone").fill("+92 300 0000000");
-    await page.locator("#country").fill("Pakistan");
-    await page.locator("#age").fill("14");
-    await page.locator("#educationLevel").selectOption("Grade 9-10 / Matric / O-Level");
-    await page.locator("#selectedProgram").fill("HTML5");
-    await page.locator("#consent").check();
+    const email = "tbos-minor-validation@example.com";
+    try {
+      if (liveFormMode) await cleanupEmail(email);
+      await page.locator("#studentName").fill("TBOS Minor Guard Validation");
+      await page.locator("#email").fill(email);
+      await page.locator("#phone").fill("+92 300 0000000");
+      await page.locator("#country").fill("Pakistan");
+      await page.locator("#age").fill("14");
+      await page.locator("#educationLevel").selectOption("Grade 9-10 / Matric / O-Level");
+      await page.locator("#selectedProgram").fill("HTML5");
+      await page.locator("#consent").check();
 
-    await page.getByRole("button", { name: /submit application/i }).click();
-    await expect(page.getByText(/please provide a parent or guardian name/i)).toBeVisible();
+      await page.getByRole("button", { name: /submit application/i }).click();
+      await expect(page.getByText(/please provide a parent or guardian name/i)).toBeVisible();
 
-    await page.locator("#guardianName").fill("TBOS Guardian");
-    await page.locator("#guardianPhone").fill("+92 300 0000001");
-    await page.getByRole("button", { name: /submit application/i }).click();
-    if (liveFormMode) {
-      await expect(page.getByText(/application received!/i)).toBeVisible();
+      await page.locator("#guardianName").fill("TBOS Guardian");
+      await page.locator("#guardianPhone").fill("+92 300 0000001");
+      await page.getByRole("button", { name: /submit application/i }).click();
+      if (liveFormMode) {
+        await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
+      }
+    } finally {
+      if (liveFormMode) await cleanupEmail(email);
     }
   });
 
