@@ -1,11 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  CheckCircle2,
-  ShieldCheck,
-  Globe2,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck, Globe2, Sparkles } from "lucide-react";
 import heroStudent from "@/assets/hero-student.jpg";
 import tutorTeaching from "@/assets/tutor-teaching.jpg";
 import { Button } from "@/components/ui/button";
@@ -69,14 +63,17 @@ function Home() {
               <span className="text-gradient-gold">ambitious students</span>
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-primary-foreground/80">
-              Live online technical courses and personalized tutoring from Grade 5 to University level —
-              across Pakistan and worldwide. Learn practical programming and academic subjects
-              from expert instructors, your way.
+              Live online technical courses and personalized tutoring from Grade 5 to University
+              level — across Pakistan and worldwide. Learn practical programming and academic
+              subjects from expert instructors, your way.
             </p>
 
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-3">
               {trustPoints.map((p) => (
-                <li key={p} className="flex items-center gap-2 text-sm font-medium text-primary-foreground/90">
+                <li
+                  key={p}
+                  className="flex items-center gap-2 text-sm font-medium text-primary-foreground/90"
+                >
                   <CheckCircle2 className="h-5 w-5 text-gold" /> {p}
                 </li>
               ))}
@@ -117,7 +114,9 @@ function Home() {
               </span>
               <div>
                 <p className="text-sm font-bold text-foreground">Trusted & secure</p>
-                <p className="text-xs text-muted-foreground">Vetted tutors · Safe classrooms</p>
+                <p className="text-xs text-muted-foreground">
+                  Experienced instructors · Safe classrooms
+                </p>
               </div>
             </div>
             <div className="absolute -right-4 top-6 hidden items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card md:flex">
@@ -195,7 +194,8 @@ function Home() {
               Current Live Group Programs
             </h2>
             <p className="mt-3 max-w-2xl text-base text-muted-foreground">
-              Join active group cohorts with live interactive instruction, step-by-step milestones, and special group pricing. Every program includes a Free Demo trial session.
+              Join active group cohorts with live interactive instruction, step-by-step milestones,
+              and special group pricing. Every program includes a Free Demo trial session.
             </p>
           </div>
           <Button asChild variant="outline" size="lg" className="shrink-0">
@@ -207,7 +207,7 @@ function Home() {
 
         <div className="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {activeLiveOffers.map((offer, i) => (
-            <Reveal key={offer.slug} delay={i * 80}>
+            <Reveal key={offer.slug} delay={i * 80} className="min-w-0">
               <LiveOfferCard offer={offer} />
             </Reveal>
           ))}

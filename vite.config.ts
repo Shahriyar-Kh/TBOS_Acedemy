@@ -12,4 +12,22 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: {
+    preset: "cloudflare-module",
+    cloudflare: {
+      // @ts-expect-error Nitro Cloudflare wrangler configuration
+      wrangler: {
+        name: "techbuilt-os",
+        account_id: "663a3a9235c68ebb150f268ba6389b7f",
+        compatibility_date: "2026-09-30",
+        workers_dev: true,
+        routes: [
+          {
+            pattern: "techbuiltos.online",
+            custom_domain: true,
+          },
+        ],
+      },
+    },
+  },
 });

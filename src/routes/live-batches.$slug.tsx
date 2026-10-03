@@ -20,7 +20,7 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { getLiveOffer, activeLiveOffers } from "@/data/liveOffers";
 import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
-import { whatsappLink } from "@/data/site";
+import { site, whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/live-batches/$slug")({
   loader: async ({ params }) => {
@@ -37,7 +37,8 @@ export const Route = createFileRoute("/live-batches/$slug")({
     const offer = loaderData?.offer;
     if (!offer) return { meta: buildMeta({ title: "Live Batch", description: "Program details." }) };
     const title = offer.seoTitle || `${offer.title} | Live Group Online Batch | TechBuilt Open School`;
-    const description = offer.seoDescription || `${offer.summary} Current offer: Rs ${offer.offerFee.toLocaleString()}/${offer.billingPeriod}. Free Demo session available.`;
+    const feeStr = typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0");
+    const description = offer.seoDescription || `${offer.summary} Current offer: Rs ${feeStr}/${offer.billingPeriod}. Free Demo session available.`;
     return {
       meta: buildMeta({
         title,
@@ -45,7 +46,7 @@ export const Route = createFileRoute("/live-batches/$slug")({
         keywords: offer.keywords,
         type: "article",
       }),
-      links: [{ rel: "canonical", href: `/live-batches/${offer.slug}` }],
+      links: [{ rel: "canonical", href: `${site.url}/live-batches/${offer.slug}` }],
     };
   },
   notFoundComponent: () => (
@@ -89,7 +90,7 @@ function LiveOfferDetail() {
                 </span>
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="hero">Active Group Batch</Badge>
+                    <Badge variant="default">Active Group Batch</Badge>
                     <Badge variant="secondary">{offer.ageOrEducationLevel}</Badge>
                     <Badge variant="outline">{offer.duration}</Badge>
                   </div>
@@ -224,7 +225,7 @@ function LiveOfferDetail() {
           <Reveal delay={120} className="lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
               <div className="flex items-center justify-between gap-2">
-                <Badge variant="hero" className="text-xs">
+                <Badge variant="default" className="text-xs">
                   Active Live Batch
                 </Badge>
                 <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold-foreground">
@@ -237,10 +238,10 @@ function LiveOfferDetail() {
                 <p className="text-xs text-muted-foreground">Current Group Cohort Fee</p>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="text-xs text-muted-foreground line-through">
-                    Rs {offer.regularFee.toLocaleString()}/{offer.billingPeriod}
+                    Rs {typeof offer.regularFee === "number" ? offer.regularFee.toLocaleString() : (offer.regularFee ?? "0")}/{offer.billingPeriod}
                   </span>
                   <span className="text-2xl font-extrabold text-foreground">
-                    Rs {offer.offerFee.toLocaleString()}
+                    Rs {typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0")}
                   </span>
                   <span className="text-xs text-muted-foreground">/{offer.billingPeriod}</span>
                 </div>

@@ -2,9 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { getCmsCourses, getCmsSpecializations, getCmsLiveOffers } from "@/lib/cms.server";
 import { seoPages } from "../data/seoPages";
+import { site } from "../data/site";
 
-// TODO: set this to your live domain once published, e.g. https://techbuiltopenschool.com
-const BASE_URL = "";
+const BASE_URL = site.url;
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {

@@ -30,7 +30,7 @@ export const seoPages: SeoPage[] = [
       "Live one-to-one and group classes",
       "Qualified Pakistani and international tutors",
       "Flexible timing for every city and schedule",
-      "Affordable plans with scholarships available",
+      "Affordable, transparent monthly plans",
     ],
     sections: [
       {
@@ -88,7 +88,7 @@ export const seoPages: SeoPage[] = [
       },
       {
         heading: "A trusted, premium experience",
-        body: "We are built around quality, safety and results — with vetted tutors, structured curricula, and constant communication with parents and students.",
+        body: "We are built around quality, safety and results — with experienced instructors, structured curricula, and constant communication with parents and students.",
       },
     ],
     faqs: [
@@ -144,8 +144,7 @@ export const seoPages: SeoPage[] = [
       },
       {
         question: "What do students need to join?",
-        answer:
-          "Just a laptop, tablet or smartphone with an internet connection.",
+        answer: "Just a laptop, tablet or smartphone with an internet connection.",
       },
     ],
     ctaCourseType: "Other Inquiry",
@@ -234,8 +233,7 @@ export const seoPages: SeoPage[] = [
       },
       {
         question: "Which level do you teach?",
-        answer:
-          "From school (Grade 5+) to university and MS level.",
+        answer: "From school (Grade 5+) to university and MS level.",
       },
     ],
     ctaCourseType: "Academic Subject",
@@ -279,8 +277,7 @@ export const seoPages: SeoPage[] = [
       },
       {
         question: "Do you offer one-to-one maths tutoring?",
-        answer:
-          "Yes, one-to-one is our most popular option for maximum personalised attention.",
+        answer: "Yes, one-to-one is our most popular option for maximum personalised attention.",
       },
     ],
     ctaCourseType: "Academic Subject",
@@ -319,13 +316,11 @@ export const seoPages: SeoPage[] = [
     faqs: [
       {
         question: "Do you help with physics numericals?",
-        answer:
-          "Yes — numerical problem solving is a core part of our physics tutoring.",
+        answer: "Yes — numerical problem solving is a core part of our physics tutoring.",
       },
       {
         question: "Which levels do you teach?",
-        answer:
-          "From Grade 8 up to university and MS level.",
+        answer: "From Grade 8 up to university and MS level.",
       },
     ],
     ctaCourseType: "Academic Subject",
@@ -409,13 +404,11 @@ export const seoPages: SeoPage[] = [
     faqs: [
       {
         question: "Is this course suitable for beginners?",
-        answer:
-          "Yes — we start from the basics and build up to professional skills step by step.",
+        answer: "Yes — we start from the basics and build up to professional skills step by step.",
       },
       {
         question: "Will I have a portfolio at the end?",
-        answer:
-          "Yes, you'll finish with real projects and a portfolio to showcase your abilities.",
+        answer: "Yes, you'll finish with real projects and a portfolio to showcase your abilities.",
       },
     ],
     ctaCourseType: "Single Course",

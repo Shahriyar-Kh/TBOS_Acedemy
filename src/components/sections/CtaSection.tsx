@@ -6,7 +6,7 @@ import { whatsappLink } from "@/data/site";
 
 export function CtaSection({
   title = "Ready to start your learning journey?",
-  description = "Apply today and our admissions team will match you with the perfect tutor and plan within 24 hours.",
+  description = "Apply today and our admissions team will review your application and guide you through the next steps.",
 }: {
   title?: string;
   description?: string;

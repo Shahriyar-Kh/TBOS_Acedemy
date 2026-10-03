@@ -6,25 +6,26 @@ import {
 } from "@/components/ui/accordion";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Reveal } from "@/components/Reveal";
-import type { Faq } from "@/data/faqs";
+import { faqs as defaultFaqs, type Faq } from "@/data/faqs";
 
 export function FaqSection({
-  faqs,
+  faqs = defaultFaqs,
   eyebrow = "FAQ",
   title = "Frequently asked questions",
   description = "Everything parents and students need to know about learning with us.",
 }: {
-  faqs: Faq[];
+  faqs?: Faq[];
   eyebrow?: string;
   title?: string;
   description?: string;
 }) {
+  const list = Array.isArray(faqs) && faqs.length > 0 ? faqs : defaultFaqs;
   return (
     <section className="mx-auto max-w-3xl container-px py-16 sm:py-20">
       <SectionHeading eyebrow={eyebrow} title={title} description={description} />
       <Reveal className="mt-10">
         <Accordion type="single" collapsible className="w-full">
-          {faqs.map((faq, i) => (
+          {list.map((faq, i) => (
             <AccordionItem key={i} value={`item-${i}`} className="border-border">
               <AccordionTrigger className="text-left text-base font-semibold text-foreground hover:no-underline">
                 {faq.question}

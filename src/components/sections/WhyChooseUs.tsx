@@ -28,17 +28,17 @@ const reasons = [
   {
     icon: ShieldCheck,
     title: "Safe & trusted",
-    desc: "Secure online classrooms, vetted tutors and transparent communication with parents at every step.",
+    desc: "Interactive online classrooms, patient instructors, and clear communication with parents at every step.",
   },
   {
     icon: Clock4,
     title: "Flexible learning",
-    desc: "Study from home at times that suit you, with recordings and notes for easy revision.",
+    desc: "Study online at convenient schedules that suit your routine, guided by your instructor.",
   },
   {
     icon: HeartHandshake,
-    title: "Real results",
-    desc: "Proven improvement in grades, confidence and skills — with progress reports for parents.",
+    title: "Dedicated support",
+    desc: "Structured coursework designed to build confidence, practical understanding, and foundational skills.",
   },
 ];
 
@@ -48,8 +48,8 @@ export function WhyChooseUs() {
       <div className="mx-auto max-w-7xl container-px py-16 sm:py-20">
         <SectionHeading
           eyebrow="Why TechBuilt"
-          title="A premium academy built around results"
-          description="We combine world-class teaching with a personal, parent-friendly experience that students love."
+          title="A focused academy built around student progress"
+          description="We combine structured curriculum with an interactive, supportive learning experience."
         />
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {reasons.map((r, i) => (

@@ -37,3 +37,5 @@ dist/
 .env.development
 .env.production
 .env.*.local
+test-results/
+playwright-report/

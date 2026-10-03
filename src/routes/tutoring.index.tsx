@@ -100,7 +100,7 @@ function TutoringPage() {
               ))}
             </ul>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button asChild variant="hero" size="lg">
+              <Button asChild variant="default" size="lg">
                 <Link to="/apply" search={{ type: "One-to-One Learning" }}>
                   Request a Tutor <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -222,7 +222,7 @@ function TutoringPage() {
                       Free Demo
                     </Link>
                   </Button>
-                  <Button asChild size="sm" variant="hero" className="text-xs">
+                  <Button asChild size="sm" variant="default" className="text-xs">
                     <Link to="/apply" search={{ type: "Quran & Islamic Studies", selected: subject.title }}>
                       Enrol
                     </Link>

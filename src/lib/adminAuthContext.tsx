@@ -47,17 +47,23 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const supabase = getSupabaseBrowserClient();
-    if (!supabase) {
+    // Phase 10 optimization: Only run admin auth session logic on admin routes
+    if (typeof window !== "undefined" && !window.location.pathname.startsWith("/admin")) {
+      setIsLoading(false);
+      return;
+    }
+
+    const client = getSupabaseBrowserClient();
+    if (!client) {
       setIsLoading(false);
       return;
     }
 
     let isMounted = true;
 
-    async function initSession() {
+    async function initSession(activeClient: NonNullable<typeof client>) {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await activeClient.auth.getSession();
         if (session?.access_token) {
           const verifiedAdmin = await verifyTokenWithServer(session.access_token);
           if (isMounted) {
@@ -66,7 +72,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
               setToken(session.access_token);
             } else {
               // Authenticated in Supabase but not an admin -> sign out
-              await supabase.auth.signOut();
+              await activeClient.auth.signOut();
               setAdmin(null);
               setToken(null);
             }
@@ -81,11 +87,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    initSession();
+    initSession(client);
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = client.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_OUT" || !session) {
         setAdmin(null);
         setToken(null);
@@ -97,7 +103,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
             setAdmin(verified);
             setToken(session.access_token);
           } else {
-            await supabase.auth.signOut();
+            await client.auth.signOut();
             setAdmin(null);
             setToken(null);
           }

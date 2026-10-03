@@ -399,8 +399,8 @@ export function ApplyForm({
             />
             <datalist id="application-program-list">
               {filteredSuggestions.map((item) => (
-                <option key={item.id} value={item.title}>
-                  {item.category} ({item.group})
+                <option key={`${item.group}-${item.slug}`} value={item.value}>
+                  {item.label}
                 </option>
               ))}
             </datalist>

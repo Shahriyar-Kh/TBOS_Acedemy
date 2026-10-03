@@ -10,7 +10,7 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { getCourse, courses } from "@/data/courses";
 import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
-import { whatsappLink } from "@/data/site";
+import { site, whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/courses/$slug")({
   loader: async ({ params }) => {
@@ -35,7 +35,7 @@ export const Route = createFileRoute("/courses/$slug")({
         keywords: course.keywords,
         type: "article",
       }),
-      links: [{ rel: "canonical", href: `/courses/${course.slug}` }],
+      links: [{ rel: "canonical", href: `${site.url}/courses/${course.slug}` }],
       scripts: [courseJsonLd(course.title, course.summary)],
     };
   },
@@ -82,18 +82,27 @@ function CourseDetail() {
               </p>
             </Reveal>
 
-            {course.prerequisites && course.prerequisites.length > 0 && (
-              <Reveal className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-soft">
-                <h3 className="text-lg font-bold text-foreground">Prerequisites</h3>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {course.prerequisites.map((p: string) => (
-                    <Badge key={p} variant="outline" className="px-3 py-1 text-sm font-medium">
-                      {p}
-                    </Badge>
-                  ))}
-                </div>
-              </Reveal>
-            )}
+            {(() => {
+              const raw = course.prerequisites;
+              const prereqList: string[] = Array.isArray(raw)
+                ? (raw as string[])
+                : typeof raw === "string" && raw.trim().length > 0
+                ? raw.split(",").map((s: string) => s.trim()).filter(Boolean)
+                : [];
+              if (prereqList.length === 0) return null;
+              return (
+                <Reveal className="mt-8 rounded-2xl border border-border bg-card p-6 shadow-soft">
+                  <h3 className="text-lg font-bold text-foreground">Prerequisites</h3>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {prereqList.map((p: string) => (
+                      <Badge key={p} variant="outline" className="px-3 py-1 text-sm font-medium">
+                        {p}
+                      </Badge>
+                    ))}
+                  </div>
+                </Reveal>
+              );
+            })()}
 
             <Reveal className="mt-10">
               <h2 className="text-2xl font-bold text-foreground">What you'll achieve</h2>
@@ -143,7 +152,7 @@ function CourseDetail() {
                   <Monitor className="h-4 w-4 text-primary" /> {course.mode}
                 </li>
                 <li className="flex items-center gap-2.5">
-                  <Users className="h-4 w-4 text-primary" /> {course.availability}
+                  <Users className="h-4 w-4 text-primary" /> 1-on-1 & small batches
                 </li>
               </ul>
               <Button asChild variant="hero" size="lg" className="mt-6 w-full">
