@@ -2,7 +2,7 @@
 
 **Phase:** Phase 10 — Ultra Production Recovery, Real-Browser E2E Audit & Zero-Broken-Pages Gate  
 **Authoritative Workspace:** `D:\Client_Projects\TBOS_Acedemy`  
-**Active Git Branch:** `fix/production-live-e2e`  
+**Authoritative Git Branch:** `main`  
 **Production URLs:**
 
 - Custom Domain: [https://techbuiltos.online](https://techbuiltos.online)
@@ -36,6 +36,8 @@ In Phase 10, an ultra-strict **Real-Browser Chromium Execution Gate** was instit
 
 ### Current Phase10B status
 
+- Recovery branch `fix/production-live-e2e` was safely merged to `main` through PR #1 on October 3, 2026; `main` is now authoritative.
+
 - GitHub Actions final closure run `37126445476` completed successfully.
 - Cloudflare production deployment succeeded for Worker `techbuilt-os`; verified production version: `319b0f8f-9a8d-42ca-ad09-4455821c24db`.
 - The full responsive matrix at 375px, 390px, and 430px passed with no horizontal overflow.
@@ -43,6 +45,7 @@ In Phase 10, an ultra-strict **Real-Browser Chromium Execution Gate** was instit
 - Authenticated owner verification, admin API authorization, and CMS create → draft-hidden → publish → public-read → unpublish → delete lifecycle all passed.
 - The full Playwright suite finished **27 passed, 0 failed**.
 - The real-browser route audit finished **69/69 PASS, 0 failed** with zero root-error screens or uncaught browser errors.
+- Normal `main` pushes now run deployment plus non-destructive production verification. Controlled live Contact/Apply/Demo submissions and authenticated owner/admin + CMS lifecycle checks are enabled only when `workflow_dispatch` is run with `full_production_verification=true`.
 
 ---
 
@@ -220,4 +223,4 @@ npx playwright test
 
 ## 6. Conclusion & Production Sign-Off
 
-The production deployment at **`https://techbuiltos.online`** has achieved **Zero-Broken-Pages** status across all 69 catalog and informational routes. The hydration crashes have been eliminated, the 375/390/430 mobile overflow matrix passes on the deployed build, controlled production form flows pass with cleanup, authenticated owner/admin boundaries pass, and the CMS lifecycle passes end to end. Phase10B is **COMPLETE** with **27/27 Playwright tests passed** and **69/69 real-browser routes passed**.
+The production deployment at **`https://techbuiltos.online`** has achieved **Zero-Broken-Pages** status across all 69 catalog and informational routes. The hydration crashes have been eliminated, the 375/390/430 mobile overflow matrix passes on the deployed build, controlled production form flows pass with cleanup, authenticated owner/admin boundaries pass, and the CMS lifecycle passes end to end. Phase10B is **FINAL COMPLETE** with **27/27 Playwright tests passed** and **69/69 real-browser routes passed**. Phase 11A preserves this closure on `main` while keeping destructive/credentialed production verification manual-only.
