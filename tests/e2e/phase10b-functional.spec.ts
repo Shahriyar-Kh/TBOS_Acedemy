@@ -183,13 +183,19 @@ test.describe("TBOS Phase10B functional coverage", () => {
     expect(initialOverflow).toBe(false);
 
     const menuTrigger = page
-      .locator(
-        'button[aria-label="Toggle menu"], button[aria-label="Open menu"], [data-slot="sheet-trigger"]',
-      )
+      .locator('button[aria-label="Toggle menu"], button[aria-label="Open menu"]')
       .first();
     await expect(menuTrigger).toBeVisible();
+    await expect(menuTrigger).toHaveAttribute("aria-expanded", "false");
     await menuTrigger.click();
-    const coursesLink = page.getByRole("link", { name: "Courses", exact: true }).first();
+
+    const closeTrigger = page.locator('button[aria-label="Close menu"]').first();
+    await expect(closeTrigger).toBeVisible();
+    await expect(closeTrigger).toHaveAttribute("aria-expanded", "true");
+
+    const mobileNav = page.locator('nav[aria-label="Mobile navigation"]');
+    await expect(mobileNav).toBeVisible();
+    const coursesLink = mobileNav.getByRole("link", { name: "Courses", exact: true });
     await expect(coursesLink).toBeVisible();
     await coursesLink.click();
     await expect(page).toHaveURL(/\/courses$/);
