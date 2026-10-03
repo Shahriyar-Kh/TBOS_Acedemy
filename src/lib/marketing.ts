@@ -14,6 +14,8 @@ declare global {
     fbq?: MetaFbq;
     _fbq?: MetaFbq;
     __tbosMetaPixelInitialized?: string;
+    __tbosLastPageView?: { key: string; at: number };
+    __tbosLastViewContent?: { key: string; at: number };
   }
 }
 
@@ -55,14 +57,20 @@ export function getMarketingAttribution(): MarketingAttribution {
 
 export function withMarketingAttribution(sourcePage: string) {
   const attribution = getMarketingAttribution();
-  const params = new URLSearchParams();
+  const compact = new URLSearchParams();
+  const pairs: Array<[(typeof UTM_KEYS)[number], string]> = [
+    ["utm_source", "s"],
+    ["utm_medium", "m"],
+    ["utm_campaign", "c"],
+    ["utm_content", "v"],
+  ];
 
-  for (const key of UTM_KEYS) {
+  for (const [key, shortKey] of pairs) {
     const value = attribution[key];
-    if (value) params.set(key, value);
+    if (value) compact.set(shortKey, value.slice(0, 20));
   }
 
-  const suffix = params.toString();
+  const suffix = compact.toString();
   if (!suffix) return sourcePage.slice(0, 100);
   return `${sourcePage} | ${suffix}`.slice(0, 100);
 }
@@ -116,6 +124,12 @@ function trackMeta(eventName: "PageView" | "ViewContent" | "Lead", data?: MetaEv
 }
 
 export function trackMetaPageView() {
+  if (typeof window === "undefined") return;
+  const now = Date.now();
+  const key = `${window.location.pathname}${window.location.search}`;
+  const previous = window.__tbosLastPageView;
+  if (previous?.key === key && now - previous.at < 1000) return;
+  window.__tbosLastPageView = { key, at: now };
   trackMeta("PageView");
 }
 
@@ -130,6 +144,13 @@ export function trackMetaViewContent({
   value?: number;
   currency?: string;
 }) {
+  if (typeof window === "undefined") return;
+  const now = Date.now();
+  const key = `${window.location.pathname}:${contentName}`;
+  const previous = window.__tbosLastViewContent;
+  if (previous?.key === key && now - previous.at < 1000) return;
+  window.__tbosLastViewContent = { key, at: now };
+
   trackMeta("ViewContent", {
     content_name: contentName,
     content_category: contentCategory,
