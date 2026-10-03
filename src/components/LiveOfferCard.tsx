@@ -10,7 +10,7 @@ export function LiveOfferCard({ offer }: { offer: LiveOffer }) {
   const whatsappDemoText = `Hello TechBuilt Open School, I would like information about the ${offer.title} live group program and Free Demo.`;
 
   return (
-    <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-card">
+    <div className="group relative flex min-w-0 w-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-card">
       <div className="absolute top-0 right-0 h-28 w-28 translate-x-8 -translate-y-8 rounded-full bg-gold/10 blur-2xl group-hover:bg-gold/20" />
 
       <div>

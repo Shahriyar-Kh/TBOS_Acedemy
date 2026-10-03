@@ -29,6 +29,7 @@ const staticRoutes = [
   "/physics-tutor",
   "/python-course-online",
   "/web-development-course-online",
+  "/sitemap.xml",
 ];
 
 const allRoutes = [
