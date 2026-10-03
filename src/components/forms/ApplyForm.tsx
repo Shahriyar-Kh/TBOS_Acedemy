@@ -183,6 +183,7 @@ export function ApplyForm({
     });
 
     if (result.ok) {
+      trackMetaLead({ leadType: "application", contentName: values.selectedProgram });
       setSubmittedData({
         studentName: values.studentName,
         selectedProgram: values.selectedProgram,
