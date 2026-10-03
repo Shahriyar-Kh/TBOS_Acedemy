@@ -1,5 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, MessageCircle, Clock, Facebook, Instagram, Music2, Youtube, Linkedin } from "lucide-react";
+import {
+  Clock,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Mail,
+  MessageCircle,
+  Music2,
+  Youtube,
+} from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { footerLinks } from "@/data/navigation";
 import { site, whatsappLink } from "@/data/site";
@@ -47,7 +56,7 @@ export function Footer() {
               ]
                 .filter(({ href }) => Boolean(href))
                 .map(({ href, icon: Icon, label }) => (
-                <a
+                  <a
                   key={label}
                   href={href}
                   target="_blank"
@@ -55,9 +64,9 @@ export function Footer() {
                   aria-label={label}
                   className="grid h-9 w-9 place-items-center rounded-lg bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
                 >
-                  <Icon className="h-4 w-4" />
-                </a>
-              ))}
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
             </div>
           </div>
 
@@ -77,7 +86,12 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <MessageCircle className="h-4 w-4 shrink-0 text-gold" />
-                <a href={whatsappLink()} target="_blank" rel="noopener noreferrer" className="hover:text-gold">
+                <a
+                  href={whatsappLink()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-gold"
+                >
                   WhatsApp us
                 </a>
               </li>
