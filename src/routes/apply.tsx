@@ -6,6 +6,7 @@ import { ApplyForm } from "@/components/forms/ApplyForm";
 import { buildMeta } from "@/lib/seo";
 import { courseTypeOptions, type FormType } from "@/lib/forms";
 import { normalizeApplicationType } from "@/lib/programs";
+import { site } from "@/data/site";
 
 type ApplySearch = { type?: string; selected?: string };
 
@@ -20,8 +21,9 @@ export const Route = createFileRoute("/apply")({
       description:
         "Apply for online courses, specializations, live cohorts, or academic tutoring at TechBuilt Open School. Submit your learning goals for personalized admissions guidance.",
       keywords: ["apply online academy", "enrol online course", "book online tutor", "techbuilt admissions"],
+      path: "/apply",
     }),
-    links: [{ rel: "canonical", href: "/apply" }],
+    links: [{ rel: "canonical", href: `${site.url}/apply` }],
   }),
   component: ApplyPage,
 });

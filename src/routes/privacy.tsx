@@ -10,7 +10,7 @@ export const Route = createFileRoute("/privacy")({
       description:
         "Read how TechBuilt Open School collects, uses and protects your personal information when you use our online academy and submit application or contact forms.",
     }),
-    links: [{ rel: "canonical", href: "/privacy" }],
+    links: [{ rel: "canonical", href: `${site.url}/privacy` }],
   }),
   component: PrivacyPage,
 });
@@ -26,7 +26,7 @@ const sections = [
   },
   {
     h: "3. Storage of form submissions",
-    p: "Form submissions are securely recorded (for example, in a managed spreadsheet) and trigger an internal email notification to our admissions team so we can respond promptly. Access is limited to authorised staff.",
+    p: "Form submissions are recorded in our managed admissions systems, including our production database and operational notification or reporting tools. Access is limited to authorised staff who need the information to handle admissions and support.",
   },
   {
     h: "4. Sharing your information",
@@ -41,8 +41,8 @@ const sections = [
     p: "You may request access to, correction of, or deletion of your personal data. To exercise these rights, contact us using the details below.",
   },
   {
-    h: "7. Cookies",
-    p: "Our website may use essential cookies and similar technologies to ensure the site functions correctly and to understand how it is used so we can improve it.",
+    h: "7. Cookies, analytics & advertising measurement",
+    p: "Our website may use essential storage and, when enabled, advertising or measurement technologies such as Meta Pixel to understand campaign performance and actions such as viewing a program or submitting an enquiry. Campaign parameters such as UTM source, medium, campaign and content may be retained with an admissions submission for attribution.",
   },
   {
     h: "8. Contact us",
@@ -55,7 +55,7 @@ function PrivacyPage() {
     <>
       <PageHeader eyebrow="Legal" title="Privacy Policy" breadcrumb={[{ label: "Privacy Policy" }]} />
       <section className="mx-auto max-w-3xl container-px py-16 sm:py-20">
-        <p className="text-sm text-muted-foreground">Last updated: June 2026</p>
+        <p className="text-sm text-muted-foreground">Last updated: October 2026</p>
         <p className="mt-6 text-base leading-relaxed text-muted-foreground">
           At {site.fullName}, we are committed to protecting your privacy. This policy explains
           what information we collect, how we use it, and your rights.

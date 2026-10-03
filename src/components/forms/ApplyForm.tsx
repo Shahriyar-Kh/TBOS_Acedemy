@@ -24,6 +24,7 @@ import {
   isMinorLearner,
 } from "@/lib/programs";
 import { whatsappLink } from "@/data/site";
+import { trackMetaLead } from "@/lib/marketing";
 
 const schema = z.object({
   studentName: z.string().trim().min(2, "Please enter your full name").max(100),
@@ -183,6 +184,7 @@ export function ApplyForm({
     });
 
     if (result.ok) {
+      trackMetaLead({ leadType: "application", contentName: values.selectedProgram });
       setSubmittedData({
         studentName: values.studentName,
         selectedProgram: values.selectedProgram,

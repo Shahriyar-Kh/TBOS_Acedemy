@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { submitForm } from "@/lib/forms";
+import { trackMetaLead } from "@/lib/marketing";
 
 const inquiryCategories = [
   "Course enquiry",
   "Specialization enquiry",
   "Academic tutoring",
   "Tutor service",
-  "Fees & scholarships",
+  "Fees & payment",
   "Partnership",
   "Other",
 ];
@@ -61,6 +62,7 @@ export function ContactForm({ sourcePage = "Contact" }: { sourcePage?: string })
       company: values.company,
     });
     if (result.ok) {
+      trackMetaLead({ leadType: "contact", contentName: values.category });
       setDone(true);
       reset();
       toast.success("Message sent! We'll get back to you shortly.");

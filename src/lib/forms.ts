@@ -8,6 +8,7 @@ import {
   educationLevelOptions,
   learningPreferenceOptions,
 } from "./programs";
+import { withMarketingAttribution } from "./marketing";
 
 export type FormType =
   | ApplicationType
@@ -105,7 +106,7 @@ export async function submitForm(payload: SubmissionPayload): Promise<SubmitResu
         guardianPhone: payload.guardianPhone?.trim() || "",
         guardianEmail: payload.guardianEmail?.trim() || "",
         notes,
-        sourcePage: payload.sourcePage,
+        sourcePage: withMarketingAttribution(payload.sourcePage),
         company: payload.company || "",
       }),
     });

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { activeLiveOffers } from "@/data/liveOffers";
 import { getCmsLiveOffersFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
+import { site } from "@/data/site";
+import studentsLearning from "@/assets/students-learning.jpg";
 
 export const Route = createFileRoute("/live-batches/")({
   loader: async () => {
@@ -25,6 +27,8 @@ export const Route = createFileRoute("/live-batches/")({
       title: "Active Live Group Classes & Batches | TechBuilt Open School",
       description:
         "Explore active live group coding batches at TechBuilt Open School. Instructor-led online classes in Python, Data Analysis, and Young Developers with Free Demo sessions.",
+      path: "/live-batches",
+      image: studentsLearning,
       keywords: [
         "live online classes",
         "Python live course",
@@ -34,7 +38,7 @@ export const Route = createFileRoute("/live-batches/")({
         "live programming batch",
       ],
     }),
-    links: [{ rel: "canonical", href: "/live-batches" }],
+    links: [{ rel: "canonical", href: `${site.url}/live-batches` }],
   }),
   component: LiveBatchesPage,
 });
