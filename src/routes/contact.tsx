@@ -35,7 +35,7 @@ function ContactPage() {
       <PageHeader
         eyebrow="We're here to help"
         title="Contact Us"
-        description="Have a question about courses, tutoring, fees or scholarships? Reach out and we'll get back to you quickly."
+        description="Have a question about courses, tutoring, live batches, or fees? Reach out to our admissions team."
         breadcrumb={[{ label: "Contact" }]}
       />
 
