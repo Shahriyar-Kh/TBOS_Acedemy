@@ -78,6 +78,14 @@ jobs:
         shell: bash
         run: rm -f .env.phase10b-deploy
 
+      - name: Meta Pixel configured
+        if: ${{ env.VITE_META_PIXEL_ID != '' }}
+        run: echo "Meta Pixel repository variable is configured."
+
+      - name: Meta Pixel not configured
+        if: ${{ env.VITE_META_PIXEL_ID == '' }}
+        run: echo "Meta Pixel repository variable is not configured; tracking remains safely disabled."
+
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
