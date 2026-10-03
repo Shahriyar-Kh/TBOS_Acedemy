@@ -20,6 +20,9 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      TBOS_E2E_ADMIN_EMAIL: ${{ secrets.TBOS_E2E_ADMIN_EMAIL }}
+      TBOS_E2E_ADMIN_PASSWORD: ${{ secrets.TBOS_E2E_ADMIN_PASSWORD }}
+      TBOS_E2E_ALLOW_LIVE_FORMS: "1"
 
     steps:
       - name: Checkout
