@@ -75,4 +75,4 @@ jobs:
         run: node ./node_modules/@playwright/test/cli.js test
 
       - name: Run 69-route production audit
-        run: node ./node_modules/tsx/dist/cli.mjs scripts/audit-all-routes.ts
+        run: bun scripts/audit-all-routes.ts
