@@ -120,9 +120,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           sameAs: [
             site.social.facebook,
             site.social.instagram,
+            site.social.tiktok,
             site.social.youtube,
             site.social.linkedin,
-          ],
+          ].filter(Boolean),
         }),
       },
     ],
