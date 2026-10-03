@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Mail, MessageCircle, Clock, Facebook, Instagram, Youtube, Linkedin } from "lucide-react";
+import { Mail, MessageCircle, Clock, Facebook, Instagram, Music2, Youtube, Linkedin } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { footerLinks } from "@/data/navigation";
 import { site, whatsappLink } from "@/data/site";
@@ -41,9 +41,12 @@ export function Footer() {
               {[
                 { href: site.social.facebook, icon: Facebook, label: "Facebook" },
                 { href: site.social.instagram, icon: Instagram, label: "Instagram" },
+                { href: site.social.tiktok, icon: Music2, label: "TikTok" },
                 { href: site.social.youtube, icon: Youtube, label: "YouTube" },
                 { href: site.social.linkedin, icon: Linkedin, label: "LinkedIn" },
-              ].map(({ href, icon: Icon, label }) => (
+              ]
+                .filter(({ href }) => Boolean(href))
+                .map(({ href, icon: Icon, label }) => (
                 <a
                   key={label}
                   href={href}
