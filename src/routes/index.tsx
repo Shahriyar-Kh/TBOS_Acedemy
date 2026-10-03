@@ -26,6 +26,8 @@ export const Route = createFileRoute("/")({
     meta: buildMeta({
       title: `${site.fullName} | Programming Courses & Academic Tutoring`,
       description: site.description,
+      path: "/",
+      image: heroStudent,
       keywords: [
         "international online academy",
         "online tutor service pakistan",
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/")({
         "maths physics tutor online",
       ],
     }),
-    links: [{ rel: "canonical", href: "/" }],
+    links: [{ rel: "canonical", href: `${site.url}/` }],
     scripts: [faqJsonLd(faqs.slice(0, 6))],
   }),
   component: Home,
