@@ -57,13 +57,13 @@ export function Footer() {
                 .filter(({ href }) => Boolean(href))
                 .map(({ href, icon: Icon, label }) => (
                   <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="grid h-9 w-9 place-items-center rounded-lg bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
-                >
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="grid h-9 w-9 place-items-center rounded-lg bg-primary-foreground/10 text-primary-foreground transition-colors hover:bg-gold hover:text-gold-foreground"
+                  >
                     <Icon className="h-4 w-4" />
                   </a>
                 ))}
