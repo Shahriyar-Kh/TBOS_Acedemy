@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { submitForm } from "@/lib/forms";
+import { trackMetaLead } from "@/lib/marketing";
 import {
   type ApplicationType,
   applicationTypeOptions,
@@ -178,6 +179,7 @@ export function DemoForm({
     });
 
     if (result.ok) {
+      trackMetaLead({ leadType: "free_demo", contentName: values.selectedProgram });
       setSubmittedData({
         studentName: values.studentName,
         selectedProgram: values.selectedProgram,
