@@ -140,6 +140,7 @@ test.describe("TBOS Phase10B functional coverage", () => {
       await page.locator("#educationLevel").selectOption("Grade 9-10 / Matric / O-Level");
       await page.locator("#selectedProgram").fill("HTML5");
       await page.locator("#consent").check();
+      await expect(page.locator("#guardianName")).toBeVisible();
 
       await page.getByRole("button", { name: /submit application/i }).click();
       await expect(page.getByText(/please provide a parent or guardian name/i)).toBeVisible();
