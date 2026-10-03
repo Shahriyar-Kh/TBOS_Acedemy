@@ -17,7 +17,7 @@ const inquiryCategories = [
   "Specialization enquiry",
   "Academic tutoring",
   "Tutor service",
-  "Fees & scholarships",
+  "Fees & payment",
   "Partnership",
   "Other",
 ];
