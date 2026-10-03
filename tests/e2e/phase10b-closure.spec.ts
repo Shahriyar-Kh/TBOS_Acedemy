@@ -323,7 +323,7 @@ test.describe("TBOS Phase10B closure coverage", () => {
     const item = (await create.json()).item;
     try {
       const publicDraft = await page.request.get(
-        "/api/content/courses/tbos-phase10b-cms-verification",
+        "/api/content/courses?slug=tbos-phase10b-cms-verification",
       );
       expect(publicDraft.status()).toBe(404);
       const update = await page.request.patch(`/api/admin/content/courses/${item.id}`, {
@@ -332,7 +332,7 @@ test.describe("TBOS Phase10B closure coverage", () => {
       });
       expect(update.status()).toBe(200);
       const publicPublished = await page.request.get(
-        "/api/content/courses/tbos-phase10b-cms-verification",
+        "/api/content/courses?slug=tbos-phase10b-cms-verification",
       );
       expect(publicPublished.status()).toBe(200);
       const unpublish = await page.request.patch(`/api/admin/content/courses/${item.id}`, {
