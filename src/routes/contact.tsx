@@ -12,10 +12,11 @@ export const Route = createFileRoute("/contact")({
     meta: buildMeta({
       title: "Contact Us | TechBuilt Open School International Online Academy",
       description:
-        "Get in touch with TechBuilt Open School. Ask about courses, specializations, fees, scholarships and online tutoring. We respond quickly via email and WhatsApp.",
+        "Get in touch with TechBuilt Open School. Ask about courses, specializations, fees, live batches, and online tutoring via email or WhatsApp.",
       keywords: ["contact online academy", "online tutor contact", "academy enquiry"],
+      path: "/contact",
     }),
-    links: [{ rel: "canonical", href: "/contact" }],
+    links: [{ rel: "canonical", href: `${site.url}/contact` }],
   }),
   component: ContactPage,
 });
@@ -44,7 +45,7 @@ function ContactPage() {
             <h2 className="text-2xl font-bold text-foreground">Get in touch</h2>
             <p className="mt-3 text-muted-foreground">
               Prefer to talk directly? Message us on WhatsApp for the fastest response, or send an
-              email and our team will reply within one working day.
+              email and our admissions team will respond as soon as they can.
             </p>
 
             <ul className="mt-8 space-y-4">
