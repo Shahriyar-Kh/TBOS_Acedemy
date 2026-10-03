@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { DemoForm } from "@/components/forms/DemoForm";
 import { buildMeta } from "@/lib/seo";
+import { site } from "@/data/site";
 
 type DemoSearch = {
   type?: string;
@@ -35,8 +36,9 @@ export const Route = createFileRoute("/free-demo")({
         "online tutoring trial",
         "techbuilt open school demo",
       ],
+      path: "/free-demo",
     }),
-    links: [{ rel: "canonical", href: "/free-demo" }],
+    links: [{ rel: "canonical", href: `${site.url}/free-demo` }],
   }),
   component: FreeDemoPage,
 });
