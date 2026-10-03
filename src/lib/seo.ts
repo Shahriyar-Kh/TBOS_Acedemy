@@ -13,10 +13,13 @@ type MetaInput = {
 export function buildMeta({
   title,
   description,
+  path,
   type = "website",
   image,
   keywords,
 }: MetaInput) {
+  const pageUrl = path ? new URL(path, site.url).toString() : undefined;
+  const imageUrl = image ? new URL(image, site.url).toString() : undefined;
   const meta: Array<Record<string, string>> = [
     { title },
     { name: "description", content: description },
@@ -24,16 +27,17 @@ export function buildMeta({
     { property: "og:description", content: description },
     { property: "og:type", content: type },
     { property: "og:site_name", content: site.fullName },
-    { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
+    ...(pageUrl ? [{ property: "og:url", content: pageUrl }] : []),
+    { name: "twitter:card", content: imageUrl ? "summary_large_image" : "summary" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
   ];
   if (keywords && keywords.length) {
     meta.push({ name: "keywords", content: keywords.join(", ") });
   }
-  if (image) {
-    meta.push({ property: "og:image", content: image });
-    meta.push({ name: "twitter:image", content: image });
+  if (imageUrl) {
+    meta.push({ property: "og:image", content: imageUrl });
+    meta.push({ name: "twitter:image", content: imageUrl });
   }
   return meta;
 }
