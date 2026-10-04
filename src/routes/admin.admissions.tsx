@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   History,
   Info,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,6 +90,7 @@ function AdminAdmissionsPage() {
   const [deliveryLogs, setDeliveryLogs] = useState<AdmissionsDeliveryLogRecord[]>([]);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Editable CRM form fields in detail drawer
   const [editStatus, setEditStatus] = useState<CrmStatus>("new");
@@ -211,6 +213,43 @@ function AdminAdmissionsPage() {
       toast.error("Network error while saving changes.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAdmission = async () => {
+    if (!selectedId || !detailData?.id) return;
+    if (!(admin?.role === "owner" || admin?.role === "admin")) {
+      toast.error("Only owner/admin roles can permanently delete admissions records.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Permanently delete ${detailData.student_name}'s record for "${detailData.selected_program_title}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/admissions/${selectedId}`, {
+        method: "DELETE",
+        headers: getAuthHeader(),
+      });
+      const json = await res.json();
+
+      if (json.ok) {
+        toast.success("Admissions record permanently deleted.");
+        setSelectedId(null);
+        setDetailData(null);
+        setActivities([]);
+        setDeliveryLogs([]);
+        await fetchAdmissions();
+      } else {
+        toast.error(json.error || "Failed to delete admissions record.");
+      }
+    } catch {
+      toast.error("Network error while deleting record.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -774,6 +813,24 @@ function AdminAdmissionsPage() {
                     <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
                     Mark Contacted
                   </Button>
+
+                  {(admin?.role === "owner" || admin?.role === "admin") && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteAdmission}
+                      disabled={isDeleting}
+                      className="h-8 text-xs gap-1 border-rose-200 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                      title="Permanently delete this admissions record"
+                    >
+                      {isDeleting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      Delete
+                    </Button>
+                  )}
 
                   {detailData.last_contacted_at && (
                     <span className="text-[11px] text-slate-400 ml-auto">
