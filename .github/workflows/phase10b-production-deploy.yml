@@ -27,6 +27,13 @@ jobs:
       VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       VITE_META_PIXEL_ID: ${{ vars.VITE_META_PIXEL_ID || secrets.VITE_META_PIXEL_ID }}
+      GOOGLE_SCRIPT_URL: ${{ secrets.GOOGLE_SCRIPT_URL }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
+      ADMISSIONS_NOTIFICATION_EMAIL: ${{ secrets.ADMISSIONS_NOTIFICATION_EMAIL }}
       TBOS_E2E_ALLOW_LIVE_FORMS: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && '1' || '0' }}
       TBOS_E2E_ADMIN_EMAIL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && secrets.TBOS_E2E_ADMIN_EMAIL || '' }}
       TBOS_E2E_ADMIN_PASSWORD: ${{ github.event_name == 'workflow_dispatch' && inputs.full_production_verification && secrets.TBOS_E2E_ADMIN_PASSWORD || '' }}
@@ -62,6 +69,19 @@ jobs:
             printf 'VITE_SUPABASE_URL=%s\n' "$VITE_SUPABASE_URL"
             printf 'VITE_SUPABASE_PUBLISHABLE_KEY=%s\n' "$VITE_SUPABASE_PUBLISHABLE_KEY"
           } > .env.phase10b-deploy
+
+          if [ -n "$GOOGLE_SCRIPT_URL" ]; then
+            printf 'GOOGLE_SCRIPT_URL=%s\n' "$GOOGLE_SCRIPT_URL" >> .env.phase10b-deploy
+          fi
+
+          if [ -n "$SMTP_USER" ] && [ -n "$SMTP_APP_PASSWORD" ]; then
+            [ -n "$SMTP_HOST" ] && printf 'SMTP_HOST=%s\n' "$SMTP_HOST" >> .env.phase10b-deploy
+            [ -n "$SMTP_PORT" ] && printf 'SMTP_PORT=%s\n' "$SMTP_PORT" >> .env.phase10b-deploy
+            [ -n "$SMTP_SECURE" ] && printf 'SMTP_SECURE=%s\n' "$SMTP_SECURE" >> .env.phase10b-deploy
+            printf 'SMTP_USER=%s\n' "$SMTP_USER" >> .env.phase10b-deploy
+            printf 'SMTP_APP_PASSWORD=%s\n' "$SMTP_APP_PASSWORD" >> .env.phase10b-deploy
+            [ -n "$ADMISSIONS_NOTIFICATION_EMAIL" ] && printf 'ADMISSIONS_NOTIFICATION_EMAIL=%s\n' "$ADMISSIONS_NOTIFICATION_EMAIL" >> .env.phase10b-deploy
+          fi
 
       - name: Deploy production Worker
         id: deploy

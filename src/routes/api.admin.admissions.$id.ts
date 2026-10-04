@@ -64,6 +64,67 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
         );
       },
 
+      DELETE: async ({ request, params }: { request: Request; params: { id: string } }) => {
+        // Destructive CRM action: only owner/admin roles may permanently delete records.
+        const auth = await verifyAdminRequest(request, ["owner", "admin"]);
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+            status: auth.status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const { client } = getSupabaseServerClient();
+        if (!client) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "Database client unavailable" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        const admissionId = params.id;
+
+        const { data: existing, error: findError } = await client
+          .from("admissions_requests")
+          .select("id, student_name, selected_program_title")
+          .eq("id", admissionId)
+          .single();
+
+        if (findError || !existing) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "Admissions record not found" }),
+            { status: 404, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // admissions_activity and admissions_delivery_log are removed by FK cascade.
+        const { error: deleteError } = await client
+          .from("admissions_requests")
+          .delete()
+          .eq("id", admissionId);
+
+        if (deleteError) {
+          console.error("Admissions delete error:", deleteError.message);
+          return new Response(
+            JSON.stringify({ ok: false, error: "Failed to delete admissions record" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        console.info("Admissions record permanently deleted", {
+          admissionId,
+          adminUserId: auth.admin.user.id,
+        });
+
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            deletedId: admissionId,
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+
       PATCH: async ({ request, params }: { request: Request; params: { id: string } }) => {
         // 1. Authorize admin
         const auth = await verifyAdminRequest(request);
