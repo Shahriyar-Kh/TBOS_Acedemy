@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,7 @@ function AdminDemosPage() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [meetingLink, setMeetingLink] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const fetchDemos = useCallback(async () => {
     setIsLoading(true);
@@ -118,6 +120,38 @@ function AdminDemosPage() {
       toast.error("Network error while saving schedule.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteDemo = async (demo: AdmissionsRequestRecord) => {
+    if (!demo.id) return;
+    if (!(admin?.role === "owner" || admin?.role === "admin")) {
+      toast.error("Only owner/admin roles can permanently delete demo records.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Permanently delete ${demo.student_name}'s demo request for "${demo.selected_program_title}"? This cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(demo.id);
+    try {
+      const res = await fetch(`/api/admin/admissions/${demo.id}`, {
+        method: "DELETE",
+        headers: getAuthHeader(),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        toast.success("Demo request permanently deleted.");
+        await fetchDemos();
+      } else {
+        toast.error(json.error || "Failed to delete demo request.");
+      }
+    } catch {
+      toast.error("Network error while deleting demo request.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -334,6 +368,23 @@ function AdminDemosPage() {
                     )}
 
                     <div className="flex items-center gap-1.5">
+                      {(admin?.role === "owner" || admin?.role === "admin") && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteDemo(demo)}
+                          disabled={deletingId === demo.id}
+                          className="h-8 text-xs text-rose-700 hover:bg-rose-50 px-2"
+                          title="Permanently delete this demo request"
+                        >
+                          {deletingId === demo.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+
                       {demo.status === "demo_scheduled" && (
                         <Button
                           variant="ghost"
