@@ -1,28 +1,29 @@
 import { useEffect } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
-  ArrowRight,
   CheckCircle2,
-  Clock,
-  Users,
-  Calendar,
+  Code2,
   Sparkles,
-  MessageCircle,
   Award,
   Layers,
+  ArrowRight,
+  MessageCircle,
 } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
-import { Icon } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LiveOfferCard } from "@/components/LiveOfferCard";
+import { LiveProgramHero } from "@/components/live/LiveProgramHero";
+import { LiveProgramFacts } from "@/components/live/LiveProgramFacts";
+import { LiveProgramRoadmap } from "@/components/live/LiveProgramRoadmap";
+import { LiveProgramExperience } from "@/components/live/LiveProgramExperience";
+import { LiveProgramFAQ } from "@/components/live/LiveProgramFAQ";
+import { LiveProgramMobileCTA } from "@/components/live/LiveProgramMobileCTA";
+import { LiveProgramCard } from "@/components/live/LiveProgramCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { getLiveOffer, activeLiveOffers } from "@/data/liveOffers";
+import { getLiveProgramVisual } from "@/data/liveProgramVisuals";
 import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
-import { buildMeta } from "@/lib/seo";
+import { buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
-import studentsLearning from "@/assets/students-learning.jpg";
 import { trackMetaViewContent } from "@/lib/marketing";
 
 export const Route = createFileRoute("/live-batches/$slug")({
@@ -38,10 +39,20 @@ export const Route = createFileRoute("/live-batches/$slug")({
   },
   head: ({ loaderData }) => {
     const offer = loaderData?.offer;
-    if (!offer) return { meta: buildMeta({ title: "Live Batch", description: "Program details." }) };
-    const title = offer.seoTitle || `${offer.title} | Live Group Online Batch | TechBuilt Open School`;
-    const feeStr = typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0");
-    const description = offer.seoDescription || `${offer.summary} Current offer: Rs ${feeStr}/${offer.billingPeriod}. Free Demo session available.`;
+    if (!offer) {
+      return { meta: buildMeta({ title: "Live Batch", description: "Program details." }) };
+    }
+    const visual = getLiveProgramVisual(offer.slug);
+    const title =
+      offer.seoTitle || `${offer.title} | Live Group Online Cohort | TechBuilt Open School`;
+    const feeStr =
+      typeof offer.offerFee === "number"
+        ? offer.offerFee.toLocaleString()
+        : (offer.offerFee ?? "0");
+    const description =
+      offer.seoDescription ||
+      `${offer.summary} Current offer: Rs ${feeStr}/${offer.billingPeriod}. Free Demo session available.`;
+
     return {
       meta: buildMeta({
         title,
@@ -49,15 +60,18 @@ export const Route = createFileRoute("/live-batches/$slug")({
         keywords: offer.keywords,
         type: "article",
         path: `/live-batches/${offer.slug}`,
-        image: studentsLearning,
+        image: visual.image,
       }),
       links: [{ rel: "canonical", href: `${site.url}/live-batches/${offer.slug}` }],
+      scripts: [courseJsonLd(offer.title, offer.summary)],
     };
   },
   notFoundComponent: () => (
     <div className="mx-auto max-w-xl container-px py-28 text-center">
       <h1 className="text-3xl font-bold text-foreground">Program not found</h1>
-      <p className="mt-3 text-muted-foreground">The live group program you're looking for doesn't exist.</p>
+      <p className="mt-3 text-muted-foreground">
+        The live group program you're looking for doesn't exist.
+      </p>
       <Button asChild className="mt-6">
         <Link to="/live-batches">Browse all live batches</Link>
       </Button>
@@ -66,8 +80,9 @@ export const Route = createFileRoute("/live-batches/$slug")({
   component: LiveOfferDetail,
 });
 
-function LiveOfferDetail() {
+export function LiveOfferDetail() {
   const { offer } = Route.useLoaderData();
+  const visual = getLiveProgramVisual(offer.slug);
   const relatedOffers = activeLiveOffers.filter((o) => o.slug !== offer.slug);
 
   useEffect(() => {
@@ -79,235 +94,100 @@ function LiveOfferDetail() {
     });
   }, [offer.currency, offer.offerFee, offer.slug, offer.title]);
 
-  const whatsappInquiryText = `Hello TechBuilt Open School, I would like information about the ${offer.title} live group program and Free Demo.`;
+  const regularFeeStr =
+    typeof offer.regularFee === "number"
+      ? offer.regularFee.toLocaleString()
+      : (offer.regularFee ?? "0");
+  const offerFeeStr =
+    typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0");
+
+  const whatsappInquiryText = visual.whatsappMessage;
 
   return (
     <>
-      <PageHeader
-        eyebrow="Active Live Group Program"
-        title={offer.title}
-        description={offer.tagline}
-        breadcrumb={[
-          { label: "Live Batches", to: "/live-batches" },
-          { label: offer.shortTitle },
-        ]}
-      />
+      {/* 1. Premium Conversion Hero with Single Semantic H1 */}
+      <LiveProgramHero offer={offer} />
 
+      {/* 2. Quick Fact Strip */}
+      <LiveProgramFacts offer={offer} />
+
+      {/* 3. Program Highlights & Capstone Project Direction */}
       <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-[1.6fr_1fr]">
-          <div>
-            {/* Header info */}
-            <Reveal>
-              <div className="flex items-center gap-4">
-                <span className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-hero text-primary-foreground shadow-soft">
-                  <Icon name={offer.icon} className="h-8 w-8" />
-                </span>
-                <div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="default">Active Group Batch</Badge>
-                    <Badge variant="secondary">{offer.ageOrEducationLevel}</Badge>
-                    <Badge variant="outline">{offer.duration}</Badge>
-                  </div>
-                  <h2 className="mt-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                    Program Overview
-                  </h2>
+        <div className="grid gap-10 lg:grid-cols-2">
+          {/* Left: Program Highlights */}
+          <Reveal>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-soft h-full flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Code2 className="h-4 w-4" />
+                  </span>
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                    KEY CURRICULUM HIGHLIGHTS
+                  </span>
                 </div>
+
+                <h2 className="mt-3 font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  {visual.highlightsTitle}
+                </h2>
+
+                <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  {offer.description}
+                </p>
+
+                <ul className="mt-6 space-y-3">
+                  {offer.highlights.map((h) => (
+                    <li
+                      key={h}
+                      className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90"
+                    >
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                      <span>{h}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            </div>
+          </Reveal>
 
-              <p className="mt-6 text-base leading-relaxed text-muted-foreground">
-                {offer.description}
-              </p>
-            </Reveal>
+          {/* Right: Capstone Direction & Real Software Building */}
+          <Reveal delay={80}>
+            <div className="rounded-2xl border border-border bg-gradient-soft p-6 sm:p-8 shadow-soft h-full flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold/15 text-gold-foreground">
+                    <Award className="h-4 w-4" />
+                  </span>
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-gold-foreground">
+                    MILESTONE CAPSTONE
+                  </span>
+                </div>
 
-            {/* Key Highlights */}
-            <Reveal className="mt-10">
-              <h3 className="text-xl font-bold text-foreground">Program Highlights</h3>
-              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
-                {offer.highlights.map((h) => (
-                  <li
-                    key={h}
-                    className="flex items-start gap-2.5 rounded-xl border border-border bg-card p-4 text-sm text-foreground/90 shadow-soft"
-                  >
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
-                    <span>{h}</span>
-                  </li>
-                ))}
-              </ul>
-            </Reveal>
+                <h3 className="mt-3 font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  {visual.capstoneProject.title}
+                </h3>
 
-            {/* Structured Roadmap / Phases */}
-            <Reveal className="mt-12">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">Syllabus & Roadmap</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Structured progressive phases designed for deep mastery.
+                <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  {visual.capstoneProject.description}
+                </p>
+
+                <div className="mt-6 rounded-xl border border-primary/20 bg-background/80 p-4">
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-primary">
+                    Verified Outcome
+                  </span>
+                  <p className="mt-1 text-xs sm:text-sm font-medium text-foreground">
+                    {visual.capstoneProject.milestone}
                   </p>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
-                  <Layers className="h-3.5 w-3.5" /> {offer.roadmap.length} Phases
+              </div>
+
+              {/* Free Demo Trial Reminder */}
+              <div className="mt-6 pt-5 border-t border-border/60 flex items-center justify-between gap-3">
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-4 w-4 text-gold-foreground shrink-0" />
+                  Free trial session before enrollment
                 </span>
-              </div>
-
-              <div className="mt-6 space-y-4">
-                {offer.roadmap.map((phase, idx) => (
-                  <div
-                    key={phase.title}
-                    className="rounded-2xl border border-border bg-card p-6 shadow-soft transition-colors hover:border-primary/40"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-3">
-                      <div className="flex items-center gap-3">
-                        <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-xs font-bold text-primary">
-                          {idx + 1}
-                        </span>
-                        <h4 className="text-base font-bold text-foreground">
-                          {phase.phase}: {phase.title}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-                      {phase.topics.map((topic) => (
-                        <li key={topic} className="flex items-start gap-2 text-xs text-muted-foreground">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                          <span>{topic}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    {phase.outcome && (
-                      <div className="mt-4 rounded-xl bg-muted/50 p-3 text-xs text-foreground/80 flex items-start gap-2">
-                        <Award className="h-4 w-4 shrink-0 text-gold-foreground mt-0.5" />
-                        <span><strong>Milestone Outcome:</strong> {phase.outcome}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-
-            {/* Who is this for & Prerequisites */}
-            <div className="mt-12 grid gap-6 sm:grid-cols-2">
-              <Reveal>
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-soft h-full">
-                  <h3 className="text-lg font-bold text-foreground">Who this is for</h3>
-                  <ul className="mt-4 space-y-2.5">
-                    {offer.idealFor.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Reveal>
-
-              <Reveal delay={80}>
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-soft h-full">
-                  <h3 className="text-lg font-bold text-foreground">Prerequisites</h3>
-                  <ul className="mt-4 space-y-2.5">
-                    {offer.prerequisites.map((p) => (
-                      <li key={p} className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
-                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                        <span>{p}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Reveal>
-            </div>
-
-            {/* Free Demo Trial Disclosure */}
-            <Reveal className="mt-10">
-              <div className="rounded-2xl border border-gold/40 bg-gold/5 p-6">
-                <div className="flex items-start gap-3">
-                  <Sparkles className="h-5 w-5 text-gold-foreground shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-sm font-bold text-foreground">
-                      Free Demo Trial Session Available
-                    </h4>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      We offer a complimentary trial demo class so students and parents can experience our live interactive teaching environment, mentor style, and curriculum firsthand before enrolling. The full program is a structured paid monthly course.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-
-          {/* Sticky Enrollment Sidebar */}
-          <Reveal delay={120} className="lg:sticky lg:top-24 lg:self-start">
-            <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
-              <div className="flex items-center justify-between gap-2">
-                <Badge variant="default" className="text-xs">
-                  Active Live Batch
-                </Badge>
-                <span className="inline-flex items-center gap-1 rounded-full bg-gold/15 px-2.5 py-0.5 text-xs font-semibold text-gold-foreground">
-                  <Sparkles className="h-3 w-3" /> Free Demo
-                </span>
-              </div>
-
-              {/* Pricing Callout */}
-              <div className="mt-5 rounded-xl border border-border bg-background p-4">
-                <p className="text-xs text-muted-foreground">Current Group Cohort Fee</p>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="text-xs text-muted-foreground line-through">
-                    Rs {typeof offer.regularFee === "number" ? offer.regularFee.toLocaleString() : (offer.regularFee ?? "0")}/{offer.billingPeriod}
-                  </span>
-                  <span className="text-2xl font-extrabold text-foreground">
-                    Rs {typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0")}
-                  </span>
-                  <span className="text-xs text-muted-foreground">/{offer.billingPeriod}</span>
-                </div>
-                <p className="mt-2 text-[11px] leading-tight text-gold-foreground font-medium">
-                  {offer.paidNote}
-                </p>
-              </div>
-
-              <h3 className="mt-5 text-lg font-bold text-foreground">Enrol in {offer.title}</h3>
-
-              <ul className="mt-4 space-y-3 text-xs text-muted-foreground">
-                <li className="flex items-center gap-2.5">
-                  <Clock className="h-4 w-4 text-primary shrink-0" />
-                  <span><strong>Duration:</strong> {offer.duration}</span>
-                </li>
-                {offer.classesPerWeek && (
-                  <li className="flex items-center gap-2.5">
-                    <Calendar className="h-4 w-4 text-primary shrink-0" />
-                    <span><strong>Frequency:</strong> {offer.classesPerWeek}</span>
-                  </li>
-                )}
-                {offer.sessionDuration && (
-                  <li className="flex items-center gap-2.5">
-                    <Clock className="h-4 w-4 text-primary shrink-0" />
-                    <span><strong>Session:</strong> {offer.sessionDuration}</span>
-                  </li>
-                )}
-                <li className="flex items-center gap-2.5">
-                  <Users className="h-4 w-4 text-primary shrink-0" />
-                  <span><strong>Format:</strong> {offer.format}</span>
-                </li>
-              </ul>
-
-              <div className="mt-4 rounded-xl bg-muted/60 p-3 text-[11px] text-muted-foreground">
-                <p><strong>Next Schedule:</strong> {offer.scheduleNote}</p>
-              </div>
-
-              {/* CTAs */}
-              <div className="mt-6 flex flex-col gap-2.5">
-                <Button asChild variant="hero" size="lg" className="w-full">
-                  <Link
-                    to="/apply"
-                    search={{
-                      type: "Live Group Offer",
-                      selected: offer.title,
-                    }}
-                  >
-                    Apply for this Batch <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-
-                <Button asChild variant="outline" size="lg" className="w-full">
+                <Button asChild variant="outline" size="sm">
                   <Link
                     to="/free-demo"
                     search={{
@@ -315,39 +195,190 @@ function LiveOfferDetail() {
                       selected: offer.title,
                     }}
                   >
-                    <Sparkles className="h-4 w-4 text-gold-foreground" /> Request Free Demo Session
+                    Request Demo
                   </Link>
-                </Button>
-
-                <Button asChild variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground">
-                  <a href={whatsappLink(whatsappInquiryText)} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-3.5 w-3.5" /> Have questions? Ask on WhatsApp
-                  </a>
                 </Button>
               </div>
             </div>
           </Reveal>
         </div>
+
+        {/* 4. Full Structured Roadmap */}
+        <LiveProgramRoadmap offer={offer} />
+
+        {/* 5. Audience & Prerequisites */}
+        <div className="grid gap-8 sm:grid-cols-2 pt-4">
+          <Reveal>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-soft h-full">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                IDEAL CANDIDATES
+              </span>
+              <h3 className="mt-1 font-display text-xl font-bold text-foreground">
+                Who this Cohort is For
+              </h3>
+              <ul className="mt-5 space-y-3">
+                {offer.idealFor.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed text-muted-foreground"
+                  >
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+
+          <Reveal delay={80}>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-soft h-full">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                STARTING REQUIREMENTS
+              </span>
+              <h3 className="mt-1 font-display text-xl font-bold text-foreground">
+                Prerequisites & Preparation
+              </h3>
+              <ul className="mt-5 space-y-3">
+                {offer.prerequisites.map((p) => (
+                  <li
+                    key={p}
+                    className="flex items-start gap-2.5 text-xs sm:text-sm leading-relaxed text-muted-foreground"
+                  >
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+                    <span>{p}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* 6. Learning Experience Section */}
+        <LiveProgramExperience />
+
+        {/* 7. Transparent Pricing & Free Demo Breakdown */}
+        <section className="py-12">
+          <Reveal>
+            <div className="rounded-2xl border border-border bg-card p-6 sm:p-10 shadow-card">
+              <div className="grid gap-8 lg:grid-cols-2 lg:items-center">
+                <div>
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                    FEE TRANSPARENCY
+                  </span>
+                  <h3 className="mt-1 font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                    Monthly Group Cohort Tuition
+                  </h3>
+                  <p className="mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                    The program fee shown is the current monthly group cohort fee. Before deciding
+                    on paid enrollment, we invite students and parents to attend one complimentary
+                    trial session.
+                  </p>
+
+                  <div className="mt-6 space-y-2.5 text-xs text-foreground/80">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                      <span>One trial/demo session included before enrollment</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                      <span>Paid monthly at the current group cohort rate</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                      <span>Batch schedule confirmed directly with admissions</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-muted/30 p-6 text-center sm:p-8">
+                  <span className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Current Group Offer
+                  </span>
+                  <div className="mt-2 flex items-baseline justify-center gap-2">
+                    <span className="text-sm text-muted-foreground line-through">
+                      Rs {regularFeeStr}/{offer.billingPeriod}
+                    </span>
+                    <span className="font-display text-3xl font-extrabold text-foreground sm:text-4xl">
+                      Rs {offerFeeStr}
+                    </span>
+                    <span className="text-sm text-muted-foreground">/{offer.billingPeriod}</span>
+                  </div>
+                  <p className="mt-2 text-xs font-medium text-gold-foreground">{offer.paidNote}</p>
+
+                  <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                    <Button asChild variant="hero" size="lg" className="flex-1 shadow-gold">
+                      <Link
+                        to="/apply"
+                        search={{
+                          type: "Live Group Offer",
+                          selected: offer.title,
+                        }}
+                      >
+                        Start Enrollment <ArrowRight className="h-4 w-4 ml-1.5" />
+                      </Link>
+                    </Button>
+
+                    <Button asChild variant="outline" size="lg" className="flex-1">
+                      <Link
+                        to="/free-demo"
+                        search={{
+                          type: "Live Group Offer",
+                          selected: offer.title,
+                        }}
+                      >
+                        <Sparkles className="h-4 w-4 mr-1.5 text-gold-foreground" /> Request Demo
+                      </Link>
+                    </Button>
+                  </div>
+
+                  <a
+                    href={whatsappLink(whatsappInquiryText)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 inline-flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 text-success" />
+                    Ask questions on WhatsApp with Admissions
+                  </a>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </section>
+
+        {/* 8. Program FAQs */}
+        <LiveProgramFAQ offer={offer} />
       </section>
 
-      {/* Other Active Batches */}
+      {/* 9. Related Live Programs */}
       {relatedOffers.length > 0 && (
-        <section className="bg-muted/50">
+        <section className="bg-muted/40 border-t border-border/60">
           <div className="mx-auto max-w-7xl container-px py-16 sm:py-20">
-            <h2 className="text-2xl font-bold text-foreground">Other Active Live Batches</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Explore our other scheduled group programs currently open for registration.
-            </p>
-            <div className="mt-8 grid gap-6 sm:grid-cols-2">
+            <div className="mb-8">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+                OTHER ACTIVE COHORTS
+              </span>
+              <h2 className="mt-1 font-display text-2xl font-bold text-foreground sm:text-3xl">
+                Explore Other Live Programs
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Scheduled group classes currently accepting students.
+              </p>
+            </div>
+            <div className="grid gap-8 md:grid-cols-2">
               {relatedOffers.map((o) => (
-                <LiveOfferCard key={o.slug} offer={o} />
+                <LiveProgramCard key={o.slug} offer={o} />
               ))}
             </div>
           </div>
         </section>
       )}
 
+      {/* 10. Global CTA Section */}
       <CtaSection />
+
+      {/* 11. Mobile Sticky Conversion Bar */}
+      <LiveProgramMobileCTA offer={offer} />
     </>
   );
 }
