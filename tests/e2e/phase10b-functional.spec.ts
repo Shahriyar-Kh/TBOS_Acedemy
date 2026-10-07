@@ -45,7 +45,7 @@ test.describe("TBOS Phase10B functional coverage", () => {
   test("homepage loads and exposes the key conversion CTAs", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator("body")).not.toContainText("This page didn't load");
-    await expect(page.getByRole("heading", { name: /techbuilt open school/i })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/build real technical skills/i);
     await expect(page.getByRole("link", { name: /apply now/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /courses/i }).first()).toBeVisible();
   });
