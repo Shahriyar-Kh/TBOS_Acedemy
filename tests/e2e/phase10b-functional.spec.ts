@@ -207,6 +207,8 @@ test.describe("TBOS Phase10B functional coverage", () => {
   test("mobile navigation opens and maintains a stable route flow", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    // Production can reach DOMContentLoaded before React hydration has attached the menu click handler.
+    await page.waitForTimeout(750);
     await expect(page.locator("body")).not.toContainText("This page didn't load");
 
     const initialOverflow = await page.evaluate(

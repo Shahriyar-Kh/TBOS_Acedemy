@@ -83,6 +83,8 @@ test.describe("TBOS Phase10B closure coverage", () => {
   test("mobile navigation supports Courses, Apply, Free Demo, and WhatsApp", async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    // Production can reach DOMContentLoaded before React hydration has attached the menu click handler.
+    await page.waitForTimeout(750);
     const menuTrigger = page
       .locator('button[aria-label="Toggle menu"], button[aria-label="Open menu"]')
       .first();
