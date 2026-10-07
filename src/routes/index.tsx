@@ -17,16 +17,18 @@ import { site } from "@/data/site";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: buildMeta({
-      title: `${site.fullName} | Programming Courses & Academic Tutoring`,
-      description: site.description,
+      title: "TechBuilt Open School | Live Python, Web, Data & AI Programs",
+      description:
+        "Live, instructor-led online programs in Python, web development, data analysis and AI/ML foundations — practical project-driven roadmaps for learners across Pakistan and worldwide.",
       path: "/",
-      image: "/images/home/hero-tech-learning.webp",
+      image: "/images/og/tbos-technical-academy-1200x630.jpg",
       keywords: [
         "international online academy",
-        "online tutor service pakistan",
-        "python course online",
+        "live python classes online",
         "web development course online",
-        "maths physics tutor online",
+        "data analysis python course",
+        "ai ml foundations course",
+        "online coding academy pakistan",
       ],
     }),
     links: [{ rel: "canonical", href: `${site.url}/` }],

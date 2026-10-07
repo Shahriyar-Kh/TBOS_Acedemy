@@ -213,7 +213,7 @@ function HeroVisual() {
       </div>
 
       {/* Live class indicator */}
-      <Layer className="left-3 top-3 sm:-left-4 sm:top-8" depth={1.2}>
+      <Layer className="left-3 top-3 sm:left-4 sm:top-5 lg:-left-3 lg:top-7 xl:-left-6" depth={1.2}>
         <div className="animate-float-slow">
           <div className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold text-primary-foreground shadow-soft">
             <span className="relative grid h-2.5 w-2.5 place-items-center">
@@ -226,7 +226,10 @@ function HeroVisual() {
       </Layer>
 
       {/* Focus badges */}
-      <Layer className="right-3 top-16 sm:-right-5 sm:top-24" depth={1.6}>
+      <Layer
+        className="right-3 top-14 sm:right-4 sm:top-16 lg:-right-3 lg:top-20 xl:-right-5"
+        depth={1.6}
+      >
         <ul className="flex flex-col items-end gap-2.5">
           {[
             { label: "Python", icon: Terminal, delay: "0s" },
@@ -245,7 +248,7 @@ function HeroVisual() {
 
       {/* Terminal panel (decorative) */}
       <Layer
-        className="inset-x-3 bottom-4 sm:-left-8 sm:right-auto sm:w-[19.5rem] lg:-left-10"
+        className="inset-x-3 bottom-3 sm:inset-x-auto sm:left-4 sm:bottom-4 sm:w-[18.5rem] lg:-left-4 lg:bottom-4 lg:w-[19rem] xl:-left-7"
         depth={0.8}
       >
         <div
@@ -274,7 +277,10 @@ function HeroVisual() {
       </Layer>
 
       {/* Project-based learning card */}
-      <Layer className="-bottom-5 right-4 hidden sm:block lg:-right-6" depth={1.4}>
+      <Layer
+        className="hidden md:block md:bottom-4 md:right-4 lg:-bottom-3 lg:-right-3 xl:-bottom-5 xl:-right-6"
+        depth={1.4}
+      >
         <div className="animate-float-slow [animation-delay:-4s]">
           <div className="glass-light flex items-center gap-3 rounded-2xl p-3.5 pr-5 shadow-card">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-hero text-primary-foreground">
