@@ -14,14 +14,14 @@ import { Icon } from "@/components/Icon";
 import { Button } from "@/components/ui/button";
 import { HomeImage } from "@/components/home/HomeImage";
 import { SectionIntro } from "@/components/home/HomeSections";
-import { homeImages, imageForLiveOffer } from "@/data/homepage";
+import { getLiveOfferVisual } from "@/data/homepage";
 import { activeLiveOffers, type LiveOffer } from "@/data/liveOffers";
 
 // Deterministic across server and browser (avoids hydration mismatches from locale formatting).
 const money = (value: number) => `Rs ${value.toLocaleString("en-US")}`;
 
 function ProgramCard({ offer }: { offer: LiveOffer }) {
-  const image = homeImages[imageForLiveOffer(offer.slug)];
+  const visual = getLiveOfferVisual(offer.slug);
   const schedule = [offer.classesPerWeek, offer.sessionDuration].filter(Boolean).join(" · ");
 
   const specs: { icon: typeof Clock; label: string; value: string }[] = [
@@ -32,33 +32,33 @@ function ProgramCard({ offer }: { offer: LiveOffer }) {
   ];
 
   return (
-    <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border border-primary-foreground/10 bg-card shadow-card transition-all duration-500 hover:-translate-y-1.5 hover:border-gold/60">
+    <article className="group relative flex h-full min-w-0 flex-col overflow-hidden rounded-3xl border border-primary-foreground/10 bg-card shadow-card transition-all duration-500 hover:-translate-y-1.5 hover:border-cyan/50 hover:shadow-card">
       {/* Visual header */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-gradient-hero">
+      <div className="relative aspect-[16/10] overflow-hidden bg-gradient-hero">
         <HomeImage
-          src={image.src}
-          alt={image.alt}
-          width={image.width}
-          height={image.height}
+          src={visual.src}
+          alt={visual.alt}
+          width={visual.width}
+          height={visual.height}
           sizes="(min-width: 1024px) 380px, (min-width: 768px) 46vw, 92vw"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className={`h-full w-full object-cover ${visual.objectPosition ?? "object-center"} transition-transform duration-700 group-hover:scale-105`}
           fallback={<Icon name={offer.icon} className="h-14 w-14 text-cyan/60" />}
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/25 to-transparent"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-deep/95 via-navy-deep/30 to-transparent"
         />
         <div className="absolute inset-x-4 top-4 flex items-start justify-between gap-2">
-          <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground">
+          <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary-foreground shadow-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden="true" />
             Live Group Batch
           </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-gold px-2.5 py-1 text-[11px] font-bold text-gold-foreground">
+          <span className="inline-flex items-center gap-1 rounded-full bg-gold px-2.5 py-1 text-[11px] font-bold text-gold-foreground shadow-sm">
             <Sparkles className="h-3 w-3" aria-hidden="true" /> Free Demo
           </span>
         </div>
-        <div className="absolute inset-x-4 bottom-4 flex items-center gap-3">
-          <span className="glass grid h-11 w-11 shrink-0 place-items-center rounded-xl text-cyan">
+        <div className="absolute inset-x-4 bottom-4 flex items-center justify-between gap-3">
+          <span className="glass grid h-11 w-11 shrink-0 place-items-center rounded-xl text-cyan transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3">
             <Icon name={offer.icon} className="h-5 w-5" />
           </span>
           <span className="glass inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold text-primary-foreground">
