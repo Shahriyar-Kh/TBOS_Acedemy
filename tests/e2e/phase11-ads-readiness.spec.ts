@@ -68,6 +68,7 @@ test.describe("Phase 11 Meta Ads launch readiness", () => {
       "/contact?utm_source=facebook&utm_medium=paid_social&utm_campaign=python_launch&utm_content=creative_a",
       { waitUntil: "domcontentloaded" },
     );
+    await page.waitForTimeout(1000);
 
     await page.locator("#c-name").fill("TBOS Attribution Check");
     await page.locator("#c-email").fill("tbos-attribution@example.com");

@@ -1,16 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Clock, Sparkles, Users, BookOpen } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { ArrowRight, BookOpen, Clock, Sparkles, Users } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { LiveOfferCard } from "@/components/LiveOfferCard";
-import { HowItWorks } from "@/components/sections/HowItWorks";
+import { LiveProgramsHero } from "@/components/live/LiveProgramsHero";
+import { LiveProgramCard } from "@/components/live/LiveProgramCard";
+import { LiveProgramComparison } from "@/components/live/LiveProgramComparison";
+import { LiveProgramExperience } from "@/components/live/LiveProgramExperience";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { activeLiveOffers } from "@/data/liveOffers";
 import { getCmsLiveOffersFn } from "@/lib/cmsFunctions";
 import { buildMeta } from "@/lib/seo";
 import { site } from "@/data/site";
-import studentsLearning from "@/assets/students-learning.jpg";
 
 export const Route = createFileRoute("/live-batches/")({
   loader: async () => {
@@ -26,9 +26,9 @@ export const Route = createFileRoute("/live-batches/")({
     meta: buildMeta({
       title: "Active Live Group Classes & Batches | TechBuilt Open School",
       description:
-        "Explore active live group coding batches at TechBuilt Open School. Instructor-led online classes in Python, Data Analysis, and Young Developers with Free Demo sessions.",
+        "Explore active live group coding batches at TechBuilt Open School. Instructor-led online cohorts in Python, Data Analysis & AI, and Young Developers with Free Demo sessions.",
       path: "/live-batches",
-      image: studentsLearning,
+      image: "/images/home/live-100-days-python.webp",
       keywords: [
         "live online classes",
         "Python live course",
@@ -46,19 +46,16 @@ export const Route = createFileRoute("/live-batches/")({
 export function LiveBatchesPage() {
   const { offers: loadedOffers } = Route.useLoaderData();
   const allOffers = loadedOffers && loadedOffers.length > 0 ? loadedOffers : activeLiveOffers;
+
   return (
     <>
-      <PageHeader
-        eyebrow="Instructor-Led Cohorts"
-        title="Active Live Group Programs"
-        description="Join scheduled live online cohorts with real-time screen sharing, structured milestones, hands-on code reviews, and dedicated mentor guidance."
-        breadcrumb={[{ label: "Live Batches" }]}
-      />
+      {/* Premium Hero with Single Semantic H1 */}
+      <LiveProgramsHero />
 
-      {/* Explanatory Banner: Group Cohorts vs 1-on-1 */}
+      {/* Program Type Distinction: Group Cohorts vs 1-on-1 Mentoring */}
       <section className="mx-auto max-w-7xl container-px pt-12 pb-4">
         <Reveal>
-          <div className="rounded-2xl border border-border bg-gradient-soft p-6 sm:p-8">
+          <div className="rounded-2xl border border-border bg-gradient-soft p-6 sm:p-8 shadow-soft">
             <div className="grid gap-6 md:grid-cols-3">
               <div className="flex items-start gap-3.5">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
@@ -67,7 +64,8 @@ export function LiveBatchesPage() {
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Interactive Cohorts</h3>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Learn in collaborative groups with live discussions, guided exercises, and peer energy.
+                    Learn in collaborative groups with live discussions, guided exercises, and
+                    shared accountability.
                   </p>
                 </div>
               </div>
@@ -77,9 +75,9 @@ export function LiveBatchesPage() {
                   <Sparkles className="h-5 w-5" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Free Demo Session</h3>
+                  <h3 className="text-sm font-bold text-foreground">Free Demo Trial</h3>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Attend a live trial session before committing to monthly paid enrollment.
+                    Attend one live trial session before committing to monthly paid enrollment.
                   </p>
                 </div>
               </div>
@@ -89,9 +87,10 @@ export function LiveBatchesPage() {
                   <Clock className="h-5 w-5" />
                 </span>
                 <div>
-                  <h3 className="text-sm font-bold text-foreground">Next Scheduled Batches</h3>
+                  <h3 className="text-sm font-bold text-foreground">Transparent Schedules</h3>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Exact times arranged with admissions to suit student schedules and time zones.
+                    Timetables arranged directly with admissions to match student time zones and
+                    commitments.
                   </p>
                 </div>
               </div>
@@ -100,55 +99,69 @@ export function LiveBatchesPage() {
         </Reveal>
       </section>
 
-      {/* Active Live Offers Grid */}
+      {/* 3 Active Live Programs Grid */}
       <section className="mx-auto max-w-7xl container-px py-12 sm:py-16">
-        <div className="mb-8 flex items-end justify-between gap-4">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            <span className="font-mono text-xs font-semibold uppercase tracking-wider text-primary">
+              CURRENTLY OPEN FOR ENROLLMENT
+            </span>
+            <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Currently Promoted Live Batches
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              These are our currently active group programs. Every program includes a Free Demo trial class.
+              These 3 programs are currently running as active group cohorts. Each includes a
+              complimentary trial class.
             </p>
           </div>
-          <span className="hidden sm:inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
-            {allOffers.length} Active Programs
+          <span className="self-start sm:self-auto inline-flex items-center rounded-full bg-accent px-3.5 py-1 text-xs font-semibold text-primary">
+            {allOffers.length} Active Cohorts
           </span>
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {allOffers.map((offer) => (
             <Reveal key={offer.slug} className="min-w-0">
-              <LiveOfferCard offer={offer} />
+              <LiveProgramCard offer={offer} />
             </Reveal>
           ))}
         </div>
       </section>
 
+      {/* Honest Side-by-Side Comparison */}
+      <LiveProgramComparison offers={allOffers} />
+
+      {/* Learning Experience Pillars */}
+      <div className="mx-auto max-w-7xl container-px">
+        <LiveProgramExperience />
+      </div>
+
       {/* Catalog Distinction Callout */}
-      <section className="mx-auto max-w-7xl container-px py-8">
+      <section className="mx-auto max-w-7xl container-px py-12">
         <Reveal>
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-soft">
             <div className="max-w-2xl">
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-                <BookOpen className="h-4 w-4" /> 1-on-1 Learning Flexibility
+                <BookOpen className="h-4 w-4" /> 1-on-1 Private Learning Flexibility
               </span>
               <h3 className="mt-2 text-xl font-bold text-foreground">
                 Looking for other programming topics or academic subjects?
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Only the programs above are running as active group batches. However, our full catalog of 32 technical courses and academic tutoring subjects are always available for private, one-to-one mentoring at flexible times.
+                Only the 3 programs above are running as active group cohorts. However, our complete
+                catalog of 32 technical courses and academic tutoring subjects are always available
+                for private, one-to-one mentoring at flexible hours.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 shrink-0">
               <Button asChild variant="default" size="lg">
                 <Link to="/courses">
-                  Browse 32 Courses <ArrowRight className="h-4 w-4" />
+                  Browse 32 Courses <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link to="/tutoring">
-                  Academic Tutoring
+                  Academic Tutoring <ArrowRight className="h-4 w-4 ml-1.5" />
                 </Link>
               </Button>
             </div>
@@ -156,7 +169,6 @@ export function LiveBatchesPage() {
         </Reveal>
       </section>
 
-      <HowItWorks />
       <CtaSection />
     </>
   );
