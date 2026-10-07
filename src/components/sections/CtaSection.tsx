@@ -12,7 +12,7 @@ export function CtaSection({
   description?: string;
 }) {
   return (
-    <section className="mx-auto max-w-7xl container-px py-16 sm:py-20">
+    <section className="mx-auto max-w-7xl container-px py-16 sm:py-20 overflow-hidden">
       <Reveal className="relative overflow-hidden rounded-3xl bg-gradient-hero px-6 py-14 text-center shadow-card sm:px-12 sm:py-20">
         <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 -left-16 h-64 w-64 rounded-full bg-gold/10 blur-3xl" />

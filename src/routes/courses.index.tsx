@@ -1,16 +1,15 @@
 import { useState, useMemo } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Search, X, Sparkles } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
+import { ArrowRight, BookOpen, Search, Sparkles } from "lucide-react";
+import { CatalogHero } from "@/components/catalog/CatalogHero";
+import { CatalogFilters } from "@/components/catalog/CatalogFilters";
+import { CourseCatalogCard } from "@/components/catalog/CourseCatalogCard";
 import { Reveal } from "@/components/Reveal";
-import { CourseCard } from "@/components/CourseCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { courses, type CourseCategory } from "@/data/courses";
-import { buildMeta } from "@/lib/seo";
-
 import { getCmsCoursesFn } from "@/lib/cmsFunctions";
+import { buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/courses/")({
   loader: async () => {
@@ -26,7 +25,7 @@ export const Route = createFileRoute("/courses/")({
     meta: buildMeta({
       title: "Programming & Technology Courses Catalog | TechBuilt Open School",
       description:
-        "Explore 30+ live instructor-led technical courses in Web Development, Python, C++, Java, Databases, and AI/ML. One-to-one and small group batches available.",
+        "Explore 32 live instructor-led technical courses in Web Development, Python, C++, Java, Databases, and AI/ML foundations. 1-on-1 instruction and small group cohorts.",
       keywords: [
         "programming courses catalog",
         "python course online",
@@ -34,21 +33,13 @@ export const Route = createFileRoute("/courses/")({
         "database courses sql",
         "data science courses",
         "ai ml courses",
+        "computer science courses",
       ],
     }),
     links: [{ rel: "canonical", href: "/courses" }],
   }),
   component: CoursesPage,
 });
-
-const CATEGORIES: Array<"All" | CourseCategory> = [
-  "All",
-  "Web Development",
-  "Programming",
-  "Computer Science",
-  "Database",
-  "Data & AI",
-];
 
 function CoursesPage() {
   const { courses: loadedCourses } = Route.useLoaderData();
@@ -79,94 +70,52 @@ function CoursesPage() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Technology Catalog"
-        title="Programming & Technology Courses"
-        description="Comprehensive, instructor-led technical courses designed around practical projects, clean architecture, and modern industry tools."
+      {/* A1. Premium Catalog Hero */}
+      <CatalogHero
+        eyebrow="TECHNICAL COURSE LIBRARY"
+        title="Build Skills One Technology at a Time"
+        description="Instructor-led technical courses across programming, web development, databases, computer science, data analytics and AI foundations."
         breadcrumb={[{ label: "Courses" }]}
+        chips={[
+          `${allCourses.length} technical courses`,
+          "Live online",
+          "1-on-1 available",
+          "Project-driven",
+        ]}
+      />
+
+      {/* A2. Anchored / Sticky Filter Bar */}
+      <CatalogFilters
+        search={search}
+        onSearchChange={setSearch}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        totalCount={allCourses.length}
+        filteredCount={filteredCourses.length}
+        onClearFilters={clearFilters}
       />
 
       <section className="mx-auto max-w-7xl container-px py-12 sm:py-16">
-        {/* Controls: Search and Category Pills */}
-        <div className="space-y-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-md flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search courses (e.g. Python, React, SQL, DSA)..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-9"
-              />
-              {search && (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Clear search"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="text-sm font-medium text-muted-foreground">
-              Showing <span className="font-bold text-foreground">{filteredCourses.length}</span>{" "}
-              {filteredCourses.length === 1 ? "course" : "courses"}
-              {selectedCategory !== "All" && ` in ${selectedCategory}`}
-            </div>
-          </div>
-
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            {CATEGORIES.map((cat) => {
-              const active = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "border border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-foreground"
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-
-            {(search || selectedCategory !== "All") && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="ml-auto text-xs font-semibold text-primary underline-offset-4 hover:underline"
-              >
-                Reset all filters
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Course Grid / Empty State */}
+        {/* A3. Course Card Grid / Empty State */}
         {filteredCourses.length > 0 ? (
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCourses.map((c) => (
-              <Reveal key={c.slug}>
-                <CourseCard course={c} />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredCourses.map((c, i) => (
+              <Reveal key={c.slug} delay={Math.min((i % 6) * 60, 300)} className="h-full">
+                <CourseCatalogCard course={c} />
               </Reveal>
             ))}
           </div>
         ) : (
-          <div className="mt-12 rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-            <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-accent text-primary">
+          <div className="rounded-3xl border border-dashed border-border bg-card p-12 text-center shadow-soft">
+            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-accent text-primary">
               <Search className="h-6 w-6" />
             </div>
-            <h3 className="mt-4 text-lg font-bold text-foreground">No courses found</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              No technical courses match your current search or category filter.
+            <h3 className="mt-4 font-display text-xl font-bold text-foreground">
+              No courses match your query
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+              We couldn&apos;t find any technical courses matching &ldquo;{search}&rdquo;
+              {selectedCategory !== "All" && ` in ${selectedCategory}`}.
             </p>
             <Button onClick={clearFilters} variant="outline" className="mt-6">
               Clear filters and view all courses
@@ -174,43 +123,47 @@ function CoursesPage() {
           </div>
         )}
 
-        {/* Live Batches Callout */}
-        <Reveal className="mt-14 rounded-2xl border border-primary/25 bg-gradient-soft p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+        {/* Scheduled Group Batches Callout */}
+        <Reveal className="mt-16 rounded-3xl border border-primary/25 bg-gradient-soft p-6 sm:p-8 shadow-soft">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div className="max-w-2xl">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 font-mono text-xs font-semibold text-primary">
                 <Sparkles className="h-3.5 w-3.5 text-gold-foreground" /> Scheduled Group Programs
               </span>
-              <h3 className="mt-2 text-lg font-bold text-foreground">
-                Looking for active group batches with special cohort pricing?
+              <h3 className="mt-3 font-display text-xl font-bold text-foreground sm:text-2xl">
+                Looking for scheduled group cohorts with special cohort pricing?
               </h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                While every catalog course is available for 1-on-1 personalized instruction, our active cohort programs feature live group learning, structured roadmaps, and Free Demo trial sessions.
+              <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                While every catalog course is available for 1-on-1 personalized instruction, our
+                active cohort programs feature live group learning, structured roadmaps, and Free
+                Demo trial sessions.
               </p>
             </div>
-            <Button asChild variant="hero" size="sm" className="shrink-0">
+            <Button asChild variant="hero" size="lg" className="shrink-0 font-semibold">
               <Link to="/live-batches">
-                View Active Live Batches <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                View Active Live Batches <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
           </div>
         </Reveal>
 
         {/* Academic & Islamic Tutoring Banner */}
-        <Reveal className="mt-16 rounded-2xl border border-border bg-muted/40 p-8 text-center sm:p-10">
+        <Reveal className="mt-14 rounded-3xl border border-border/80 bg-muted/40 p-8 text-center sm:p-10 shadow-soft">
           <div className="mx-auto max-w-2xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 font-mono text-xs font-semibold text-primary">
               <BookOpen className="h-3.5 w-3.5" /> Academic & Islamic Tutoring
             </span>
-            <h3 className="mt-3 text-xl font-bold text-foreground sm:text-2xl">
+            <h3 className="mt-4 font-display text-2xl font-bold text-foreground sm:text-3xl">
               Looking for School Subjects or Quran Tutoring?
             </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              We provide dedicated 1-on-1 and small group academic tutoring in Mathematics, Physics, Chemistry, Biology, Computer Science, and Quran & Islamic Studies under our separate Tutoring service.
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              We provide dedicated 1-on-1 and small group academic tutoring in Mathematics, Physics,
+              Chemistry, Biology, Computer Science, and Quran & Islamic Studies under our separate
+              Tutoring service.
             </p>
-            <Button asChild variant="outline" className="mt-5">
+            <Button asChild variant="outline" size="lg" className="mt-6 font-semibold">
               <Link to="/tutoring">
-                Explore Tutoring Services <ArrowRight className="ml-1 h-4 w-4" />
+                Explore Tutoring Services <ArrowRight className="ml-1.5 h-4 w-4" />
               </Link>
             </Button>
           </div>
