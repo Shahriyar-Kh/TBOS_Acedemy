@@ -15,7 +15,7 @@ export function TutoringCatalogCard({
     subject.category === "Quran & Islamic Studies" ? "Quran & Islamic Studies" : "Academic Tutoring";
 
   return (
-    <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
+    <article data-tutoring-card={subject.slug} className="group flex h-full flex-col overflow-hidden rounded-3xl border border-border/80 bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card">
       <Link
         to="/tutoring/$slug"
         params={{ slug: subject.slug }}
