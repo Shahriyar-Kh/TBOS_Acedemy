@@ -1,19 +1,20 @@
 /**
- * TechBuilt Open School — Admissions Webhook v2
+ * TechBuilt Open School — Admissions Webhook v2.1
  * Google Apps Script Web App for Google Sheets Mirror & Notification Delivery
  *
- * Capabilities:
- * 1. Health check via GET request (`doGet`).
- * 2. Idempotent append to Google Sheets locating `referenceId` by header name (`doPost`).
- * 3. Never assumes `referenceId` is Column A; detects existing header row dynamically.
- * 4. Migration-safe: Preserves legacy sheet columns; adds `referenceId` at end if missing.
- * 5. Prevents duplicate row appends and duplicate notification emails on replay.
- * 6. Structured JSON responses with channel breakdown (sheet, adminEmail, learnerEmail).
- * 7. Full backwards compatibility with legacy form payloads.
+ * Guarantees:
+ * 1. GET health endpoint for deployment verification.
+ * 2. Idempotent Sheet mirroring keyed by referenceId.
+ * 3. Migration-safe dynamic header lookup; no fixed-column assumptions.
+ * 4. Admin notification via Google MailApp.
+ * 5. Learner/guardian acknowledgement via Google MailApp.
+ * 6. Per-reference delivery state in Script Properties so duplicate webhook
+ *    retries can re-attempt only channels that have not succeeded.
+ * 7. Structured JSON channel statuses for the Cloudflare Worker.
  */
 
-// Configuration — can also be overridden via Script Properties (NOTIFY_EMAIL)
 const DEFAULT_NOTIFY_EMAIL = "admissions@techbuiltopenschool.com";
+const DELIVERY_STATE_PREFIX = "TBOS_DELIVERY_";
 
 const CANONICAL_HEADERS = [
   "referenceId",
@@ -47,42 +48,29 @@ function getNotifyEmail() {
   try {
     const props = PropertiesService.getScriptProperties();
     const configured = props.getProperty("NOTIFY_EMAIL");
-    if (configured && configured.trim() !== "") {
-      return configured.trim();
-    }
+    if (configured && configured.trim() !== "") return configured.trim();
   } catch (e) {
-    // Fall back to constant if properties unavailable
+    // Fall back to constant if Script Properties are unavailable.
   }
   return DEFAULT_NOTIFY_EMAIL;
 }
 
-/**
- * Normalizes header string for fuzzy matching (lowercase, no spaces, no underscores).
- */
 function normalizeHeaderName(name) {
   return String(name || "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
 }
 
-/**
- * Locates the 1-based column index matching any of the candidate names.
- * Returns -1 if not found.
- */
 function findHeaderColumnIndex(headers, candidateNames) {
   const normalizedCandidates = candidateNames.map(normalizeHeaderName);
   for (let i = 0; i < headers.length; i++) {
-    const norm = normalizeHeaderName(headers[i]);
-    if (normalizedCandidates.indexOf(norm) !== -1) {
-      return i + 1; // 1-based index for Google Sheets
+    if (normalizedCandidates.indexOf(normalizeHeaderName(headers[i])) !== -1) {
+      return i + 1;
     }
   }
   return -1;
 }
 
-/**
- * Migration-safe value extractor mapping payload fields to any header name.
- */
 function extractValueForHeader(headerName, data, referenceId) {
   const norm = normalizeHeaderName(headerName);
 
@@ -211,30 +199,264 @@ function extractValueForHeader(headerName, data, referenceId) {
   }
 }
 
-/**
- * Health check endpoint for testing deployment status.
- */
-function doGet(e) {
-  const healthResponse = {
-    ok: true,
-    version: "2.0.0",
-    service: "TBOS Admissions Webhook v2",
-    timestamp: new Date().toISOString(),
-    status: "active",
-  };
+function deliveryStateKey(referenceId) {
+  return DELIVERY_STATE_PREFIX + String(referenceId || "").toUpperCase();
+}
 
-  return ContentService.createTextOutput(JSON.stringify(healthResponse)).setMimeType(
-    ContentService.MimeType.JSON,
+function readDeliveryState(referenceId) {
+  try {
+    const raw = PropertiesService.getScriptProperties().getProperty(deliveryStateKey(referenceId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeDeliveryState(referenceId, state) {
+  try {
+    PropertiesService.getScriptProperties().setProperty(
+      deliveryStateKey(referenceId),
+      JSON.stringify({
+        adminEmailStatus: state.adminEmailStatus || "skipped",
+        learnerEmailStatus: state.learnerEmailStatus || "skipped",
+        learnerRecipientType: state.learnerRecipientType || "learner",
+        rowIndex: state.rowIndex || null,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
+  } catch (e) {
+    // Delivery still succeeds even if audit state cannot be stored.
+  }
+}
+
+function isDemoRequest(data) {
+  return (
+    String(data.submissionKind || "").toLowerCase() === "demo" ||
+    String(data.formType || "").toLowerCase() === "free demo"
   );
 }
 
-/**
- * Main Webhook Receiver
- */
+function isGeneralInquiry(data) {
+  return (
+    String(data.applicationType || "").toLowerCase() === "general admissions inquiry" ||
+    String(data.selectedProgram || data.selected || "").toLowerCase().indexOf("enquiry") !== -1
+  );
+}
+
+function sendAdminNotification(data, referenceId, rowIndex) {
+  try {
+    const recipient = getNotifyEmail();
+    const isDemo = isDemoRequest(data);
+    const studentName = data.studentName || data.fullName || "Prospective Student";
+    const programTitle = data.selectedProgram || data.selected || "Admissions Inquiry";
+
+    const subject = isDemo
+      ? "TBOS Free Demo Request — " + programTitle + " (" + referenceId + ")"
+      : "TBOS New Application — " + programTitle + " (" + referenceId + ")";
+
+    const bodyLines = [
+      "TECHBUILT OPEN SCHOOL — " + (isDemo ? "FREE DEMO REQUEST" : "NEW APPLICATION"),
+      "==================================================",
+      "Reference ID: " + referenceId,
+      "Student Name: " + studentName,
+      "Program / Course: " + programTitle,
+      "Category: " + (data.applicationType || data.formType || "Admissions"),
+      "Email: " + (data.email || "N/A"),
+      "Phone / WhatsApp: " + (data.phone || data.whatsapp || "N/A"),
+      "Location: " + (data.country || "") + (data.city ? ", " + data.city : ""),
+      "Education Level: " + (data.educationLevel || data.grade || "N/A"),
+      "Age: " + (data.age || "N/A"),
+      data.guardianName
+        ? "Parent / Guardian: " +
+          data.guardianName +
+          " (" +
+          (data.guardianPhone || "No phone") +
+          ")"
+        : null,
+      data.preferredTime
+        ? "Preferred Timing: " + (data.preferredDays || "") + " " + data.preferredTime
+        : null,
+      data.notes
+        ? "Applicant Notes: " + data.notes
+        : data.message
+          ? "Message: " + data.message
+          : null,
+      "Source Page: " + (data.sourcePage || "Direct"),
+      rowIndex ? "Google Sheet Row: #" + rowIndex : null,
+      "==================================================",
+    ].filter(Boolean);
+
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      body: bodyLines.join("\n"),
+    });
+
+    return { status: "success", recipientType: "admin", error: null };
+  } catch (err) {
+    return {
+      status: "failed",
+      recipientType: "admin",
+      error: String(err).slice(0, 200),
+    };
+  }
+}
+
+function resolveLearnerRecipient(data) {
+  const learnerEmail = String(data.email || "").trim();
+  const guardianEmail = String(data.guardianEmail || "").trim();
+  const age = Number(data.age);
+  const isMinor = Number.isFinite(age) && age > 0 && age < 18;
+
+  if (isMinor && guardianEmail.indexOf("@") > 0) {
+    return {
+      email: guardianEmail,
+      recipientType: "guardian",
+      greetingName:
+        data.guardianName || "Parent/Guardian of " + (data.studentName || data.fullName || "the learner"),
+      cc: learnerEmail && learnerEmail.toLowerCase() !== guardianEmail.toLowerCase() ? learnerEmail : "",
+    };
+  }
+
+  return {
+    email: learnerEmail,
+    recipientType: "learner",
+    greetingName: data.studentName || data.fullName || "Learner",
+    cc: "",
+  };
+}
+
+function sendLearnerAcknowledgement(data, referenceId) {
+  const recipient = resolveLearnerRecipient(data);
+
+  if (!recipient.email || recipient.email.indexOf("@") < 1) {
+    return {
+      status: "skipped",
+      recipientType: recipient.recipientType,
+      error: "No valid learner or guardian email available",
+    };
+  }
+
+  try {
+    const isDemo = isDemoRequest(data);
+    const isInquiry = !isDemo && isGeneralInquiry(data);
+    const programTitle = data.selectedProgram || data.selected || "Admissions Inquiry";
+
+    const subject = isDemo
+      ? "TBOS — Free Demo Request Received (" + referenceId + ")"
+      : isInquiry
+        ? "TBOS — Inquiry Received (" + referenceId + ")"
+        : "TBOS — Application Received (" + referenceId + ")";
+
+    const intro = isDemo
+      ? 'Thank you for requesting a Free Demo session for "' + programTitle + '".'
+      : isInquiry
+        ? 'Thank you for contacting TechBuilt Open School regarding "' + programTitle + '".'
+        : 'Thank you for submitting your admissions application for "' + programTitle + '".';
+
+    const nextSteps = isDemo
+      ? [
+          "1. Your preferred demo availability has been recorded.",
+          "2. The final demo date and time is not confirmed yet.",
+          "3. Admissions will contact you by WhatsApp or email to confirm the session details.",
+          "4. The Free Demo is one trial session; ongoing programs remain paid where applicable.",
+        ]
+      : [
+          "1. Admissions will review your request and learning requirements.",
+          "2. We may contact you by WhatsApp or email with course, schedule, prerequisite, or fee details.",
+          "3. Submitting this request does not guarantee admission or immediate enrollment.",
+        ];
+
+    const bodyLines = [
+      "Dear " + recipient.greetingName + ",",
+      "",
+      intro,
+      "",
+      "Official Reference ID: " + referenceId,
+      "",
+      "What happens next:",
+    ]
+      .concat(nextSteps)
+      .concat([
+        "",
+        "For quick assistance, contact TBOS Admissions on WhatsApp: +92 329 5448590",
+        "https://wa.me/923295448590",
+        "",
+        "Warm regards,",
+        "Admissions Team",
+        "TechBuilt Open School",
+      ]);
+
+    const mailOptions = {
+      to: recipient.email,
+      subject: subject,
+      body: bodyLines.join("\n"),
+    };
+
+    if (recipient.cc) mailOptions.cc = recipient.cc;
+
+    MailApp.sendEmail(mailOptions);
+
+    return {
+      status: "success",
+      recipientType: recipient.recipientType,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      status: "failed",
+      recipientType: recipient.recipientType,
+      error: String(err).slice(0, 200),
+    };
+  }
+}
+
+function deliverNotifications(data, referenceId, rowIndex, previousState) {
+  const prior = previousState || {};
+
+  const adminResult =
+    prior.adminEmailStatus === "success"
+      ? { status: "success", recipientType: "admin", error: null }
+      : sendAdminNotification(data, referenceId, rowIndex);
+
+  const learnerResult =
+    prior.learnerEmailStatus === "success"
+      ? {
+          status: "success",
+          recipientType: prior.learnerRecipientType || "learner",
+          error: null,
+        }
+      : sendLearnerAcknowledgement(data, referenceId);
+
+  writeDeliveryState(referenceId, {
+    adminEmailStatus: adminResult.status,
+    learnerEmailStatus: learnerResult.status,
+    learnerRecipientType: learnerResult.recipientType,
+    rowIndex: rowIndex,
+  });
+
+  return {
+    adminEmail: adminResult,
+    learnerEmail: learnerResult,
+  };
+}
+
+function doGet() {
+  return createJsonResponse({
+    ok: true,
+    version: "2.1.0",
+    service: "TBOS Admissions Webhook v2.1",
+    timestamp: new Date().toISOString(),
+    status: "active",
+  });
+}
+
 function doPost(e) {
   try {
     if (!e) {
-      return createJsonResponse({ ok: false, error: "Empty request event" }, 400);
+      return createJsonResponse({ ok: false, error: "Empty request event" });
     }
 
     let rawContents = "";
@@ -245,25 +467,21 @@ function doPost(e) {
     }
 
     if (!rawContents) {
-      return createJsonResponse({ ok: false, error: "No post data payload provided" }, 400);
+      return createJsonResponse({ ok: false, error: "No post data payload provided" });
     }
 
     const data = JSON.parse(rawContents);
-
-    // Extract reference ID or generate fallback
-    const referenceId = (
+    const referenceId = String(
       data.referenceId ||
-      data.ref ||
-      "TBOS-EXT-" + new Date().getTime().toString(36).toUpperCase()
+        data.ref ||
+        "TBOS-EXT-" + new Date().getTime().toString(36).toUpperCase(),
     ).trim();
 
     const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    const lastRow = sheet.getLastRow();
+    let lastRow = sheet.getLastRow();
     let lastCol = sheet.getLastColumn();
-
     let currentHeaders = [];
 
-    // 1. Ensure Header Row exists or read existing headers
     if (lastRow === 0 || lastCol === 0) {
       sheet.appendRow(CANONICAL_HEADERS);
       sheet
@@ -272,16 +490,17 @@ function doPost(e) {
         .setBackground("#0b192c")
         .setFontColor("#ffffff");
       currentHeaders = CANONICAL_HEADERS.slice();
+      lastRow = sheet.getLastRow();
       lastCol = CANONICAL_HEADERS.length;
     } else {
-      // Read Row 1 headers dynamically (Migration-safe: never clear or overwrite existing sheet)
-      const rawHeaderValues = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-      currentHeaders = rawHeaderValues.map(function (h) {
-        return String(h || "").trim();
-      });
+      currentHeaders = sheet
+        .getRange(1, 1, 1, lastCol)
+        .getValues()[0]
+        .map(function (h) {
+          return String(h || "").trim();
+        });
     }
 
-    // 2. Locate referenceId column dynamically by header name
     let refColIndex = findHeaderColumnIndex(currentHeaders, [
       "referenceId",
       "reference_id",
@@ -291,112 +510,81 @@ function doPost(e) {
     ]);
 
     if (refColIndex === -1) {
-      // Migration safe: Add referenceId column at the end without reordering legacy columns
       const newRefCol = currentHeaders.length + 1;
       sheet.getRange(1, newRefCol).setValue("referenceId").setFontWeight("bold");
       currentHeaders.push("referenceId");
       refColIndex = newRefCol;
+      lastCol = currentHeaders.length;
     }
 
-    // 3. Dynamic Idempotency Check: Verify if referenceId already exists in located column
+    let existingRowIndex = null;
     if (lastRow > 1) {
       const refColValues = sheet.getRange(2, refColIndex, lastRow - 1, 1).getValues();
       for (let i = 0; i < refColValues.length; i++) {
         const existingRef = String(refColValues[i][0] || "").trim();
         if (existingRef && existingRef.toUpperCase() === referenceId.toUpperCase()) {
-          // Idempotent hit: Record already mirrored!
-          return createJsonResponse({
-            ok: true,
-            duplicate: true,
-            referenceId: referenceId,
-            sheet: {
-              status: "success",
-              rowIndex: i + 2,
-              refColumn: refColIndex,
-              note: "Existing row matched referenceId dynamically; retained idempotently",
-            },
-            adminEmail: {
-              status: "skipped",
-              note: "Skipped email to prevent duplicate notification",
-            },
-            learnerEmail: {
-              status: "skipped",
-              note: "Skipped email to prevent duplicate notification",
-            },
-          });
+          existingRowIndex = i + 2;
+          break;
         }
       }
     }
 
-    // 4. Map values against actual sheet headers to preserve existing schema order
+    if (existingRowIndex) {
+      const previousState = readDeliveryState(referenceId);
+
+      if (!previousState) {
+        // Legacy rows predate v2.1 delivery state. Preserve idempotency rather
+        // than risk duplicate email notifications.
+        return createJsonResponse({
+          ok: true,
+          duplicate: true,
+          referenceId: referenceId,
+          sheet: {
+            status: "success",
+            rowIndex: existingRowIndex,
+            refColumn: refColIndex,
+          },
+          adminEmail: {
+            status: "skipped",
+            note: "Legacy duplicate retained without resending notification",
+          },
+          learnerEmail: {
+            status: "skipped",
+            recipientType: "learner",
+            note: "Legacy duplicate retained without resending acknowledgement",
+          },
+        });
+      }
+
+      const retryDelivery = deliverNotifications(
+        data,
+        referenceId,
+        existingRowIndex,
+        previousState,
+      );
+
+      return createJsonResponse({
+        ok: true,
+        duplicate: true,
+        referenceId: referenceId,
+        sheet: {
+          status: "success",
+          rowIndex: existingRowIndex,
+          refColumn: refColIndex,
+        },
+        adminEmail: retryDelivery.adminEmail,
+        learnerEmail: retryDelivery.learnerEmail,
+      });
+    }
+
     const rowValues = currentHeaders.map(function (colName) {
       return extractValueForHeader(colName, data, referenceId);
     });
 
-    // 5. Append row to sheet
     sheet.appendRow(rowValues);
     const newRowIndex = sheet.getLastRow();
 
-    // 6. Send Admin Notification Email via MailApp
-    let adminEmailStatus = "skipped";
-    let adminEmailError = null;
-
-    try {
-      const recipient = getNotifyEmail();
-      const isDemo =
-        (data.submissionKind || "").toLowerCase() === "demo" ||
-        (data.formType || "").toLowerCase() === "free demo";
-
-      const studentName = data.studentName || data.fullName || "Prospective Student";
-      const programTitle = data.selectedProgram || data.selected || "Admissions Inquiry";
-
-      const subject = isDemo
-        ? "TBOS Free Demo Request — " + programTitle + " (" + referenceId + ")"
-        : "TBOS New Application — " + programTitle + " (" + referenceId + ")";
-
-      const bodyLines = [
-        "TECHBUILT OPEN SCHOOL — " + (isDemo ? "FREE DEMO REQUEST" : "NEW APPLICATION"),
-        "==================================================",
-        "Reference ID: " + referenceId,
-        "Student Name: " + studentName,
-        "Program / Course: " + programTitle,
-        "Category: " + (data.applicationType || data.formType || "Admissions"),
-        "Email: " + (data.email || "N/A"),
-        "Phone / WhatsApp: " + (data.phone || data.whatsapp || "N/A"),
-        "Location: " + (data.country || "") + (data.city ? ", " + data.city : ""),
-        "Education Level: " + (data.educationLevel || data.grade || "N/A"),
-        "Age: " + (data.age || "N/A"),
-        data.guardianName
-          ? "Parent / Guardian: " +
-            data.guardianName +
-            " (" +
-            (data.guardianPhone || "No phone") +
-            ")"
-          : null,
-        data.preferredTime
-          ? "Preferred Timing: " + (data.preferredDays || "") + " " + data.preferredTime
-          : null,
-        data.notes
-          ? "Applicant Notes: " + data.notes
-          : data.message
-            ? "Message: " + data.message
-            : null,
-        "Source Page: " + (data.sourcePage || "Direct"),
-        "Google Sheet Row: #" + newRowIndex,
-        "==================================================",
-      ].filter(Boolean);
-
-      MailApp.sendEmail({
-        to: recipient,
-        subject: subject,
-        body: bodyLines.join("\n"),
-      });
-
-      adminEmailStatus = "success";
-    } catch (mailErr) {
-      adminEmailStatus = "failed";
-      adminEmailError = String(mailErr);
-    }
+    const delivery = deliverNotifications(data, referenceId, newRowIndex, null);
 
     return createJsonResponse({
       ok: true,
@@ -407,19 +595,13 @@ function doPost(e) {
         rowIndex: newRowIndex,
         refColumn: refColIndex,
       },
-      adminEmail: {
-        status: adminEmailStatus,
-        error: adminEmailError,
-      },
-      learnerEmail: {
-        status: "skipped",
-        note: "Learner acknowledgement dispatched via academy mail service",
-      },
+      adminEmail: delivery.adminEmail,
+      learnerEmail: delivery.learnerEmail,
     });
   } catch (err) {
     return createJsonResponse({
       ok: false,
-      error: String(err),
+      error: String(err).slice(0, 200),
     });
   }
 }

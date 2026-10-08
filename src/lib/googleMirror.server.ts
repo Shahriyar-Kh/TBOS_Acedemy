@@ -7,6 +7,7 @@ export interface GoogleMirrorResult {
   sheetStatus?: "success" | "failed";
   adminEmailStatus?: "success" | "failed" | "skipped";
   learnerEmailStatus?: "success" | "failed" | "skipped";
+  learnerRecipientType?: "learner" | "guardian";
   errorSummary?: string | null;
 }
 
@@ -141,7 +142,10 @@ export async function mirrorToGoogleSheetsServer(
         error?: string;
         sheet?: { status?: "success" | "failed" };
         adminEmail?: { status?: "success" | "failed" | "skipped" };
-        learnerEmail?: { status?: "success" | "failed" | "skipped" };
+        learnerEmail?: {
+          status?: "success" | "failed" | "skipped";
+          recipientType?: "learner" | "guardian";
+        };
       };
 
       try {
@@ -151,7 +155,10 @@ export async function mirrorToGoogleSheetsServer(
           error?: string;
           sheet?: { status?: "success" | "failed" };
           adminEmail?: { status?: "success" | "failed" | "skipped" };
-          learnerEmail?: { status?: "success" | "failed" | "skipped" };
+          learnerEmail?: {
+            status?: "success" | "failed" | "skipped";
+            recipientType?: "learner" | "guardian";
+          };
         };
       } catch {
         return {
@@ -173,6 +180,8 @@ export async function mirrorToGoogleSheetsServer(
         (jsonBody?.adminEmail?.status as "success" | "failed" | "skipped") || "success";
       const learnerEmailStatus =
         (jsonBody?.learnerEmail?.status as "success" | "failed" | "skipped") || undefined;
+      const learnerRecipientType =
+        (jsonBody?.learnerEmail?.recipientType as "learner" | "guardian") || undefined;
 
       return {
         status: "success",
@@ -180,6 +189,7 @@ export async function mirrorToGoogleSheetsServer(
         sheetStatus,
         adminEmailStatus,
         learnerEmailStatus,
+        learnerRecipientType,
       };
     } catch (err: unknown) {
       clearTimeout(timeoutId);
