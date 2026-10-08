@@ -152,7 +152,11 @@ function TutoringDetailPage() {
 
                 <div className="mt-8 flex flex-wrap gap-3">
                   <Button asChild variant="hero" size="lg" className="font-semibold shadow-soft">
-                    <Link to="/apply" search={{ type, selected: subject.title }}>
+                    <Link
+                      to="/apply"
+                      search={{ type, selected: subject.title }}
+                      data-tutoring-apply
+                    >
                       Request this tutor <ArrowRight className="ml-1.5 h-4 w-4" />
                     </Link>
                   </Button>
@@ -162,7 +166,11 @@ function TutoringDetailPage() {
                     size="lg"
                     className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
                   >
-                    <Link to="/free-demo" search={{ type, selected: subject.title }}>
+                    <Link
+                      to="/free-demo"
+                      search={{ type, selected: subject.title }}
+                      data-tutoring-demo
+                    >
                       <Sparkles className="mr-1.5 h-4 w-4 text-gold" />
                       Request Free Demo
                     </Link>
@@ -362,13 +370,21 @@ function TutoringDetailPage() {
                 </ul>
 
                 <Button asChild variant="hero" size="lg" className="mt-6 w-full font-semibold">
-                  <Link to="/apply" search={{ type, selected: subject.title }}>
+                  <Link
+                    to="/apply"
+                    search={{ type, selected: subject.title }}
+                    data-tutoring-apply
+                  >
                     Request this tutor <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
 
                 <Button asChild variant="outline" size="lg" className="mt-3 w-full font-semibold">
-                  <Link to="/free-demo" search={{ type, selected: subject.title }}>
+                  <Link
+                    to="/free-demo"
+                    search={{ type, selected: subject.title }}
+                    data-tutoring-demo
+                  >
                     <Sparkles className="mr-1.5 h-4 w-4 text-gold-foreground" />
                     Request Free Demo
                   </Link>
