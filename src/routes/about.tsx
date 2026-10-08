@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { StatsStrip } from "@/components/sections/StatsStrip";
 import { WhyChooseUs } from "@/components/sections/WhyChooseUs";
 import { CtaSection } from "@/components/sections/CtaSection";
+import { site } from "@/data/site";
 import { buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/about")({
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/about")({
         "Learn how TechBuilt Open School structures live online technical education, tutoring, admissions, trial sessions, and learner support for students in Pakistan and abroad.",
       keywords: ["about online academy", "international online school", "online tutoring company"],
     }),
-    links: [{ rel: "canonical", href: "/about" }],
+    links: [{ rel: "canonical", href: `${site.url}/about` }],
   }),
   component: AboutPage,
 });
