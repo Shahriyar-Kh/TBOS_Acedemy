@@ -128,6 +128,19 @@ test.describe("TBOS Phase10B functional coverage", () => {
   test("minor guardian validation prevents submission until the guardian details are added", async ({
     page,
   }) => {
+    let admissionPosts = 0;
+
+    if (!liveFormMode) {
+      await page.route("**/api/admissions", async (route) => {
+        admissionPosts += 1;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({ ok: true, referenceId: "TBOS-E2E-MINOR" }),
+        });
+      });
+    }
+
     await page.goto("/apply", { waitUntil: "domcontentloaded" });
     const email = "tbos-minor-validation@example.com";
     try {
@@ -143,13 +156,24 @@ test.describe("TBOS Phase10B functional coverage", () => {
       await expect(page.locator("#guardianName")).toBeVisible();
 
       await page.getByRole("button", { name: /submit application/i }).click();
-      await expect(page.getByText(/please provide a parent or guardian name/i)).toBeVisible();
+      await expect(
+        page.getByText(/parent\/guardian name is required for minors under 18/i),
+      ).toBeVisible();
+      await expect(
+        page.getByText(/parent\/guardian whatsapp\/phone is required for minors under 18/i),
+      ).toBeVisible();
+
+      if (!liveFormMode) {
+        expect(admissionPosts).toBe(0);
+      }
 
       await page.locator("#guardianName").fill("TBOS Guardian");
       await page.locator("#guardianPhone").fill("+92 300 0000001");
       await page.getByRole("button", { name: /submit application/i }).click();
-      if (liveFormMode) {
-        await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
+
+      await expect(page.getByRole("heading", { name: "Application Received!" })).toBeVisible();
+      if (!liveFormMode) {
+        expect(admissionPosts).toBe(1);
       }
     } finally {
       if (liveFormMode) await cleanupEmail(email);
