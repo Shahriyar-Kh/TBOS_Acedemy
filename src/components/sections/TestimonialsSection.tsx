@@ -6,32 +6,32 @@ export const learningCommitments = [
   {
     icon: Laptop,
     title: "Live Interactive Instruction",
-    desc: "Every session is conducted live with an expert instructor who answers questions, reviews code, and explains concepts in real time.",
+    desc: "Scheduled classes are delivered live so learners can ask questions, receive explanations, and work through examples in real time.",
   },
   {
     icon: BookOpen,
     title: "Concept-First Curriculum",
-    desc: "We focus on strong theoretical foundations and deep problem-solving skills rather than rote memorization or surface-level tutorials.",
+    desc: "Programs are structured around concepts, guided practice, and progressive learning rather than one-off recorded content.",
   },
   {
     icon: Sparkles,
     title: "Practical Hands-On Projects",
-    desc: "Technical students build real software portfolios and Git repositories that demonstrate genuine engineering ability.",
+    desc: "Technical programs include practical exercises and project work where it fits the published curriculum and learner level.",
   },
   {
     icon: Users,
     title: "1-on-1 & Small Group Batches",
-    desc: "Intimate class sizes ensure personalized pacing, attentive mentoring, and continuous support tailored to individual learning needs.",
+    desc: "One-to-one tutoring and small-group formats are available depending on the program, tutor availability, and confirmed schedule.",
   },
   {
     icon: CheckCircle2,
     title: "Milestones & Progress Tracking",
-    desc: "Structured syllabi with clear weekly milestones and constructive feedback keep students and parents continuously updated.",
+    desc: "Programs use defined topics, milestones, and feedback appropriate to the course or tutoring plan; exact reporting varies by program.",
   },
   {
     icon: ShieldCheck,
     title: "Free Demo Trial Session",
-    desc: "Experience our teaching standard, classroom environment, and curriculum firsthand before committing to any paid enrollment.",
+    desc: "A Free Demo is one live trial session used to assess teaching fit and discuss next steps before any paid continuation.",
   },
 ];
 
@@ -43,7 +43,7 @@ export function TestimonialsSection({ limit }: { limit?: number }) {
         <SectionHeading
           eyebrow="Our Commitment"
           title="Academy Standards & Quality Commitments"
-          description="How TechBuilt Open School delivers rigorous, personalized online education for students and parents worldwide."
+          description="The practical standards we use for live instruction, program clarity, trial sessions, and responsible admissions communication."
         />
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, i) => (
