@@ -131,10 +131,23 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
       "/terms",
     ];
 
+    const gotoResponsiveRoute = async (route: string) => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          await page.goto(route, { waitUntil: "domcontentloaded" });
+          return;
+        } catch (error) {
+          const isTransientAbort = String(error).includes("ERR_ABORTED");
+          if (!isTransientAbort || attempt === 1) throw error;
+          await page.waitForTimeout(250);
+        }
+      }
+    };
+
     for (const width of viewports) {
       await page.setViewportSize({ width, height: 900 });
       for (const route of routes) {
-        await page.goto(route, { waitUntil: "domcontentloaded" });
+        await gotoResponsiveRoute(route);
         await page.waitForTimeout(100);
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth > window.innerWidth,
