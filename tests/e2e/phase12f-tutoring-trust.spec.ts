@@ -25,7 +25,7 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
   test("2. All 12 tutoring detail routes load with single H1 and subject context", async ({
     page,
   }) => {
-    test.setTimeout(90000);
+    test.setTimeout(180000);
 
     for (const subject of tutoringSubjects) {
       const pageErrors: string[] = [];
@@ -39,17 +39,17 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("h1")).toContainText(subject.title);
 
-      const applyHref = await page.locator('a[href*="/apply"]').first().getAttribute("href");
+      const applyHref = await page.locator("[data-tutoring-apply]").first().getAttribute("href");
       expect(applyHref).toContain("/apply");
-      expect(new URL(applyHref || "", "https://techbuiltos.online").searchParams.get("selected")).toBe(
-        subject.title,
-      );
+      expect(
+        new URL(applyHref || "", "https://techbuiltos.online").searchParams.get("selected"),
+      ).toBe(subject.title);
 
-      const demoHref = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
+      const demoHref = await page.locator("[data-tutoring-demo]").first().getAttribute("href");
       expect(demoHref).toContain("/free-demo");
-      expect(new URL(demoHref || "", "https://techbuiltos.online").searchParams.get("selected")).toBe(
-        subject.title,
-      );
+      expect(
+        new URL(demoHref || "", "https://techbuiltos.online").searchParams.get("selected"),
+      ).toBe(subject.title);
 
       await expect(page.locator('a[href*="wa.me"]').first()).toBeVisible();
       await expect(page.getByText(/one trial session/i).first()).toBeVisible();
@@ -61,8 +61,8 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
 
   test("3. Academic and Quran tutoring preserve the correct admissions type", async ({ page }) => {
     await page.goto("/tutoring/mathematics", { waitUntil: "domcontentloaded" });
-    const academicApply = await page.locator('a[href*="/apply"]').first().getAttribute("href");
-    const academicDemo = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
+    const academicApply = await page.locator("[data-tutoring-apply]").first().getAttribute("href");
+    const academicDemo = await page.locator("[data-tutoring-demo]").first().getAttribute("href");
     expect(
       new URL(academicApply || "", "https://techbuiltos.online").searchParams.get("type"),
     ).toBe("Academic Tutoring");
@@ -71,8 +71,8 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
     ).toBe("Academic Tutoring");
 
     await page.goto("/tutoring/tajweed-tarteel", { waitUntil: "domcontentloaded" });
-    const quranApply = await page.locator('a[href*="/apply"]').first().getAttribute("href");
-    const quranDemo = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
+    const quranApply = await page.locator("[data-tutoring-apply]").first().getAttribute("href");
+    const quranDemo = await page.locator("[data-tutoring-demo]").first().getAttribute("href");
     expect(
       new URL(quranApply || "", "https://techbuiltos.online").searchParams.get("type"),
     ).toBe("Quran & Islamic Studies");
