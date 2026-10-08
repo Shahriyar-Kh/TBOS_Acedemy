@@ -98,7 +98,7 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
           referenceId: "TBOS-UNIT-A",
           sheet: { status: "success", rowIndex: 10 },
           adminEmail: { status: "success" },
-          learnerEmail: { status: "skipped" },
+          learnerEmail: { status: "success", recipientType: "learner" },
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
@@ -108,7 +108,8 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
     expect(result.duplicate).toBe(false);
     expect(result.sheetStatus).toBe("success");
     expect(result.adminEmailStatus).toBe("success");
-    expect(result.learnerEmailStatus).toBe("skipped");
+    expect(result.learnerEmailStatus).toBe("success");
+    expect(result.learnerRecipientType).toBe("learner");
   });
 
   // B. HTTP 200 + valid JSON + ok:false => failed
@@ -278,7 +279,9 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
     };
 
     const scriptHandledLearnerEmail =
-      mockMirrorResult.status === "success" && mockMirrorResult.learnerEmailStatus === "success";
+      mockMirrorResult.status === "success" &&
+      (mockMirrorResult.learnerEmailStatus === "success" ||
+        (Boolean(mockMirrorResult.duplicate) && mockMirrorResult.learnerEmailStatus === "skipped"));
 
     expect(scriptHandledLearnerEmail).toBe(true);
   });
@@ -297,7 +300,9 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
       mockMirrorResult.status === "success" &&
       (mockMirrorResult.adminEmailStatus === "success" || Boolean(mockMirrorResult.duplicate));
     const scriptHandledLearnerEmail =
-      mockMirrorResult.status === "success" && mockMirrorResult.learnerEmailStatus === "success";
+      mockMirrorResult.status === "success" &&
+      (mockMirrorResult.learnerEmailStatus === "success" ||
+        (Boolean(mockMirrorResult.duplicate) && mockMirrorResult.learnerEmailStatus === "skipped"));
 
     expect(scriptHandledAdminEmail).toBe(false); // Needs SMTP fallback
     expect(scriptHandledLearnerEmail).toBe(true); // Does NOT need SMTP fallback
@@ -314,11 +319,18 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
     };
 
     expect(mockMirrorResult.duplicate).toBe(true);
-    // When duplicate is true, admin notification was already sent on initial attempt
+    // Legacy duplicate responses use skipped to preserve idempotency without
+    // resending already-delivered notifications.
     const scriptHandledAdminEmail =
       mockMirrorResult.status === "success" &&
-      (mockMirrorResult.adminEmailStatus === "success" || Boolean(mockMirrorResult.duplicate));
+      (mockMirrorResult.adminEmailStatus === "success" ||
+        (Boolean(mockMirrorResult.duplicate) && mockMirrorResult.adminEmailStatus === "skipped"));
+    const scriptHandledLearnerEmail =
+      mockMirrorResult.status === "success" &&
+      (mockMirrorResult.learnerEmailStatus === "success" ||
+        (Boolean(mockMirrorResult.duplicate) && mockMirrorResult.learnerEmailStatus === "skipped"));
     expect(scriptHandledAdminEmail).toBe(true);
+    expect(scriptHandledLearnerEmail).toBe(true);
   });
 
   // O. Retry Failed Deliveries does not retry already-successful channels
@@ -346,6 +358,26 @@ test.describe("Secondary Lead Delivery Reliability Unit Suite", () => {
     expect(channelsToAttempt).toContain("google_sheet");
     expect(channelsToAttempt).toContain("learner_email");
     expect(channelsToAttempt).toEqual(["learner_email", "google_sheet"]);
+  });
+
+  // Q. Duplicate response with a failed learner channel must still allow fallback
+  test("Q. duplicate with failed learner channel does not suppress fallback", () => {
+    const mockMirrorResult: GoogleMirrorResult = {
+      status: "success",
+      duplicate: true,
+      sheetStatus: "success",
+      adminEmailStatus: "success",
+      learnerEmailStatus: "failed",
+      learnerRecipientType: "guardian",
+    };
+
+    const scriptHandledLearnerEmail =
+      mockMirrorResult.status === "success" &&
+      (mockMirrorResult.learnerEmailStatus === "success" ||
+        (Boolean(mockMirrorResult.duplicate) && mockMirrorResult.learnerEmailStatus === "skipped"));
+
+    expect(scriptHandledLearnerEmail).toBe(false);
+    expect(mockMirrorResult.learnerRecipientType).toBe("guardian");
   });
 
   // P. Dynamic Header Column Lookup in Apps Script (Migration-safe)
