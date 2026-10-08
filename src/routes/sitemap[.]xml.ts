@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { getCmsCourses, getCmsSpecializations, getCmsLiveOffers } from "@/lib/cms.server";
+import { getCmsCourses, getCmsSpecializations, getCmsLiveOffers, getCmsTutoring } from "@/lib/cms.server";
 import { seoPages } from "../data/seoPages";
 import { site } from "../data/site";
 
@@ -10,10 +10,11 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const [activeCourses, activeSpecs, activeOffers] = await Promise.all([
+        const [activeCourses, activeSpecs, activeOffers, activeTutoring] = await Promise.all([
           getCmsCourses(),
           getCmsSpecializations(),
           getCmsLiveOffers(),
+          getCmsTutoring(),
         ]);
 
         const staticPaths = [
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           ...activeCourses.map((c) => `/courses/${c.slug}`),
           ...activeSpecs.map((s) => `/specializations/${s.slug}`),
           ...activeOffers.map((o) => `/live-batches/${o.slug}`),
+          ...activeTutoring.map((t) => `/tutoring/${t.slug}`),
           ...seoPages.map((p) => `/${p.slug}`),
         ];
 
