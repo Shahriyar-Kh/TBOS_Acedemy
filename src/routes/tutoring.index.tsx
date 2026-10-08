@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, UserRound, Users, Globe2, BookOpen, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, UserRound, Users, Globe2, Sparkles } from "lucide-react";
 import tutorTeaching from "@/assets/tutor-teaching.jpg";
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
@@ -9,10 +9,12 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { TestimonialsSection } from "@/components/sections/TestimonialsSection";
 import { FaqSection } from "@/components/sections/FaqSection";
 import { CtaSection } from "@/components/sections/CtaSection";
-import { academicTutoring, quranTutoring, tutoringSubjects } from "@/data/tutoring";
+import { tutoringSubjects } from "@/data/tutoring";
 import { getCmsTutoringFn } from "@/lib/cmsFunctions";
 import { faqs } from "@/data/faqs";
 import { buildMeta, faqJsonLd } from "@/lib/seo";
+import { site } from "@/data/site";
+import { TutoringCatalogCard } from "@/components/catalog/TutoringCatalogCard";
 
 export const Route = createFileRoute("/tutoring/")({
   loader: async () => {
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/tutoring/")({
     meta: buildMeta({
       title: "Online Tutoring Service | Academic & Quran Tutoring | TechBuilt Open School",
       description:
-        "Personalized online tutoring for Grade 5 to MS level. Live 1-on-1 and small group classes in Mathematics, Physics, Chemistry, Computer Science, and Quran & Tajweed.",
+        "Live online tutoring options for school, college, university, Quran and Islamic Studies learners. One-to-one and small-group formats are available subject to tutor scheduling.",
       keywords: [
         "online tutoring service",
         "online tutor pakistan",
@@ -38,16 +40,16 @@ export const Route = createFileRoute("/tutoring/")({
         "tajweed classes",
       ],
     }),
-    links: [{ rel: "canonical", href: "/tutoring" }],
+    links: [{ rel: "canonical", href: `${site.url}/tutoring` }],
     scripts: [faqJsonLd(faqs.slice(0, 6))],
   }),
   component: TutoringPage,
 });
 
 const tutorModes = [
-  { icon: UserRound, title: "One-to-one tutoring", desc: "Fully personalised lessons with the tutor's complete attention on your progress and syllabus." },
-  { icon: Users, title: "Small group classes", desc: "Affordable, collaborative learning in carefully matched small groups." },
-  { icon: Globe2, title: "International scheduling", desc: "Flexible class times that work across time zones in Pakistan, the Middle East, UK, and worldwide." },
+  { icon: UserRound, title: "One-to-one tutoring", desc: "A focused format built around the learner's current level, syllabus and goals." },
+  { icon: Users, title: "Small group classes", desc: "Collaborative learning when a suitable small group and schedule are available." },
+  { icon: Globe2, title: "Online scheduling", desc: "Live online sessions with timing confirmed by admissions based on tutor and learner availability." },
 ];
 
 const popular = [
@@ -69,8 +71,8 @@ function TutoringPage() {
     <>
       <PageHeader
         eyebrow="Online Tutoring Service"
-        title="Live Online Tutoring, Tailored to You"
-        description="Expert 1-on-1 and small-group tutoring for students from Grade 5 to University level — covering core academic subjects and Quran & Islamic Studies."
+        title="Live Online Tutoring, Tailored to the Learner"
+        description="Explore one-to-one and small-group tutoring options for school, college, university, Quran and Islamic Studies learners. Availability, tutor match and schedule are confirmed before enrollment."
         breadcrumb={[{ label: "Tutoring" }]}
       />
 
@@ -81,17 +83,17 @@ function TutoringPage() {
               Personalised Learning
             </span>
             <h2 className="mt-2 text-3xl font-extrabold text-foreground sm:text-4xl">
-              Match with an expert tutor who fits your curriculum & goals
+              Find a tutoring option that fits your curriculum and goals
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Whether preparing for board exams, university entrance tests, mastering difficult formulas, or seeking fluent Quranic recitation, our experienced tutors deliver structured, patient guidance.
+              Whether the goal is syllabus support, exam preparation, difficult concepts, or Quranic learning, admissions helps match the request to an available tutoring option and suitable schedule.
             </p>
             <ul className="mt-6 space-y-3">
               {[
-                "Personalised lesson plans based on your syllabus",
-                "Regular assessments and feedback for students and parents",
-                "Flexible timing across Pakistan and international time zones",
-                "Free Demo session before committing to full classes",
+                "Subject and level captured before tutor matching",
+                "One-to-one and small-group formats where available",
+                "Schedule and applicable fee confirmed before enrollment",
+                "One Free Demo trial session available before paid continuation",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-3 text-sm text-foreground/90">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -149,46 +151,12 @@ function TutoringPage() {
             align="left"
             eyebrow="Academic Excellence"
             title="School, College & University Subjects"
-            description="From Grade 5 foundational skills to advanced university coursework, our tutors help students master concepts and score top marks."
+            description="Tutoring options span school foundations through university-level academic support. Exact syllabus coverage is confirmed against the learner's level and goals."
           />
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {academicList.map((subject, i) => (
-              <Reveal
-                key={subject.slug}
-                delay={i * 60}
-                className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
-                    <BookOpen className="h-3.5 w-3.5" /> {subject.level}
-                  </span>
-                </div>
-                <h3 className="mt-4 text-xl font-bold text-foreground">{subject.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subject.summary}</p>
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {subject.topics.slice(0, 4).map((topic) => (
-                    <span
-                      key={topic}
-                      className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground"
-                    >
-                      {topic}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-6 pt-4 border-t border-border flex items-center justify-between gap-2">
-                  <Button asChild size="sm" variant="outline" className="text-xs">
-                    <Link to="/free-demo" search={{ type: "Academic Tutoring", selected: subject.title }}>
-                      Free Demo
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" variant="hero" className="text-xs">
-                    <Link to="/apply" search={{ type: "Academic Tutoring", selected: subject.title }}>
-                      Request Tutor <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                    </Link>
-                  </Button>
-                </div>
-              </Reveal>
+            {academicList.map((subject) => (
+              <TutoringCatalogCard key={subject.slug} subject={subject} />
             ))}
           </div>
         </div>
@@ -201,34 +169,12 @@ function TutoringPage() {
             align="left"
             eyebrow="Spiritual & Moral Growth"
             title="Quran & Islamic Studies Tutoring"
-            description="Qualified, patient instructors offering foundational Qaida, Nazra with translation, Tajweed rules, and essential Islamic character building."
+            description="Explore Qaida, Nazra, Tajweed and Islamic Studies options. Instructor availability, level fit and recurring schedule are confirmed before enrollment."
           />
 
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {quranList.map((subject, i) => (
-              <Reveal
-                key={subject.slug}
-                delay={i * 60}
-                className="flex flex-col rounded-2xl border border-border bg-card p-6 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card"
-              >
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
-                  <Sparkles className="h-3.5 w-3.5" /> {subject.level}
-                </span>
-                <h3 className="mt-4 text-lg font-bold text-foreground">{subject.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{subject.summary}</p>
-                <div className="mt-6 pt-4 border-t border-border mt-auto grid grid-cols-2 gap-2">
-                  <Button asChild size="sm" variant="outline" className="text-xs">
-                    <Link to="/free-demo" search={{ type: "Quran & Islamic Studies", selected: subject.title }}>
-                      Free Demo
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm" variant="default" className="text-xs">
-                    <Link to="/apply" search={{ type: "Quran & Islamic Studies", selected: subject.title }}>
-                      Enrol
-                    </Link>
-                  </Button>
-                </div>
-              </Reveal>
+            {quranList.map((subject) => (
+              <TutoringCatalogCard key={subject.slug} subject={subject} />
             ))}
           </div>
         </div>
