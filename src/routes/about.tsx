@@ -17,6 +17,7 @@ export const Route = createFileRoute("/about")({
       description:
         "Learn how TechBuilt Open School structures live online technical education, tutoring, admissions, trial sessions, and learner support for students in Pakistan and abroad.",
       keywords: ["about online academy", "international online school", "online tutoring company"],
+      path: "/about",
     }),
     links: [{ rel: "canonical", href: `${site.url}/about` }],
   }),
