@@ -51,7 +51,8 @@ export async function runAdmissionsIntegrations(
   let adminEmailResult: EmailSendResult;
   const scriptHandledAdminEmail =
     googleMirrorResult.status === "success" &&
-    (googleMirrorResult.adminEmailStatus === "success" || googleMirrorResult.duplicate);
+    (googleMirrorResult.adminEmailStatus === "success" ||
+      (googleMirrorResult.duplicate && googleMirrorResult.adminEmailStatus === "skipped"));
 
   if (scriptHandledAdminEmail) {
     adminEmailResult = {
@@ -75,12 +76,14 @@ export async function runAdmissionsIntegrations(
   // 3. Learner / Guardian Acknowledgement Email
   let learnerEmailResult: EmailSendResult;
   const scriptHandledLearnerEmail =
-    googleMirrorResult.status === "success" && googleMirrorResult.learnerEmailStatus === "success";
+    googleMirrorResult.status === "success" &&
+    (googleMirrorResult.learnerEmailStatus === "success" ||
+      (googleMirrorResult.duplicate && googleMirrorResult.learnerEmailStatus === "skipped"));
 
   if (scriptHandledLearnerEmail) {
     learnerEmailResult = {
       status: "success",
-      recipientType: "learner",
+      recipientType: googleMirrorResult.learnerRecipientType || "learner",
       errorSummary: null,
     };
   } else {
@@ -217,89 +220,120 @@ export async function retryAdmissionsDeliveries(
     error_summary: string | null;
   }[] = [];
 
-  // 2. Retry Google Sheet Mirror if requested
-  if (channelsToAttempt.includes("google_sheet")) {
+  // 2. Prefer the HTTPS Apps Script path for retries whenever the Sheet itself
+  // needs retry OR the Sheet previously succeeded and an email channel now needs retry.
+  // In the latter case the webhook uses referenceId idempotency and never appends a duplicate row.
+  const shouldRetryViaWebhook =
+    channelsToAttempt.includes("google_sheet") ||
+    (latestStatusMap.get("google_sheet") === "success" &&
+      (channelsToAttempt.includes("admin_email") || channelsToAttempt.includes("learner_email")));
+
+  let retryMirrorResult: GoogleMirrorResult | undefined;
+
+  if (shouldRetryViaWebhook) {
     try {
-      const sheetResult = await mirrorToGoogleSheetsServer(admission, ref);
-      report.googleMirror = sheetResult;
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "google_sheet",
-        recipient_type: "google_sheet",
-        status: sheetResult.status,
-        error_summary: sheetResult.errorSummary
-          ? sanitizeIntegrationError(sheetResult.errorSummary)
-          : null,
-      });
+      retryMirrorResult = await mirrorToGoogleSheetsServer(admission, ref);
+      report.googleMirror = retryMirrorResult;
+
+      if (channelsToAttempt.includes("google_sheet")) {
+        newDeliveryLogs.push({
+          admission_id: admissionId,
+          channel: "google_sheet",
+          recipient_type: "google_sheet",
+          status: retryMirrorResult.status,
+          error_summary: retryMirrorResult.errorSummary
+            ? sanitizeIntegrationError(retryMirrorResult.errorSummary)
+            : null,
+        });
+      }
     } catch (err) {
       const errSummary = sanitizeIntegrationError(err);
-      report.googleMirror = { status: "failed", errorSummary: errSummary };
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "google_sheet",
-        recipient_type: "google_sheet",
-        status: "failed",
-        error_summary: errSummary,
-      });
+      retryMirrorResult = { status: "failed", errorSummary: errSummary };
+      report.googleMirror = retryMirrorResult;
+
+      if (channelsToAttempt.includes("google_sheet")) {
+        newDeliveryLogs.push({
+          admission_id: admissionId,
+          channel: "google_sheet",
+          recipient_type: "google_sheet",
+          status: "failed",
+          error_summary: errSummary,
+        });
+      }
     }
   }
 
-  // 3. Retry Admin Email via SMTP if requested
+  // 3. Retry Admin Email. Prefer Apps Script result; use SMTP only when the
+  // webhook did not successfully handle the requested channel.
   if (channelsToAttempt.includes("admin_email")) {
-    try {
-      const adminResult = await sendAdminNotificationEmail(admission, ref);
-      report.adminEmail = adminResult;
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "admin_email",
-        recipient_type: adminResult.recipientType || "admin",
-        status: adminResult.status,
-        error_summary: adminResult.errorSummary
-          ? sanitizeIntegrationError(adminResult.errorSummary)
-          : null,
-      });
-    } catch (err) {
-      const errSummary = sanitizeIntegrationError(err);
-      report.adminEmail = { status: "failed", recipientType: "admin", errorSummary: errSummary };
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "admin_email",
-        recipient_type: "admin",
-        status: "failed",
-        error_summary: errSummary,
-      });
+    const scriptHandledAdmin =
+      retryMirrorResult?.status === "success" &&
+      (retryMirrorResult.adminEmailStatus === "success" ||
+        (retryMirrorResult.duplicate && retryMirrorResult.adminEmailStatus === "skipped"));
+
+    let adminResult: EmailSendResult;
+    if (scriptHandledAdmin) {
+      adminResult = { status: "success", recipientType: "admin", errorSummary: null };
+    } else {
+      try {
+        adminResult = await sendAdminNotificationEmail(admission, ref);
+      } catch (err) {
+        adminResult = {
+          status: "failed",
+          recipientType: "admin",
+          errorSummary: sanitizeIntegrationError(err),
+        };
+      }
     }
+
+    report.adminEmail = adminResult;
+    newDeliveryLogs.push({
+      admission_id: admissionId,
+      channel: "admin_email",
+      recipient_type: adminResult.recipientType || "admin",
+      status: adminResult.status,
+      error_summary: adminResult.errorSummary
+        ? sanitizeIntegrationError(adminResult.errorSummary)
+        : null,
+    });
   }
 
-  // 4. Retry Learner Email via SMTP if requested
+  // 4. Retry Learner/Guardian Email with the same HTTPS-first gating.
   if (channelsToAttempt.includes("learner_email")) {
-    try {
-      const learnerResult = await sendLearnerAcknowledgementEmail(admission, ref);
-      report.learnerEmail = learnerResult;
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "learner_email",
-        recipient_type: learnerResult.recipientType || "learner",
-        status: learnerResult.status,
-        error_summary: learnerResult.errorSummary
-          ? sanitizeIntegrationError(learnerResult.errorSummary)
-          : null,
-      });
-    } catch (err) {
-      const errSummary = sanitizeIntegrationError(err);
-      report.learnerEmail = {
-        status: "failed",
-        recipientType: "learner",
-        errorSummary: errSummary,
+    const scriptHandledLearner =
+      retryMirrorResult?.status === "success" &&
+      (retryMirrorResult.learnerEmailStatus === "success" ||
+        (retryMirrorResult.duplicate && retryMirrorResult.learnerEmailStatus === "skipped"));
+
+    let learnerResult: EmailSendResult;
+    if (scriptHandledLearner) {
+      learnerResult = {
+        status: "success",
+        recipientType: retryMirrorResult?.learnerRecipientType || "learner",
+        errorSummary: null,
       };
-      newDeliveryLogs.push({
-        admission_id: admissionId,
-        channel: "learner_email",
-        recipient_type: "learner",
-        status: "failed",
-        error_summary: errSummary,
-      });
+    } else {
+      try {
+        learnerResult = await sendLearnerAcknowledgementEmail(admission, ref);
+      } catch (err) {
+        learnerResult = {
+          status: "failed",
+          recipientType: "learner",
+          errorSummary: sanitizeIntegrationError(err),
+        };
+      }
     }
+
+    report.learnerEmail = learnerResult;
+    newDeliveryLogs.push({
+      admission_id: admissionId,
+      channel: "learner_email",
+      recipient_type: learnerResult.recipientType || "learner",
+      status: learnerResult.status,
+      error_summary: learnerResult.errorSummary
+        ? sanitizeIntegrationError(learnerResult.errorSummary)
+        : null,
+    });
   }
 
   // 5. Append new delivery log entries
