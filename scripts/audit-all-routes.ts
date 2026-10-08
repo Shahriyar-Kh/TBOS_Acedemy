@@ -2,6 +2,7 @@ import { chromium } from "@playwright/test";
 import { courses } from "../src/data/courses";
 import { specializations } from "../src/data/specializations";
 import { liveOffers } from "../src/data/liveOffers";
+import { tutoringSubjects } from "../src/data/tutoring";
 
 const BASE_URL = process.env.TEST_URL || "https://techbuiltos.online";
 
@@ -37,6 +38,7 @@ const allRoutes = [
   ...courses.map((c) => `/courses/${c.slug}`),
   ...specializations.map((s) => `/specializations/${s.slug}`),
   ...liveOffers.map((o) => `/live-batches/${o.slug}`),
+  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
 ];
 
 console.log(`Starting real-browser Chromium audit against ${BASE_URL}`);
