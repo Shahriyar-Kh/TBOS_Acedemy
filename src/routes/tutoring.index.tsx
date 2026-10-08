@@ -31,6 +31,7 @@ export const Route = createFileRoute("/tutoring/")({
       title: "Online Tutoring Service | Academic & Quran Tutoring | TechBuilt Open School",
       description:
         "Live online tutoring options for school, college, university, Quran and Islamic Studies learners. One-to-one and small-group formats are available subject to tutor scheduling.",
+      path: "/tutoring",
       keywords: [
         "online tutoring service",
         "online tutor pakistan",
