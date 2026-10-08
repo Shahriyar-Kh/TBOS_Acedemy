@@ -14,7 +14,7 @@ export const Route = createFileRoute("/about")({
     meta: buildMeta({
       title: "About Us | TechBuilt Open School International Online Academy",
       description:
-        "Learn about TechBuilt Open School — a premium international online academy delivering live tutoring and technical courses to students from Grade 5 to MS worldwide.",
+        "Learn how TechBuilt Open School structures live online technical education, tutoring, admissions, trial sessions, and learner support for students in Pakistan and abroad.",
       keywords: ["about online academy", "international online school", "online tutoring company"],
     }),
     links: [{ rel: "canonical", href: "/about" }],
@@ -26,17 +26,17 @@ const pillars = [
   {
     icon: Target,
     title: "Our mission",
-    desc: "To make premium, personalised education accessible to every ambitious student — wherever they are in the world.",
+    desc: "To make structured, live online education easier to access for learners who need technical training or guided tutoring.",
   },
   {
     icon: Eye,
     title: "Our vision",
-    desc: "To be the most trusted international online academy, known for results, integrity and genuine care for every learner.",
+    desc: "To grow into a trusted online academy known for clear learning pathways, responsible communication and practical teaching.",
   },
   {
     icon: Heart,
     title: "Our values",
-    desc: "Excellence, honesty, respect and dedication guide everything we do — for students and parents alike.",
+    desc: "Clear expectations, respectful teaching, responsible claims and learner-focused support guide how we build the academy.",
   },
 ];
 
@@ -46,7 +46,7 @@ function AboutPage() {
       <PageHeader
         eyebrow="About TechBuilt"
         title="A premium academy without borders"
-        description="We bring world-class tutoring and modern technical education to students from Grade 5 to MS — across Pakistan and around the globe."
+        description="We deliver live online technical education and tutoring with clear admissions, one-session trial demos, and learning pathways designed around the learner's level and goals."
         breadcrumb={[{ label: "About" }]}
       />
 
@@ -71,24 +71,24 @@ function AboutPage() {
               Our story
             </span>
             <h2 className="mt-3 text-3xl font-bold text-foreground sm:text-4xl">
-              Built by educators who care
+              Built around clear, practical learning
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              TechBuilt Open School was founded on a simple belief: every student deserves access
-              to outstanding teaching, regardless of where they live. We saw talented learners held
-              back by distance, cost or crowded classrooms — and set out to change that.
+              TechBuilt Open School was created to make structured live online learning easier to
+              access for students who want technical skills, academic support, or guided tutoring
+              without being limited by location.
             </p>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Today we support thousands of students across Pakistan and worldwide with live,
-              one-to-one and small-group classes. From core school subjects to in-demand technical
-              skills, our expert tutors deliver a premium, personalised experience that builds both
-              grades and confidence.
+              We are building a growing online academy with live technical programs, one-to-one
+              tutoring, small-group options, and a public course catalog. Admissions confirms the
+              learner's program fit, schedule, tutor availability, and applicable fee before paid
+              classes begin.
             </p>
             <ul className="mt-6 space-y-3">
               {[
-                "Curriculum-aligned academic tutoring",
-                "Career-focused technical specializations",
-                "Transparent progress reports for parents",
+                "Technical courses, specializations and live cohorts",
+                "Academic, Quran and Islamic Studies tutoring options",
+                "Clear admissions, fee and scheduling confirmation before enrollment",
               ].map((i) => (
                 <li key={i} className="flex items-start gap-3 text-foreground/90">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
