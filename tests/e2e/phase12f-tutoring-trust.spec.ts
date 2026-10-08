@@ -63,14 +63,22 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
     await page.goto("/tutoring/mathematics", { waitUntil: "domcontentloaded" });
     const academicApply = await page.locator('a[href*="/apply"]').first().getAttribute("href");
     const academicDemo = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
-    expect(academicApply).toContain("type=Academic+Tutoring");
-    expect(academicDemo).toContain("type=Academic+Tutoring");
+    expect(
+      new URL(academicApply || "", "https://techbuiltos.online").searchParams.get("type"),
+    ).toBe("Academic Tutoring");
+    expect(
+      new URL(academicDemo || "", "https://techbuiltos.online").searchParams.get("type"),
+    ).toBe("Academic Tutoring");
 
     await page.goto("/tutoring/tajweed-tarteel", { waitUntil: "domcontentloaded" });
     const quranApply = await page.locator('a[href*="/apply"]').first().getAttribute("href");
     const quranDemo = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
-    expect(quranApply).toContain("type=Quran+%26+Islamic+Studies");
-    expect(quranDemo).toContain("type=Quran+%26+Islamic+Studies");
+    expect(
+      new URL(quranApply || "", "https://techbuiltos.online").searchParams.get("type"),
+    ).toBe("Quran & Islamic Studies");
+    expect(
+      new URL(quranDemo || "", "https://techbuiltos.online").searchParams.get("type"),
+    ).toBe("Quran & Islamic Studies");
   });
 
   test("4. Trust pages use clear non-guarantee and Free Demo language", async ({ page }) => {
