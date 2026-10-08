@@ -1,9 +1,19 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, MessageCircle, ShieldCheck, UserCheck } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  MessageCircle,
+  ShieldCheck,
+  UserCheck,
+  AlertCircle,
+  GraduationCap,
+  Calendar,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,6 +35,7 @@ import {
 } from "@/lib/programs";
 import { whatsappLink } from "@/data/site";
 import { trackMetaLead } from "@/lib/marketing";
+import { FormSuccessPanel } from "./FormSuccessPanel";
 
 const schema = z.object({
   studentName: z.string().trim().min(2, "Please enter your full name").max(100),
@@ -89,8 +100,12 @@ export function ApplyForm({
   const [submittedData, setSubmittedData] = useState<{
     studentName: string;
     selectedProgram: string;
+    applicationType: string;
     referenceId?: string;
   } | null>(null);
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isSubmittingLockRef = useRef(false);
 
   const initialType: ApplicationType = normalizeApplicationType(
     defaultApplicationType || defaultCourseType || (formType as string),
@@ -101,6 +116,8 @@ export function ApplyForm({
     handleSubmit,
     watch,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -148,92 +165,115 @@ export function ApplyForm({
   }, [allPrograms, watchedAppType]);
 
   const onSubmit = async (values: FormValues) => {
-    if (isMinor && (!values.guardianName || values.guardianName.trim().length < 2)) {
-      toast.error("Please provide a parent or guardian name for students under 18.");
-      return;
+    if (isSubmittingLockRef.current) return;
+    isSubmittingLockRef.current = true;
+    setSubmitError(null);
+
+    // Minor validation enforcement
+    let hasGuardianError = false;
+    if (isMinor) {
+      if (!values.guardianName || values.guardianName.trim().length < 2) {
+        setError("guardianName", {
+          message: "Parent/guardian name is required for minors under 18",
+        });
+        hasGuardianError = true;
+      } else {
+        clearErrors("guardianName");
+      }
+      if (!values.guardianPhone || values.guardianPhone.trim().length < 7) {
+        setError("guardianPhone", {
+          message: "Parent/guardian WhatsApp/phone is required for minors under 18",
+        });
+        hasGuardianError = true;
+      } else {
+        clearErrors("guardianPhone");
+      }
     }
-    if (isMinor && (!values.guardianPhone || values.guardianPhone.trim().length < 7)) {
-      toast.error("Please provide a parent or guardian contact number for students under 18.");
+
+    if (hasGuardianError) {
+      isSubmittingLockRef.current = false;
+      toast.error("Please provide parent or guardian details for students under 18.");
       return;
     }
 
-    const result = await submitForm({
-      submissionType: "application",
-      sourcePage,
-      applicationType: values.applicationType,
-      selectedProgram: values.selectedProgram,
-      studentName: values.studentName,
-      email: values.email,
-      phone: values.phone,
-      country: values.country,
-      city: values.city,
-      age: values.age,
-      educationLevel: values.educationLevel,
-      institution: values.institution,
-      guardianName: values.guardianName,
-      guardianPhone: values.guardianPhone,
-      guardianEmail: values.guardianEmail,
-      skillLevel: values.skillLevel,
-      learningGoal: values.learningGoal,
-      learningPreference: values.learningPreference,
-      preferredDays: values.preferredDays,
-      preferredTime: values.preferredTime,
-      classesPerWeek: values.classesPerWeek,
-      notes: values.notes,
-      company: values.company,
-    });
-
-    if (result.ok) {
-      trackMetaLead({ leadType: "application", contentName: values.selectedProgram });
-      setSubmittedData({
-        studentName: values.studentName,
+    try {
+      const result = await submitForm({
+        submissionType: "application",
+        sourcePage,
+        applicationType: values.applicationType,
         selectedProgram: values.selectedProgram,
-        referenceId: result.referenceId,
+        studentName: values.studentName,
+        email: values.email,
+        phone: values.phone,
+        country: values.country,
+        city: values.city,
+        age: values.age,
+        educationLevel: values.educationLevel,
+        institution: values.institution,
+        guardianName: values.guardianName,
+        guardianPhone: values.guardianPhone,
+        guardianEmail: values.guardianEmail,
+        skillLevel: values.skillLevel,
+        learningGoal: values.learningGoal,
+        learningPreference: values.learningPreference,
+        preferredDays: values.preferredDays,
+        preferredTime: values.preferredTime,
+        classesPerWeek: values.classesPerWeek,
+        notes: values.notes,
+        company: values.company,
       });
-      reset();
-      toast.success("Application received! Our admissions team will review your application and contact you.");
-    } else {
-      toast.error(result.error ?? "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp.");
+
+      if (result.ok) {
+        // Fire Meta Lead conversion tracking ONLY on verified success
+        trackMetaLead({ leadType: "application", contentName: values.selectedProgram });
+        setSubmittedData({
+          studentName: values.studentName,
+          selectedProgram: values.selectedProgram,
+          applicationType: values.applicationType,
+          referenceId: result.referenceId,
+        });
+        toast.success("Application received! Our admissions team will review your application.");
+      } else {
+        const errorMsg =
+          result.error ??
+          "We couldn't submit your application right now. Please try again or contact admissions on WhatsApp.";
+        setSubmitError(errorMsg);
+        toast.error(errorMsg);
+      }
+    } catch (err) {
+      console.error("ApplyForm submission caught unexpected error:", err);
+      const fallbackErr =
+        "A network error occurred. Please check your connection or contact admissions on WhatsApp.";
+      setSubmitError(fallbackErr);
+      toast.error(fallbackErr);
+    } finally {
+      isSubmittingLockRef.current = false;
     }
   };
 
   if (submittedData) {
-    const whatsappFollowup = `Hello TechBuilt Open School, I have submitted an application for ${submittedData.selectedProgram}${submittedData.referenceId ? ` (Ref: ${submittedData.referenceId})` : ""} and would like more information.`;
-
     return (
-      <div className="rounded-2xl border border-success/30 bg-success/5 p-8 text-center sm:p-10">
-        <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
-        <h3 className="mt-4 text-2xl font-bold text-foreground">Application Received!</h3>
-        {submittedData.referenceId && (
-          <p className="mt-2 text-xs font-mono font-semibold text-primary">
-            Application Reference: {submittedData.referenceId}
-          </p>
-        )}
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-          Thank you, <strong>{submittedData.studentName}</strong>. Your application for{" "}
-          <strong>{submittedData.selectedProgram}</strong> has been registered. Our admissions team
-          will contact you via WhatsApp or email to discuss your plan, curriculum details,
-          and schedule.
-        </p>
-
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Button asChild variant="hero" size="lg">
-            <a href={whatsappLink(whatsappFollowup)} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="h-4 w-4 mr-2" /> Message Admissions on WhatsApp
-            </a>
-          </Button>
-          <Button variant="outline" size="lg" onClick={() => setSubmittedData(null)}>
-            Submit Another Application
-          </Button>
-        </div>
-      </div>
+      <FormSuccessPanel
+        kind="application"
+        title="Application Received!"
+        studentName={submittedData.studentName}
+        selectedProgram={submittedData.selectedProgram}
+        applicationType={submittedData.applicationType}
+        referenceId={submittedData.referenceId}
+        onReset={() => {
+          setSubmittedData(null);
+          setSubmitError(null);
+          reset();
+        }}
+        resetButtonText="Submit Another Application"
+      />
     );
   }
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8"
+      className="space-y-8 rounded-2xl border border-border bg-card p-6 shadow-card sm:p-8"
       noValidate
     >
       {/* Honeypot for spam protection */}
@@ -246,19 +286,94 @@ export function ApplyForm({
         {...register("company")}
       />
 
-      {/* 1. Student Personal Information */}
-      <div>
+      {/* Program Context Banner */}
+      {(watchedProg || defaultSelected) && (
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
+              You're Applying For
+            </span>
+            <p className="text-sm font-bold text-foreground">{watchedProg || defaultSelected}</p>
+            <p className="text-xs text-muted-foreground">
+              Category: {watchedAppType || initialType}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const el = document.getElementById("selectedProgram");
+              el?.focus();
+            }}
+            className="self-start sm:self-auto text-xs h-8"
+          >
+            Change Program
+          </Button>
+        </div>
+      )}
+
+      {/* Actionable Inline Error Banner */}
+      {submitError && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive space-y-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <strong className="block text-sm font-semibold text-destructive">
+                Submission Could Not Be Completed
+              </strong>
+              <p className="mt-0.5 text-foreground leading-relaxed">{submitError}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-destructive/20">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              className="h-8 text-xs bg-background text-foreground"
+            >
+              Try Again
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-primary hover:text-primary"
+            >
+              <a
+                href={whatsappLink(
+                  `Hello TechBuilt Admissions, I had an issue submitting my application for ${watchedProg || "a course"}. Could you assist?`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp Admissions
+              </a>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 1: Learner Personal Information */}
+      <div className="space-y-4">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2">
-          <UserCheck className="h-4 w-4 text-primary" /> 1. Student Information
+          <UserCheck className="h-4 w-4 text-primary" /> 1. Learner Information
         </h3>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
-            <Label htmlFor="studentName">Student full name *</Label>
+            <Label htmlFor="studentName">Learner full name *</Label>
             <Input
               id="studentName"
               className="mt-1.5"
               placeholder="e.g. Muhammad Ahmed"
+              aria-required="true"
               {...register("studentName")}
             />
             <ErrorText msg={errors.studentName?.message} />
@@ -271,19 +386,21 @@ export function ApplyForm({
               type="email"
               className="mt-1.5"
               placeholder="student@example.com"
+              aria-required="true"
               {...register("email")}
             />
             <ErrorText msg={errors.email?.message} />
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="phone">WhatsApp / Phone number *</Label>
             <Input
               id="phone"
               className="mt-1.5"
               placeholder="+92 300 1234567"
+              aria-required="true"
               {...register("phone")}
             />
             <ErrorText msg={errors.phone?.message} />
@@ -295,16 +412,22 @@ export function ApplyForm({
               id="country"
               className="mt-1.5"
               placeholder="e.g. Pakistan, UAE, UK, USA"
+              aria-required="true"
               {...register("country")}
             />
             <ErrorText msg={errors.country?.message} />
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-3">
           <div>
             <Label htmlFor="city">City (optional)</Label>
-            <Input id="city" className="mt-1.5" placeholder="e.g. Lahore, Karachi" {...register("city")} />
+            <Input
+              id="city"
+              className="mt-1.5"
+              placeholder="e.g. Lahore, Karachi"
+              {...register("city")}
+            />
           </div>
 
           <div>
@@ -317,6 +440,7 @@ export function ApplyForm({
             <select
               id="educationLevel"
               className={cn(fieldClass, "mt-1.5")}
+              aria-required="true"
               {...register("educationLevel")}
             >
               <option value="">Select level / grade</option>
@@ -329,56 +453,98 @@ export function ApplyForm({
             <ErrorText msg={errors.educationLevel?.message} />
           </div>
         </div>
+
+        <div>
+          <Label htmlFor="institution">Current School / College / University (optional)</Label>
+          <Input
+            id="institution"
+            className="mt-1.5"
+            placeholder="e.g. Beaconhouse, FAST, NUST, etc."
+            {...register("institution")}
+          />
+        </div>
       </div>
 
-      {/* 2. Minor / Guardian Logic */}
-      {isMinor && (
-        <div className="rounded-xl border border-gold/40 bg-gold/5 p-4 sm:p-5 transition-all">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-gold-foreground" />
-            <h4 className="text-sm font-bold text-foreground">
-              Parent / Guardian Details (Required for students under 18)
-            </h4>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            We maintain direct, transparent communication with parents regarding class schedules, tutor assignments, and academic progress.
-          </p>
+      {/* SECTION 2: Parent / Guardian Information */}
+      <div
+        className={cn(
+          "rounded-xl border p-4 sm:p-5 transition-all space-y-4",
+          isMinor ? "border-amber-400/50 bg-amber-500/5" : "border-border/60 bg-muted/20",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
+          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+            <ShieldCheck
+              className={cn("h-4 w-4", isMinor ? "text-amber-500" : "text-muted-foreground")}
+            />
+            2. Parent / Guardian Information
+          </h3>
+          {isMinor && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              Required for Minors Under 18
+            </span>
+          )}
+        </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="guardianName">Parent / Guardian Name *</Label>
-              <Input
-                id="guardianName"
-                className="mt-1.5 bg-background"
-                placeholder="Father / Mother / Guardian full name"
-                {...register("guardianName")}
-              />
-            </div>
-            <div>
-              <Label htmlFor="guardianPhone">Parent WhatsApp / Phone *</Label>
-              <Input
-                id="guardianPhone"
-                className="mt-1.5 bg-background"
-                placeholder="+92 300 0000000"
-                {...register("guardianPhone")}
-              />
-            </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {isMinor
+            ? "Because the learner is under 18, we require parent or guardian contact details to coordinate batch timings, orientation, and academic progress."
+            : "Optional for adult learners. For minors, parent/guardian contact is required."}
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="guardianName">
+              Parent / Guardian Name {isMinor ? "*" : "(optional)"}
+            </Label>
+            <Input
+              id="guardianName"
+              className="mt-1.5 bg-background"
+              placeholder="Father / Mother / Guardian full name"
+              {...register("guardianName")}
+            />
+            <ErrorText msg={errors.guardianName?.message} />
+          </div>
+
+          <div>
+            <Label htmlFor="guardianPhone">
+              Parent WhatsApp / Phone {isMinor ? "*" : "(optional)"}
+            </Label>
+            <Input
+              id="guardianPhone"
+              className="mt-1.5 bg-background"
+              placeholder="+92 300 0000000"
+              {...register("guardianPhone")}
+            />
+            <ErrorText msg={errors.guardianPhone?.message} />
           </div>
         </div>
-      )}
 
-      {/* 3. Program Interest */}
-      <div>
+        <div>
+          <Label htmlFor="guardianEmail">Parent / Guardian Email (optional)</Label>
+          <Input
+            id="guardianEmail"
+            type="email"
+            className="mt-1.5 bg-background"
+            placeholder="guardian@example.com"
+            {...register("guardianEmail")}
+          />
+        </div>
+      </div>
+
+      {/* SECTION 3: Program of Interest */}
+      <div className="space-y-4">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2">
-          <CheckCircle2 className="h-4 w-4 text-primary" /> 2. Program of Interest
+          <GraduationCap className="h-4 w-4 text-primary" /> 3. Program of Interest
         </h3>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="applicationType">Application Category *</Label>
             <select
               id="applicationType"
               className={cn(fieldClass, "mt-1.5")}
+              aria-required="true"
               {...register("applicationType")}
             >
               {applicationTypeOptions.map((opt) => (
@@ -397,6 +563,7 @@ export function ApplyForm({
               list="application-program-list"
               className={cn(fieldClass, "mt-1.5")}
               placeholder="Choose or type, e.g. Python, Full Stack Developer, Mathematics"
+              aria-required="true"
               {...register("selectedProgram")}
             />
             <datalist id="application-program-list">
@@ -410,7 +577,7 @@ export function ApplyForm({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="skillLevel">Current Experience Level</Label>
             <select
@@ -438,18 +605,20 @@ export function ApplyForm({
         </div>
       </div>
 
-      {/* 4. Learning Format & Schedule Preferences */}
-      <div>
+      {/* SECTION 4: Learning Preferences & Schedule */}
+      <div className="space-y-4">
         <h3 className="text-base font-bold text-foreground flex items-center gap-2 border-b border-border/60 pb-2">
-          <CheckCircle2 className="h-4 w-4 text-primary" /> 3. Learning Preferences & Schedule
+          <Calendar className="h-4 w-4 text-primary" /> 4. Learning Format &amp; Schedule
+          Preferences
         </h3>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="learningPreference">Preferred Learning Format *</Label>
             <select
               id="learningPreference"
               className={cn(fieldClass, "mt-1.5")}
+              aria-required="true"
               {...register("learningPreference")}
             >
               {learningPreferenceOptions.map((pref) => (
@@ -477,7 +646,7 @@ export function ApplyForm({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
           <div>
             <Label htmlFor="preferredDays">Preferred Days</Label>
             <select
@@ -509,7 +678,7 @@ export function ApplyForm({
           </div>
         </div>
 
-        <div className="mt-4">
+        <div>
           <Label htmlFor="notes">Additional Requirements / Notes</Label>
           <Textarea
             id="notes"
@@ -520,35 +689,37 @@ export function ApplyForm({
         </div>
       </div>
 
-      {/* 5. Consent & Submit */}
-      <div className="flex items-start gap-3 rounded-lg bg-muted/60 p-4">
-        <input
-          id="consent"
-          type="checkbox"
-          {...register("consent")}
-          className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-primary accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-        <Label htmlFor="consent" className="text-xs font-normal leading-relaxed text-muted-foreground">
-          I agree to be contacted by TechBuilt Open School admissions regarding my application. There is no obligation to enrol until arrangements and fees are mutually confirmed. *
-        </Label>
-      </div>
-      <ErrorText msg={errors.consent?.message as string | undefined} />
+      {/* SECTION 5: Consent & Submit */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-start gap-3 rounded-lg bg-muted/60 p-4">
+          <input
+            id="consent"
+            type="checkbox"
+            aria-required="true"
+            {...register("consent")}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-primary accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+          <Label
+            htmlFor="consent"
+            className="text-xs font-normal leading-relaxed text-muted-foreground"
+          >
+            I agree to be contacted by TechBuilt Open School admissions regarding my application.
+            There is no obligation to enrol until syllabus, batch timetable, and fees are mutually
+            confirmed. *
+          </Label>
+        </div>
+        <ErrorText msg={errors.consent?.message as string | undefined} />
 
-      <Button
-        type="submit"
-        variant="hero"
-        size="xl"
-        className="w-full"
-        disabled={isSubmitting}
-      >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Submitting Application…
-          </>
-        ) : (
-          "Submit Application"
-        )}
-      </Button>
+        <Button type="submit" variant="hero" size="xl" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin mr-2" /> Submitting Application…
+            </>
+          ) : (
+            "Submit Application"
+          )}
+        </Button>
+      </div>
     </form>
   );
 }

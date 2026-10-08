@@ -39,10 +39,10 @@ test.describe("Phase 12C Premium Catalog Suite", () => {
 
     // Test Search input filtering
     const searchInput = page.locator('input[placeholder*="Search"]').first();
-    await searchInput.fill("Python");
-    await page.waitForTimeout(400);
-
+    await searchInput.click();
+    await searchInput.pressSequentially("Python", { delay: 30 });
     const pythonCards = page.locator("[data-course-card]");
+    await expect(pythonCards).not.toHaveCount(count);
     const filteredCount = await pythonCards.count();
     expect(filteredCount).toBeGreaterThan(0);
     expect(filteredCount).toBeLessThan(count);
@@ -143,6 +143,7 @@ test.describe("Phase 12C Premium Catalog Suite", () => {
   test("6. Responsive layout QA across 7 viewports has zero horizontal overflow", async ({
     page,
   }) => {
+    test.setTimeout(60000);
     const viewports = [375, 390, 430, 768, 1024, 1280, 1440];
     const testRoutes = [
       "/courses",

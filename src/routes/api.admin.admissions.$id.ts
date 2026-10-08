@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { adminAdmissionsPatchSchema } from "@/lib/adminCrm";
+import {
+  retryAdmissionsDeliveries,
+  type IntegrationChannel,
+} from "@/lib/admissionsIntegrations.server";
 
 export const Route = createFileRoute("/api/admin/admissions/$id")({
   server: {
@@ -17,10 +21,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
 
         const { client } = getSupabaseServerClient();
         if (!client) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Database client unavailable" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Database client unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const admissionId = params.id;
@@ -33,10 +37,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           .single();
 
         if (fetchError || !admission) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Admissions record not found" }),
-            { status: 404, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Admissions record not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // 2. Fetch activity audit logs
@@ -76,10 +80,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
 
         const { client } = getSupabaseServerClient();
         if (!client) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Database client unavailable" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Database client unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const admissionId = params.id;
@@ -91,10 +95,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           .single();
 
         if (findError || !existing) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Admissions record not found" }),
-            { status: 404, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Admissions record not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // admissions_activity and admissions_delivery_log are removed by FK cascade.
@@ -137,10 +141,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
 
         const { client } = getSupabaseServerClient();
         if (!client) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Database client unavailable" }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Database client unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // 2. Parse and validate JSON
@@ -148,19 +152,19 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
         try {
           body = await request.json();
         } catch {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Malformed JSON payload" }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Malformed JSON payload" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const parsed = adminAdmissionsPatchSchema.safeParse(body);
         if (!parsed.success) {
           const firstErr = parsed.error.errors[0]?.message || "Invalid patch parameters";
-          return new Response(
-            JSON.stringify({ ok: false, error: firstErr }),
-            { status: 422, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: firstErr }), {
+            status: 422,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const patch = parsed.data;
@@ -174,10 +178,10 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           .single();
 
         if (findError || !existing) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Admissions record not found" }),
-            { status: 404, headers: { "Content-Type": "application/json" } },
-          );
+          return new Response(JSON.stringify({ ok: false, error: "Admissions record not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // 4. Build sanitized update object with only allowed CRM fields
@@ -222,22 +226,30 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           });
         }
 
-        if (patch.nextFollowUpAt !== undefined && patch.nextFollowUpAt !== existing.next_follow_up_at) {
+        if (
+          patch.nextFollowUpAt !== undefined &&
+          patch.nextFollowUpAt !== existing.next_follow_up_at
+        ) {
           updatePayload.next_follow_up_at = patch.nextFollowUpAt || null;
           activitiesToInsert.push({
             admission_id: admissionId,
             admin_user_id: auth.admin.user.id,
             action_type: "follow_up_set",
-            note: patch.nextFollowUpAt ? `Follow-up scheduled for ${patch.nextFollowUpAt}` : "Follow-up cleared",
+            note: patch.nextFollowUpAt
+              ? `Follow-up scheduled for ${patch.nextFollowUpAt}`
+              : "Follow-up cleared",
           });
         }
 
-        if (
-          patch.demoScheduledAt !== undefined ||
-          patch.demoMeetingLink !== undefined
-        ) {
-          const newDemoAt = patch.demoScheduledAt !== undefined ? (patch.demoScheduledAt || null) : existing.demo_scheduled_at;
-          const newLink = patch.demoMeetingLink !== undefined ? (patch.demoMeetingLink || null) : existing.demo_meeting_link;
+        if (patch.demoScheduledAt !== undefined || patch.demoMeetingLink !== undefined) {
+          const newDemoAt =
+            patch.demoScheduledAt !== undefined
+              ? patch.demoScheduledAt || null
+              : existing.demo_scheduled_at;
+          const newLink =
+            patch.demoMeetingLink !== undefined
+              ? patch.demoMeetingLink || null
+              : existing.demo_meeting_link;
 
           if (newDemoAt !== existing.demo_scheduled_at || newLink !== existing.demo_meeting_link) {
             updatePayload.demo_scheduled_at = newDemoAt;
@@ -257,13 +269,18 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           }
         }
 
-        if (patch.lastContactedAt !== undefined && patch.lastContactedAt !== existing.last_contacted_at) {
+        if (
+          patch.lastContactedAt !== undefined &&
+          patch.lastContactedAt !== existing.last_contacted_at
+        ) {
           updatePayload.last_contacted_at = patch.lastContactedAt || null;
           activitiesToInsert.push({
             admission_id: admissionId,
             admin_user_id: auth.admin.user.id,
             action_type: "contacted",
-            note: patch.lastContactedAt ? `Contacted at ${patch.lastContactedAt}` : "Contact timestamp cleared",
+            note: patch.lastContactedAt
+              ? `Contacted at ${patch.lastContactedAt}`
+              : "Contact timestamp cleared",
           });
         }
 
@@ -273,7 +290,9 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
             admission_id: admissionId,
             admin_user_id: auth.admin.user.id,
             action_type: "closed_reason_updated",
-            note: patch.closedReason ? `Closed reason: ${patch.closedReason}` : "Closed reason cleared",
+            note: patch.closedReason
+              ? `Closed reason: ${patch.closedReason}`
+              : "Closed reason cleared",
           });
         }
 
@@ -305,6 +324,62 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
         );
+      },
+
+      POST: async ({ request, params }: { request: Request; params: { id: string } }) => {
+        const auth = await verifyAdminRequest(request);
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+            status: auth.status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const { client } = getSupabaseServerClient();
+        if (!client) {
+          return new Response(JSON.stringify({ ok: false, error: "Database client unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const admissionId = params.id;
+
+        let body: { action?: string; channels?: IntegrationChannel[] } = {};
+        try {
+          body = await request.json();
+        } catch {
+          // Defaults to retry-delivery
+        }
+
+        if (body.action && body.action !== "retry-delivery") {
+          return new Response(JSON.stringify({ ok: false, error: "Unsupported action" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Fetch admission record
+        const { data: admission, error: fetchErr } = await client
+          .from("admissions_requests")
+          .select("*")
+          .eq("id", admissionId)
+          .single();
+
+        if (fetchErr || !admission) {
+          return new Response(JSON.stringify({ ok: false, error: "Admissions record not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Retry deliveries safely
+        const retryResult = await retryAdmissionsDeliveries(admissionId, admission, body.channels);
+
+        return new Response(JSON.stringify(retryResult), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       },
     },
   },

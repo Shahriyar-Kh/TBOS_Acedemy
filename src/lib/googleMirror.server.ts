@@ -3,16 +3,46 @@ import type { AdmissionsRequestRecord } from "./supabase.server";
 
 export interface GoogleMirrorResult {
   status: "success" | "failed" | "skipped";
+  duplicate?: boolean;
+  sheetStatus?: "success" | "failed";
+  adminEmailStatus?: "success" | "failed" | "skipped";
+  learnerEmailStatus?: "success" | "failed" | "skipped";
   errorSummary?: string | null;
 }
 
 /**
- * Server-side best-effort mirror to Google Sheets via Google Apps Script.
+ * Sanitizes error strings to remove any embedded sensitive query params or secrets.
+ */
+export function sanitizeIntegrationError(errorStr: unknown): string {
+  if (!errorStr) return "Unknown integration error";
+  const str = errorStr instanceof Error ? errorStr.message : String(errorStr);
+  return str
+    .replace(/(key|token|secret|password|auth)=([^& \t\r\n]+)/gi, "$1=[REDACTED]")
+    .replace(/https?:\/\/[^\s]+/gi, (url) => {
+      try {
+        const u = new URL(url);
+        return `${u.protocol}//${u.host}${u.pathname}`;
+      } catch {
+        return "[URL]";
+      }
+    })
+    .slice(0, 200);
+}
+
+/**
+ * Server-side best-effort mirror to Google Sheets via Google Apps Script Webhook v2.
  * Failures here NEVER cause user-facing submission errors or revert database records.
+ *
+ * Implements:
+ * - HTTPS-first execution
+ * - Idempotency reference ID
+ * - Response body JSON validation (requiring ok === true)
+ * - Transient retry with exponential backoff on network errors or 5xx/429
  */
 export async function mirrorToGoogleSheetsServer(
   admission: AdmissionsRequestRecord,
   referenceId?: string,
+  maxRetries = 2,
 ): Promise<GoogleMirrorResult> {
   const config = getServerConfig();
   const scriptUrl = config.googleScriptUrl;
@@ -24,7 +54,8 @@ export async function mirrorToGoogleSheetsServer(
     };
   }
 
-  const ref = referenceId || (admission.id ? `TBOS-${admission.id.slice(0, 8).toUpperCase()}` : "TBOS-NEW");
+  const ref =
+    referenceId || (admission.id ? `TBOS-${admission.id.slice(0, 8).toUpperCase()}` : "TBOS-NEW");
   const nowIso = new Date().toISOString();
 
   // Normalized payload + legacy Google Apps Script field aliases
@@ -56,7 +87,7 @@ export async function mirrorToGoogleSheetsServer(
     status: admission.status || "new",
     createdAt: admission.created_at || nowIso,
 
-    // Legacy Apps Script contract aliases (from GOOGLE_INTEGRATION.md):
+    // Legacy Apps Script contract aliases:
     submittedAt: admission.created_at || nowIso,
     formType: admission.submission_kind === "demo" ? "Free Demo" : admission.application_type,
     fullName: admission.student_name,
@@ -69,37 +100,103 @@ export async function mirrorToGoogleSheetsServer(
     message: admission.notes || "",
   };
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  let lastErrorSummary = "Unknown mirror failure";
 
-  try {
-    const response = await fetch(scriptUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 7000);
 
-    clearTimeout(timeoutId);
+    try {
+      const response = await fetch(scriptUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-    // Google Apps Script redirects or returns 200/302
-    if (!response.ok && response.status !== 302) {
-      return {
-        status: "failed",
-        errorSummary: `Google Apps Script returned HTTP ${response.status}`,
+      clearTimeout(timeoutId);
+
+      // Status 429 or 5xx indicates transient server issue; retry if attempts remain
+      if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+        lastErrorSummary = `Google Apps Script returned HTTP ${response.status}`;
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 350));
+        continue;
+      }
+
+      if (!response.ok && response.status !== 302) {
+        return {
+          status: "failed",
+          errorSummary: sanitizeIntegrationError(
+            `Google Apps Script returned HTTP ${response.status}`,
+          ),
+        };
+      }
+
+      // Parse JSON body for Google Apps Script Webhook v2 contract
+      let jsonBody: {
+        ok?: boolean;
+        duplicate?: boolean;
+        error?: string;
+        sheet?: { status?: "success" | "failed" };
+        adminEmail?: { status?: "success" | "failed" | "skipped" };
+        learnerEmail?: { status?: "success" | "failed" | "skipped" };
       };
-    }
 
-    return { status: "success" };
-  } catch (err: unknown) {
-    clearTimeout(timeoutId);
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.warn("Server Google Sheets mirror failed (secondary integration):", errorMsg);
-    return {
-      status: "failed",
-      errorSummary: errorMsg.slice(0, 200),
-    };
+      try {
+        jsonBody = (await response.json()) as {
+          ok?: boolean;
+          duplicate?: boolean;
+          error?: string;
+          sheet?: { status?: "success" | "failed" };
+          adminEmail?: { status?: "success" | "failed" | "skipped" };
+          learnerEmail?: { status?: "success" | "failed" | "skipped" };
+        };
+      } catch {
+        return {
+          status: "failed",
+          errorSummary: "Invalid non-JSON response from Google Apps Script Webhook",
+        };
+      }
+
+      if (jsonBody && jsonBody.ok === false) {
+        return {
+          status: "failed",
+          errorSummary: sanitizeIntegrationError(jsonBody.error || "Webhook returned ok: false"),
+        };
+      }
+
+      const isDuplicate = Boolean(jsonBody?.duplicate);
+      const sheetStatus = (jsonBody?.sheet?.status as "success" | "failed") || "success";
+      const adminEmailStatus =
+        (jsonBody?.adminEmail?.status as "success" | "failed" | "skipped") || "success";
+      const learnerEmailStatus =
+        (jsonBody?.learnerEmail?.status as "success" | "failed" | "skipped") || undefined;
+
+      return {
+        status: "success",
+        duplicate: isDuplicate,
+        sheetStatus,
+        adminEmailStatus,
+        learnerEmailStatus,
+      };
+    } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      lastErrorSummary = sanitizeIntegrationError(err);
+      if (attempt < maxRetries) {
+        // Wait exponential backoff before next attempt
+        await new Promise((r) => setTimeout(r, (attempt + 1) * 350));
+      }
+    }
   }
+
+  console.warn(
+    "Server Google Sheets mirror failed after retries (secondary integration):",
+    lastErrorSummary,
+  );
+  return {
+    status: "failed",
+    errorSummary: lastErrorSummary,
+  };
 }

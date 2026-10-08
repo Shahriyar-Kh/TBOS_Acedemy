@@ -1,20 +1,24 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
+  CalendarCheck,
   Loader2,
   MessageCircle,
   ShieldCheck,
-  CalendarCheck,
   Sparkles,
+  AlertCircle,
+  UserCheck,
+  GraduationCap,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { submitForm } from "@/lib/forms";
 import { trackMetaLead } from "@/lib/marketing";
 import {
@@ -29,6 +33,7 @@ import {
   isMinorLearner,
 } from "@/lib/programs";
 import { whatsappLink } from "@/data/site";
+import { FormSuccessPanel } from "./FormSuccessPanel";
 
 const demoSchema = z.object({
   studentName: z.string().trim().min(2, "Please enter your full name").max(100),
@@ -53,7 +58,7 @@ const demoSchema = z.object({
   selectedProgram: z.string().trim().min(2, "Please select or type your course/subject").max(140),
   skillLevel: z.string().optional().or(z.literal("")),
 
-  // Preferred demo schedule (preferences, not confirmed instant appointments)
+  // Preferred demo schedule
   preferredDays: z.string().min(1, "Select preferred day(s) for the demo"),
   preferredTime: z.string().min(1, "Select preferred time window"),
   timezone: z.string().trim().max(60).optional().or(z.literal("")),
@@ -89,9 +94,13 @@ export function DemoForm({
   const [submittedData, setSubmittedData] = useState<{
     studentName: string;
     selectedProgram: string;
+    applicationType: string;
     preferredTime: string;
     referenceId?: string;
   } | null>(null);
+
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const isSubmittingLockRef = useRef(false);
 
   const initialType: ApplicationType = normalizeApplicationType(defaultType);
 
@@ -100,6 +109,8 @@ export function DemoForm({
     handleSubmit,
     watch,
     reset,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<DemoFormValues>({
     resolver: zodResolver(demoSchema),
@@ -145,105 +156,110 @@ export function DemoForm({
   }, [allPrograms, watchedAppType]);
 
   const onSubmit = async (values: DemoFormValues) => {
-    if (isMinor && (!values.guardianName || values.guardianName.trim().length < 2)) {
-      toast.error("Please provide a parent or guardian name for students under 18.");
-      return;
+    if (isSubmittingLockRef.current) return;
+    isSubmittingLockRef.current = true;
+    setSubmitError(null);
+
+    // Minor validation check
+    let hasGuardianError = false;
+    if (isMinor) {
+      if (!values.guardianName || values.guardianName.trim().length < 2) {
+        setError("guardianName", {
+          message: "Parent/guardian name is required for minors under 18",
+        });
+        hasGuardianError = true;
+      } else {
+        clearErrors("guardianName");
+      }
+      if (!values.guardianPhone || values.guardianPhone.trim().length < 7) {
+        setError("guardianPhone", {
+          message: "Parent/guardian WhatsApp/phone is required for minors under 18",
+        });
+        hasGuardianError = true;
+      } else {
+        clearErrors("guardianPhone");
+      }
     }
-    if (isMinor && (!values.guardianPhone || values.guardianPhone.trim().length < 7)) {
-      toast.error("Please provide a parent or guardian contact number for students under 18.");
+
+    if (hasGuardianError) {
+      isSubmittingLockRef.current = false;
+      toast.error("Please provide parent or guardian details for students under 18.");
       return;
     }
 
-    const result = await submitForm({
-      submissionType: "demo",
-      sourcePage,
-      applicationType: values.applicationType,
-      selectedProgram: values.selectedProgram,
-      studentName: values.studentName,
-      email: values.email,
-      phone: values.phone,
-      country: values.country,
-      city: values.city,
-      age: values.age,
-      educationLevel: values.educationLevel,
-      guardianName: values.guardianName,
-      guardianPhone: values.guardianPhone,
-      skillLevel: values.skillLevel,
-      learningGoal: values.learningGoal,
-      learningPreference: "Free Demo Trial Session",
-      preferredDays: values.preferredDays,
-      preferredTime: values.preferredTime,
-      timezone: values.timezone,
-      notes: values.notes,
-      company: values.company,
-    });
-
-    if (result.ok) {
-      trackMetaLead({ leadType: "free_demo", contentName: values.selectedProgram });
-      setSubmittedData({
-        studentName: values.studentName,
+    try {
+      const result = await submitForm({
+        submissionType: "demo",
+        sourcePage,
+        applicationType: values.applicationType,
         selectedProgram: values.selectedProgram,
-        preferredTime: `${values.preferredDays}, ${values.preferredTime}`,
-        referenceId: result.referenceId,
+        studentName: values.studentName,
+        email: values.email,
+        phone: values.phone,
+        country: values.country,
+        city: values.city,
+        age: values.age,
+        educationLevel: values.educationLevel,
+        guardianName: values.guardianName,
+        guardianPhone: values.guardianPhone,
+        skillLevel: values.skillLevel,
+        learningGoal: values.learningGoal,
+        learningPreference: "Free Demo Trial Session",
+        preferredDays: values.preferredDays,
+        preferredTime: values.preferredTime,
+        timezone: values.timezone,
+        notes: values.notes,
+        company: values.company,
       });
-      reset();
-      toast.success("Demo request received! Our admissions team will contact you to confirm the session.");
-    } else {
-      toast.error(result.error ?? "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp.");
+
+      if (result.ok) {
+        // Track conversion ONLY upon verified success
+        trackMetaLead({ leadType: "free_demo", contentName: values.selectedProgram });
+        setSubmittedData({
+          studentName: values.studentName,
+          selectedProgram: values.selectedProgram,
+          applicationType: values.applicationType,
+          preferredTime: `${values.preferredDays}, ${values.preferredTime}`,
+          referenceId: result.referenceId,
+        });
+        toast.success(
+          "Demo request received! Our admissions team will contact you to confirm the session.",
+        );
+      } else {
+        const errorMsg =
+          result.error ??
+          "We couldn't submit your demo request right now. Please try again or contact admissions on WhatsApp.";
+        setSubmitError(errorMsg);
+        toast.error(errorMsg);
+      }
+    } catch (err) {
+      console.error("DemoForm caught unexpected error:", err);
+      const fallbackErr =
+        "A network error occurred. Please check your connection or contact admissions on WhatsApp.";
+      setSubmitError(fallbackErr);
+      toast.error(fallbackErr);
+    } finally {
+      isSubmittingLockRef.current = false;
     }
   };
 
   if (submittedData) {
-    const whatsappFollowup = `Hello TechBuilt Open School, I would like to request a Free Demo for ${submittedData.selectedProgram}${submittedData.referenceId ? ` (Ref: ${submittedData.referenceId})` : ""}.`;
-
     return (
-      <div className="rounded-2xl border border-primary/30 bg-primary/5 p-8 text-center sm:p-10">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <CalendarCheck className="h-7 w-7" />
-        </div>
-        <h3 className="mt-5 text-2xl font-bold text-foreground">Demo Request Received</h3>
-        {submittedData.referenceId && (
-          <p className="mt-2 text-xs font-mono font-semibold text-primary">
-            Request Reference: {submittedData.referenceId}
-          </p>
-        )}
-        <p className="mt-3 text-muted-foreground">
-          Thank you, <strong className="text-foreground">{submittedData.studentName}</strong>. Your trial demo request for{" "}
-          <strong className="text-foreground">{submittedData.selectedProgram}</strong> has been logged.
-        </p>
-
-        <div className="mx-auto mt-6 max-w-md rounded-xl border border-border bg-card p-4 text-left text-sm">
-          <div className="flex items-center gap-2 font-medium text-foreground">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span>How your demo is confirmed:</span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Requested schedule: <strong className="text-foreground">{submittedData.preferredTime}</strong>
-          </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Our admissions coordinator will review instructor availability, reach out via WhatsApp / Email, and share your private live class meeting link before the session.
-          </p>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a
-            href={whatsappLink(whatsappFollowup)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#25D366] px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#20ba59]"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Confirm on WhatsApp
-          </a>
-          <Button
-            variant="outline"
-            onClick={() => setSubmittedData(null)}
-            className="h-11 px-5"
-          >
-            Submit Another Request
-          </Button>
-        </div>
-      </div>
+      <FormSuccessPanel
+        kind="demo"
+        title="Free Demo Request Received!"
+        studentName={submittedData.studentName}
+        selectedProgram={submittedData.selectedProgram}
+        applicationType={submittedData.applicationType}
+        preferredTime={submittedData.preferredTime}
+        referenceId={submittedData.referenceId}
+        onReset={() => {
+          setSubmittedData(null);
+          setSubmitError(null);
+          reset();
+        }}
+        resetButtonText="Submit Another Demo Request"
+      />
     );
   }
 
@@ -263,26 +279,100 @@ export function DemoForm({
         aria-hidden="true"
       />
 
+      {/* Program Context Banner */}
+      {(watchedProg || defaultSelected) && (
+        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
+              Trial For
+            </span>
+            <p className="text-sm font-bold text-foreground">{watchedProg || defaultSelected}</p>
+            <p className="text-xs text-muted-foreground">
+              Category: {watchedAppType || initialType}
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const el = document.getElementById("demo-selectedProgram");
+              el?.focus();
+            }}
+            className="self-start sm:self-auto text-xs h-8"
+          >
+            Change Program
+          </Button>
+        </div>
+      )}
+
       {/* Trial Disclosure Banner */}
       <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-foreground">
         <div className="flex items-start gap-2.5">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <div className="space-y-1 text-xs text-muted-foreground leading-relaxed">
-            <p className="font-semibold text-foreground">
-              Free 1-Class Live Trial Session
-            </p>
+            <p className="font-semibold text-foreground">Free 1-Class Live Trial Session</p>
             <p>
-              The Free Demo is an introductory live session to experience our interactive teaching style, meet the instructor, and assess curriculum fit. Ongoing batches and tutoring programs are paid courses.
+              The Free Demo is an introductory live session to experience our interactive teaching
+              style, meet the instructor, and assess curriculum fit. Regular cohorts and ongoing
+              tutoring are paid programs.
             </p>
           </div>
         </div>
       </div>
 
-      {/* 1. Student Details */}
+      {/* Actionable Inline Error Banner */}
+      {submitError && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-xs text-destructive space-y-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <strong className="block text-sm font-semibold text-destructive">
+                Demo Request Could Not Be Submitted
+              </strong>
+              <p className="mt-0.5 text-foreground leading-relaxed">{submitError}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-destructive/20">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSubmit(onSubmit)}
+              disabled={isSubmitting}
+              className="h-8 text-xs bg-background text-foreground"
+            >
+              Try Again
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-8 text-xs text-primary hover:text-primary"
+            >
+              <a
+                href={whatsappLink(
+                  `Hello TechBuilt Admissions, I had an issue requesting a demo for ${watchedProg || "a program"}. Could you assist?`,
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle className="h-3.5 w-3.5 mr-1" /> WhatsApp Admissions
+              </a>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 1: Student Details */}
       <div className="space-y-4">
-        <div className="border-b border-border pb-2">
+        <div className="border-b border-border pb-2 flex items-center gap-2">
+          <UserCheck className="h-4 w-4 text-primary" />
           <h3 className="text-base font-semibold text-foreground">1. Student Information</h3>
-          <p className="text-xs text-muted-foreground">Who will attend the demo session?</p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -294,6 +384,7 @@ export function DemoForm({
               id="demo-studentName"
               placeholder="e.g. Ayesha Khan"
               className={fieldClass}
+              aria-required="true"
               {...register("studentName")}
             />
             <ErrorText msg={errors.studentName?.message} />
@@ -308,6 +399,7 @@ export function DemoForm({
               type="email"
               placeholder="ayesha@example.com"
               className={fieldClass}
+              aria-required="true"
               {...register("email")}
             />
             <ErrorText msg={errors.email?.message} />
@@ -321,6 +413,7 @@ export function DemoForm({
               id="demo-phone"
               placeholder="+92 300 1234567"
               className={fieldClass}
+              aria-required="true"
               {...register("phone")}
             />
             <p className="mt-1 text-[11px] text-muted-foreground">
@@ -337,6 +430,7 @@ export function DemoForm({
               id="demo-country"
               placeholder="e.g. Pakistan, UAE, UK, Saudi Arabia"
               className={fieldClass}
+              aria-required="true"
               {...register("country")}
             />
             <ErrorText msg={errors.country?.message} />
@@ -356,7 +450,10 @@ export function DemoForm({
 
           <div>
             <Label htmlFor="demo-age" className="text-xs font-semibold">
-              Student Age <span className="text-muted-foreground font-normal">(Helpful for cohort placement)</span>
+              Student Age{" "}
+              <span className="text-muted-foreground font-normal">
+                (Helpful for cohort placement)
+              </span>
             </Label>
             <Input
               id="demo-age"
@@ -374,6 +471,7 @@ export function DemoForm({
           <select
             id="demo-educationLevel"
             className={fieldClass}
+            aria-required="true"
             {...register("educationLevel")}
           >
             <option value="">-- Select Grade or Education Level --</option>
@@ -387,54 +485,69 @@ export function DemoForm({
         </div>
       </div>
 
-      {/* Guardian Section (Prompted/Required for Minors) */}
-      {isMinor && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
+      {/* SECTION 2: Guardian Section (Prompted/Required for Minors) */}
+      <div
+        className={cn(
+          "rounded-xl border p-4 sm:p-5 transition-all space-y-4",
+          isMinor ? "border-amber-400/50 bg-amber-500/5" : "border-border/60 bg-muted/20",
+        )}
+      >
+        <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            <h4 className="text-sm font-semibold text-foreground">
-              Parent or Guardian Contact (Required for Learners Under 18)
-            </h4>
+            <ShieldCheck
+              className={cn("h-5 w-5", isMinor ? "text-amber-500" : "text-muted-foreground")}
+            />
+            <h4 className="text-sm font-semibold text-foreground">2. Parent / Guardian Contact</h4>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            For students in Grades 5–10 or under 18, our admissions coordinator connects directly with a parent or guardian to confirm the trial schedule.
-          </p>
+          {isMinor && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              Required for Minors Under 18
+            </span>
+          )}
+        </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="demo-guardianName" className="text-xs font-semibold">
-                Parent / Guardian Full Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="demo-guardianName"
-                placeholder="Parent or Guardian Name"
-                className={fieldClass}
-                {...register("guardianName")}
-              />
-              <ErrorText msg={errors.guardianName?.message} />
-            </div>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          {isMinor
+            ? "For students in Grades 5–10 or under 18, our admissions coordinator connects directly with a parent or guardian to confirm the trial schedule."
+            : "Optional for adult learners. For minors under 18, parent/guardian contact is required."}
+        </p>
 
-            <div>
-              <Label htmlFor="demo-guardianPhone" className="text-xs font-semibold">
-                Parent / Guardian WhatsApp <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="demo-guardianPhone"
-                placeholder="+92 300 1234567"
-                className={fieldClass}
-                {...register("guardianPhone")}
-              />
-              <ErrorText msg={errors.guardianPhone?.message} />
-            </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="demo-guardianName" className="text-xs font-semibold">
+              Parent / Guardian Full Name{" "}
+              {isMinor ? <span className="text-destructive">*</span> : "(optional)"}
+            </Label>
+            <Input
+              id="demo-guardianName"
+              placeholder="Parent or Guardian Name"
+              className={fieldClass}
+              {...register("guardianName")}
+            />
+            <ErrorText msg={errors.guardianName?.message} />
+          </div>
+
+          <div>
+            <Label htmlFor="demo-guardianPhone" className="text-xs font-semibold">
+              Parent / Guardian WhatsApp{" "}
+              {isMinor ? <span className="text-destructive">*</span> : "(optional)"}
+            </Label>
+            <Input
+              id="demo-guardianPhone"
+              placeholder="+92 300 1234567"
+              className={fieldClass}
+              {...register("guardianPhone")}
+            />
+            <ErrorText msg={errors.guardianPhone?.message} />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* 2. Program Selection */}
+      {/* SECTION 3: Program Selection */}
       <div className="space-y-4">
-        <div className="border-b border-border pb-2">
-          <h3 className="text-base font-semibold text-foreground">2. Program of Interest</h3>
-          <p className="text-xs text-muted-foreground">Which subject or course would you like to trial?</p>
+        <div className="border-b border-border pb-2 flex items-center gap-2">
+          <GraduationCap className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-foreground">3. Program of Interest</h3>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -445,6 +558,7 @@ export function DemoForm({
             <select
               id="demo-appType"
               className={fieldClass}
+              aria-required="true"
               {...register("applicationType")}
             >
               {applicationTypeOptions.map((opt) => (
@@ -465,6 +579,7 @@ export function DemoForm({
               id="demo-selectedProgram"
               placeholder="e.g. Python Young Developers, React.js, Physics"
               className={fieldClass}
+              aria-required="true"
               {...register("selectedProgram")}
             />
             <datalist id="demo-programs-list">
@@ -482,11 +597,7 @@ export function DemoForm({
           <Label htmlFor="demo-skillLevel" className="text-xs font-semibold">
             Current Knowledge / Experience Level
           </Label>
-          <select
-            id="demo-skillLevel"
-            className={fieldClass}
-            {...register("skillLevel")}
-          >
+          <select id="demo-skillLevel" className={fieldClass} {...register("skillLevel")}>
             {skillLevelOptions.map((opt) => (
               <option key={opt} value={opt}>
                 {opt}
@@ -496,14 +607,16 @@ export function DemoForm({
         </div>
       </div>
 
-      {/* 3. Schedule Preferences (Not Instant Bookings) */}
+      {/* SECTION 4: Schedule Preferences */}
       <div className="space-y-4">
-        <div className="border-b border-border pb-2">
-          <h3 className="text-base font-semibold text-foreground">3. Schedule Preference</h3>
-          <p className="text-xs text-muted-foreground">
-            Share your preferred timing window. Admissions will confirm the exact date and session time.
-          </p>
+        <div className="border-b border-border pb-2 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-primary" />
+          <h3 className="text-base font-semibold text-foreground">4. Schedule Preference</h3>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Share your preferred timing window. Admissions will confirm the exact date and session
+          time.
+        </p>
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -513,6 +626,7 @@ export function DemoForm({
             <select
               id="demo-preferredDays"
               className={fieldClass}
+              aria-required="true"
               {...register("preferredDays")}
             >
               {preferredDaysOptions.map((opt) => (
@@ -531,6 +645,7 @@ export function DemoForm({
             <select
               id="demo-preferredTime"
               className={fieldClass}
+              aria-required="true"
               {...register("preferredTime")}
             >
               {preferredTimeOptions.map((opt) => (
@@ -569,7 +684,8 @@ export function DemoForm({
 
         <div>
           <Label htmlFor="demo-notes" className="text-xs font-semibold">
-            Additional Questions or Notes <span className="text-muted-foreground font-normal">(Optional)</span>
+            Additional Questions or Notes{" "}
+            <span className="text-muted-foreground font-normal">(Optional)</span>
           </Label>
           <Textarea
             id="demo-notes"
@@ -581,16 +697,19 @@ export function DemoForm({
         </div>
       </div>
 
-      {/* Consent & Submit */}
+      {/* SECTION 5: Consent & Submit */}
       <div className="space-y-4 pt-2">
         <label className="flex items-start gap-2.5 text-xs text-muted-foreground">
           <input
             type="checkbox"
             className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-primary"
+            aria-required="true"
             {...register("consent")}
           />
           <span>
-            I understand that this Free Demo is a 1-session live trial to evaluate the course and teaching quality. Continued enrolment in the full program or tutoring is paid. <span className="text-destructive">*</span>
+            I understand that this Free Demo is a 1-session live trial to evaluate the course and
+            teaching quality. Continued enrolment in the full program or tutoring is paid.{" "}
+            <span className="text-destructive">*</span>
           </span>
         </label>
         <ErrorText msg={errors.consent?.message} />
