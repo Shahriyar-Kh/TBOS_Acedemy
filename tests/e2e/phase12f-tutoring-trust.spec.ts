@@ -41,10 +41,15 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
 
       const applyHref = await page.locator('a[href*="/apply"]').first().getAttribute("href");
       expect(applyHref).toContain("/apply");
-      expect(applyHref).toContain(encodeURIComponent(subject.title).replace(/%20/g, "+"));
+      expect(new URL(applyHref || "", "https://techbuiltos.online").searchParams.get("selected")).toBe(
+        subject.title,
+      );
 
       const demoHref = await page.locator('a[href*="/free-demo"]').first().getAttribute("href");
       expect(demoHref).toContain("/free-demo");
+      expect(new URL(demoHref || "", "https://techbuiltos.online").searchParams.get("selected")).toBe(
+        subject.title,
+      );
 
       await expect(page.locator('a[href*="wa.me"]').first()).toBeVisible();
       await expect(page.getByText(/one trial session/i).first()).toBeVisible();
