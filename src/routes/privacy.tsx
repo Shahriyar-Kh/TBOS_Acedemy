@@ -9,6 +9,7 @@ export const Route = createFileRoute("/privacy")({
       title: "Privacy Policy | TechBuilt Open School",
       description:
         "Read how TechBuilt Open School collects, uses and protects your personal information when you use our online academy and submit application or contact forms.",
+      path: "/privacy",
     }),
     links: [{ rel: "canonical", href: `${site.url}/privacy` }],
   }),
