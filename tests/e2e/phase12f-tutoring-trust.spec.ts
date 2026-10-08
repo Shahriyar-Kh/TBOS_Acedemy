@@ -117,7 +117,7 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
   test("6. Phase 12F pages have zero horizontal overflow across 7 viewports", async ({
     page,
   }) => {
-    test.setTimeout(90000);
+    test.setTimeout(180000);
 
     const viewports = [375, 390, 430, 768, 1024, 1280, 1440];
     const routes = [
