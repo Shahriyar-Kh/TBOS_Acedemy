@@ -35,7 +35,7 @@ We use Gmail SMTP over port 465 (SSL/TLS) via Nodemailer.
 
 2. **Enable 2-Step Verification (2FA)**:
    - Navigate to **Google Account Settings** → **Security**.
-   - Under *How you sign in to Google*, enable **2-Step Verification**.
+   - Under _How you sign in to Google_, enable **2-Step Verification**.
 
 3. **Generate a Google App Password**:
    - In Google Account Settings, search for **App passwords** (or go to: `https://myaccount.google.com/apppasswords`).
@@ -60,36 +60,48 @@ ADMISSIONS_NOTIFICATION_EMAIL=admissions@techbuiltopenschool.com
 
 ### Environment Variables Reference:
 
-| Variable | Default | Description |
-|---|---|---|
-| `SMTP_HOST` | `smtp.gmail.com` | SMTP server host |
-| `SMTP_PORT` | `465` | SMTP port (465 for SSL, 587 for TLS) |
-| `SMTP_SECURE` | `true` | Use SSL/TLS connection directly |
-| `SMTP_USER` | *(Required for email)* | Gmail sender address |
-| `SMTP_APP_PASSWORD` | *(Required for email)* | 16-character Google App Password |
+| Variable                        | Default                   | Description                               |
+| ------------------------------- | ------------------------- | ----------------------------------------- |
+| `SMTP_HOST`                     | `smtp.gmail.com`          | SMTP server host                          |
+| `SMTP_PORT`                     | `465`                     | SMTP port (465 for SSL, 587 for TLS)      |
+| `SMTP_SECURE`                   | `true`                    | Use SSL/TLS connection directly           |
+| `SMTP_USER`                     | _(Required for email)_    | Gmail sender address                      |
+| `SMTP_APP_PASSWORD`             | _(Required for email)_    | 16-character Google App Password          |
 | `ADMISSIONS_NOTIFICATION_EMAIL` | Falls back to `SMTP_USER` | Recipient address for admin notifications |
 
 ---
 
-## 3. Google Apps Script & Sheets Server Mirror
+## 3. Google Apps Script & Sheets Server Mirror (Webhook v2)
 
-Submissions are mirrored to a Google Sheet using Google Apps Script execution.
+Submissions are mirrored to a Google Sheet using Google Apps Script Webhook v2 (`integrations/google-apps-script/TBOS_Admissions_Webhook.gs`).
+
+### Webhook v2 Key Capabilities:
+
+- **`doGet` Health Check**: Allows immediate validation of the deployment via browser or curl.
+- **Idempotency via `referenceId`**: Column 1 stores the server-generated `referenceId`. Replays or retries safely check for duplicates without creating duplicate sheet rows or duplicate notification emails.
+- **Structured Response Body**: Returns `{ ok: true, duplicate: boolean, referenceId: string, sheet: { status: "success" }, adminEmail: { status: "success" }, learnerEmail: { status: "skipped" } }` so the server can inspect exact channel outcomes.
+- **SMTP Fallback Gating**: If Google Apps Script successfully processed the lead and dispatched the admin email, SMTP admin notification is skipped to prevent duplicate emails in the admissions inbox.
+- **Transient Retries**: The server automatically retries transient errors (timeouts, network dropouts, 429 rate limits, and 5xx responses) with exponential backoff.
 
 ### Setup Instructions:
 
 1. **Create or Open Your Google Sheet**:
    - Open your existing admissions sheet (e.g. "TechBuilt Leads").
 
-2. **Deploy the Web App Script**:
+2. **Deploy the Webhook v2 Script**:
    - In Google Sheets, open **Extensions** → **Apps Script**.
-   - Paste the script from [`GOOGLE_INTEGRATION.md`](../GOOGLE_INTEGRATION.md).
+   - Paste the code from `integrations/google-apps-script/TBOS_Admissions_Webhook.gs`.
+   - Optionally set Script Properties: `NOTIFY_EMAIL` = `admissions@techbuiltopenschool.com`.
    - Click **Deploy** → **New deployment**.
    - Select type: **Web app**.
    - Execute as: **Me** (your Google account).
    - Who has access: **Anyone** (allows webhook calls from our server).
    - Copy the Web App URL (ends with `/exec`).
 
-3. **Configure the Server-Only Environment Variable**:
+3. **Verify with Health Check**:
+   - Visit the URL in your browser. It should return `{ "ok": true, "version": "2.0.0", "status": "active" }`.
+
+4. **Configure the Server-Only Environment Variable**:
 
 ```env
 # Secondary Google Sheet Mirror (Server-Only — Private)

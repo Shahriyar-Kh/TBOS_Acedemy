@@ -62,7 +62,7 @@ const steps = [
   {
     step: "04",
     title: "Join Live Class",
-    desc: "Receive your private class meeting link via WhatsApp and experience the session.",
+    desc: "Admissions will contact you to confirm the available trial time and joining details.",
   },
 ];
 
@@ -73,11 +73,11 @@ const faqs = [
   },
   {
     q: "What equipment or software is needed for the demo?",
-    a: "A computer (laptop or desktop) with an internet connection, Google Chrome or modern browser, working audio/microphone, and optionally Zoom or Google Meet. For programming courses, our instructor will help you get started with the development environment directly.",
+    a: "A computer (laptop or desktop) with a reliable internet connection, a modern browser, and a working microphone or headset for two-way audio communication.",
   },
   {
     q: "Can parents attend the demo session?",
-    a: "Absolutely. For school learners in Grades 5–10 or minors under 18, we actively encourage parents to join the first 10 minutes of the demo to meet the teacher and discuss goals directly.",
+    a: "Yes. For school learners and minors under 18, parents or guardians are welcome to attend the trial class to discuss learning goals and curriculum with the admissions team.",
   },
   {
     q: "What happens after the Free Demo?",
@@ -113,15 +113,9 @@ function FreeDemoPage() {
                 key={s.step}
                 className="relative rounded-xl border border-border bg-card p-5 shadow-xs transition hover:border-primary/40"
               >
-                <span className="font-mono text-xs font-bold text-primary">
-                  STEP {s.step}
-                </span>
-                <h3 className="mt-2 text-base font-semibold text-foreground">
-                  {s.title}
-                </h3>
-                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                  {s.desc}
-                </p>
+                <span className="font-mono text-xs font-bold text-primary">STEP {s.step}</span>
+                <h3 className="mt-2 text-base font-semibold text-foreground">{s.title}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -146,39 +140,41 @@ function FreeDemoPage() {
                 <Sparkles className="h-4 w-4" />
                 <span>Transparent Trial Policy</span>
               </div>
-              <h3 className="mt-2 text-base font-bold text-foreground">
-                No Commitment Required
-              </h3>
+              <h3 className="mt-2 text-base font-bold text-foreground">No Commitment Required</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                We believe in providing an honest preview of our education quality. You do not need to enter credit card details or make upfront payments to attend a trial class.
+                We believe in providing an honest preview of our education quality. Experience our
+                live instruction firsthand with zero upfront payment required for the trial session.
               </p>
               <div className="mt-4 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
-                <strong className="text-foreground">Full Course Pricing:</strong> Regular batches and 1-on-1 tutoring are paid programs. Once you approve the demo, admissions coordinates enrollment and class schedules.
+                <strong className="text-foreground">Full Course Pricing:</strong> Regular batches
+                and 1-on-1 tutoring are paid programs. Once you approve the demo, admissions
+                coordinates enrollment and class schedules.
               </div>
             </div>
 
             {/* What to Expect Card */}
             <div className="rounded-2xl border border-border bg-card p-6 shadow-xs">
-              <h3 className="text-sm font-bold text-foreground">
-                What You Get In The Demo:
-              </h3>
+              <h3 className="text-sm font-bold text-foreground">What You Get In The Demo:</h3>
               <ul className="mt-4 space-y-3 text-xs text-muted-foreground">
                 <li className="flex items-start gap-2.5">
                   <Video className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span>
-                    <strong className="text-foreground">Live 1-on-1 or Cohort Session:</strong> Direct real-time interaction with the instructor, not pre-recorded videos.
+                    <strong className="text-foreground">Live 1-on-1 or Cohort Session:</strong>{" "}
+                    Direct real-time interaction with the instructor, not pre-recorded videos.
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span>
-                    <strong className="text-foreground">Curriculum Walkthrough:</strong> Clear roadmap of projects, tools, and learning milestones.
+                    <strong className="text-foreground">Curriculum Walkthrough:</strong> Clear
+                    roadmap of projects, tools, and learning milestones.
                   </span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <span>
-                    <strong className="text-foreground">Skill Level Evaluation:</strong> Understand whether your current background aligns with the course level.
+                    <strong className="text-foreground">Skill Level Evaluation:</strong> Understand
+                    whether your current background aligns with the course level.
                   </span>
                 </li>
               </ul>
@@ -186,11 +182,10 @@ function FreeDemoPage() {
 
             {/* Alternative: Ready to Apply */}
             <div className="rounded-2xl border border-dashed border-border bg-background p-6">
-              <h3 className="text-sm font-semibold text-foreground">
-                Already know what you need?
-              </h3>
+              <h3 className="text-sm font-semibold text-foreground">Already know what you need?</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Skip the trial and apply directly for admissions in a course, cohort, or 1-on-1 program.
+                Skip the trial and apply directly for admissions in a course, cohort, or 1-on-1
+                program.
               </p>
               <Link
                 to="/apply"
@@ -215,19 +210,12 @@ function FreeDemoPage() {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             {faqs.map((faq) => (
-              <div
-                key={faq.q}
-                className="rounded-xl border border-border bg-card p-5 shadow-xs"
-              >
+              <div key={faq.q} className="rounded-xl border border-border bg-card p-5 shadow-xs">
                 <div className="flex items-start gap-2.5">
                   <HelpCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">
-                      {faq.q}
-                    </h3>
-                    <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
-                      {faq.a}
-                    </p>
+                    <h3 className="text-sm font-semibold text-foreground">{faq.q}</h3>
+                    <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{faq.a}</p>
                   </div>
                 </div>
               </div>

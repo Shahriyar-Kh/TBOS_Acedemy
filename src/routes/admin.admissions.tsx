@@ -91,6 +91,7 @@ function AdminAdmissionsPage() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRetryingDelivery, setIsRetryingDelivery] = useState(false);
 
   // Editable CRM form fields in detail drawer
   const [editStatus, setEditStatus] = useState<CrmStatus>("new");
@@ -161,8 +162,12 @@ function AdminAdmissionsPage() {
         setDeliveryLogs(json.deliveryLogs || []);
         setEditStatus((json.admission.status as CrmStatus) || "new");
         setEditAdminNotes(json.admission.admin_notes || "");
-        setEditFollowUp(json.admission.next_follow_up_at ? json.admission.next_follow_up_at.slice(0, 16) : "");
-        setEditDemoScheduled(json.admission.demo_scheduled_at ? json.admission.demo_scheduled_at.slice(0, 16) : "");
+        setEditFollowUp(
+          json.admission.next_follow_up_at ? json.admission.next_follow_up_at.slice(0, 16) : "",
+        );
+        setEditDemoScheduled(
+          json.admission.demo_scheduled_at ? json.admission.demo_scheduled_at.slice(0, 16) : "",
+        );
         setEditDemoLink(json.admission.demo_meeting_link || "");
         setEditClosedReason(json.admission.closed_reason || "");
       } else {
@@ -253,6 +258,36 @@ function AdminAdmissionsPage() {
     }
   };
 
+  const handleRetryDeliveries = async () => {
+    if (!selectedId || isRetryingDelivery) return;
+    setIsRetryingDelivery(true);
+    try {
+      const res = await fetch(`/api/admin/admissions/${selectedId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeader(),
+        },
+        body: JSON.stringify({ action: "retry-delivery" }),
+      });
+      const json = await res.json();
+      if (json.ok) {
+        toast.success(
+          json.retriedChannels && json.retriedChannels.length > 0
+            ? `Retried deliveries: ${json.retriedChannels.join(", ")}`
+            : "All delivery channels were already sent successfully.",
+        );
+        await loadDetail(selectedId);
+      } else {
+        toast.error(json.error || "Delivery retry failed.");
+      }
+    } catch {
+      toast.error("Network error while retrying deliveries.");
+    } finally {
+      setIsRetryingDelivery(false);
+    }
+  };
+
   const handleMarkContacted = async () => {
     if (!selectedId) return;
     setIsSaving(true);
@@ -298,7 +333,9 @@ function AdminAdmissionsPage() {
       );
     }
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${found.color}`}>
+      <span
+        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${found.color}`}
+      >
         {found.label}
       </span>
     );
@@ -329,7 +366,9 @@ function AdminAdmissionsPage() {
               </div>
               <div>
                 <span className="font-bold tracking-tight text-base text-white">TBOS Academy</span>
-                <span className="ml-2 text-xs font-semibold text-[#41B3A2] uppercase tracking-wider">Admissions CRM</span>
+                <span className="ml-2 text-xs font-semibold text-[#41B3A2] uppercase tracking-wider">
+                  Admissions CRM
+                </span>
               </div>
             </div>
 
@@ -358,7 +397,9 @@ function AdminAdmissionsPage() {
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col text-right">
               <span className="text-xs font-medium text-white">{admin?.email}</span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">Role: {admin?.role}</span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
+                Role: {admin?.role}
+              </span>
             </div>
 
             <Button
@@ -574,12 +615,17 @@ function AdminAdmissionsPage() {
                           <div className="font-semibold text-slate-900">{item.student_name}</div>
                           <div className="text-[11px] text-slate-500">{item.email}</div>
                           {item.age && (
-                            <div className="text-[10px] text-slate-400">Age: {item.age} • {item.country}</div>
+                            <div className="text-[10px] text-slate-400">
+                              Age: {item.age} • {item.country}
+                            </div>
                           )}
                         </td>
 
                         <td className="py-3 px-4 max-w-xs truncate">
-                          <div className="font-medium text-slate-900 truncate" title={item.selected_program_title}>
+                          <div
+                            className="font-medium text-slate-900 truncate"
+                            title={item.selected_program_title}
+                          >
                             {item.selected_program_title}
                           </div>
                           {item.selected_program_category && (
@@ -595,9 +641,7 @@ function AdminAdmissionsPage() {
                           </Badge>
                         </td>
 
-                        <td className="py-3 px-4">
-                          {getStatusBadge(item.status)}
-                        </td>
+                        <td className="py-3 px-4">{getStatusBadge(item.status)}</td>
 
                         <td className="py-3 px-4" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-1.5">
@@ -621,7 +665,9 @@ function AdminAdmissionsPage() {
                         <td className="py-3 px-4">
                           {item.next_follow_up_at ? (
                             <div>
-                              <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${followUpInfo.badgeClass}`}>
+                              <span
+                                className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${followUpInfo.badgeClass}`}
+                              >
                                 {followUpInfo.label}
                               </span>
                               <div className="text-[10px] text-slate-500 mt-0.5">
@@ -672,7 +718,9 @@ function AdminAdmissionsPage() {
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <div className="font-semibold text-slate-900 text-sm">{item.student_name}</div>
+                        <div className="font-semibold text-slate-900 text-sm">
+                          {item.student_name}
+                        </div>
                         <div className="text-xs text-slate-500">{item.email}</div>
                       </div>
                       {getStatusBadge(item.status)}
@@ -683,7 +731,9 @@ function AdminAdmissionsPage() {
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
-                      <span className="text-slate-400">{item.country} • {item.submission_kind}</span>
+                      <span className="text-slate-400">
+                        {item.country} • {item.submission_kind}
+                      </span>
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         {whatsappNum && (
                           <a
@@ -1008,30 +1058,47 @@ function AdminAdmissionsPage() {
                       <span className="font-medium text-slate-900">{detailData.email}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px] uppercase">Phone / WhatsApp</span>
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        Phone / WhatsApp
+                      </span>
                       <span className="font-medium text-slate-900">{detailData.phone}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px] uppercase">Country / City</span>
-                      <span className="font-medium text-slate-900">{detailData.country}{detailData.city ? ` / ${detailData.city}` : ""}</span>
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        Country / City
+                      </span>
+                      <span className="font-medium text-slate-900">
+                        {detailData.country}
+                        {detailData.city ? ` / ${detailData.city}` : ""}
+                      </span>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase">Age</span>
-                      <span className="font-medium text-slate-900">{detailData.age ?? "Not provided"}</span>
+                      <span className="font-medium text-slate-900">
+                        {detailData.age ?? "Not provided"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[10px] uppercase">Education Level</span>
-                      <span className="font-medium text-slate-900">{detailData.education_level}</span>
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        Education Level
+                      </span>
+                      <span className="font-medium text-slate-900">
+                        {detailData.education_level}
+                      </span>
                     </div>
                     {detailData.institution && (
                       <div className="col-span-2">
-                        <span className="text-slate-400 block text-[10px] uppercase">School / College / University</span>
+                        <span className="text-slate-400 block text-[10px] uppercase">
+                          School / College / University
+                        </span>
                         <span className="font-medium text-slate-900">{detailData.institution}</span>
                       </div>
                     )}
                     {detailData.skill_level && (
                       <div>
-                        <span className="text-slate-400 block text-[10px] uppercase">Skill Level</span>
+                        <span className="text-slate-400 block text-[10px] uppercase">
+                          Skill Level
+                        </span>
                         <span className="font-medium text-slate-900">{detailData.skill_level}</span>
                       </div>
                     )}
@@ -1040,21 +1107,30 @@ function AdminAdmissionsPage() {
                   {/* Program Selection Details */}
                   <div className="rounded-lg bg-slate-50 p-3 space-y-1 text-xs border border-slate-200">
                     <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-semibold uppercase text-slate-500">Program Application</span>
+                      <span className="text-[10px] font-semibold uppercase text-slate-500">
+                        Program Application
+                      </span>
                       <Badge variant="outline" className="text-[10px]">
-                        {detailData.submission_kind === "demo" ? "Free Trial Demo" : "Full Application"}
+                        {detailData.submission_kind === "demo"
+                          ? "Free Trial Demo"
+                          : "Full Application"}
                       </Badge>
                     </div>
-                    <div className="font-semibold text-slate-900 text-sm">{detailData.selected_program_title}</div>
+                    <div className="font-semibold text-slate-900 text-sm">
+                      {detailData.selected_program_title}
+                    </div>
                     <div className="text-[11px] text-slate-600">
-                      Category: {detailData.selected_program_category || "General"} • Type: {detailData.application_type}
+                      Category: {detailData.selected_program_category || "General"} • Type:{" "}
+                      {detailData.application_type}
                     </div>
                   </div>
 
                   {/* Learning Goals and Preferences */}
                   {(detailData.learning_goal || detailData.learning_preference) && (
                     <div className="space-y-1 text-xs">
-                      <span className="text-slate-400 block text-[10px] uppercase">Learning Goal & Mode</span>
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        Learning Goal & Mode
+                      </span>
                       {detailData.learning_goal && (
                         <p className="text-slate-800 bg-slate-50 p-2.5 rounded border border-slate-100">
                           {detailData.learning_goal}
@@ -1062,26 +1138,41 @@ function AdminAdmissionsPage() {
                       )}
                       {detailData.learning_preference && (
                         <p className="text-slate-500 text-[11px]">
-                          Preference: <span className="font-medium text-slate-700">{detailData.learning_preference}</span>
+                          Preference:{" "}
+                          <span className="font-medium text-slate-700">
+                            {detailData.learning_preference}
+                          </span>
                         </p>
                       )}
                     </div>
                   )}
 
                   {/* Schedule Preferences */}
-                  {(detailData.preferred_days || detailData.preferred_time || detailData.timezone) && (
+                  {(detailData.preferred_days ||
+                    detailData.preferred_time ||
+                    detailData.timezone) && (
                     <div className="grid grid-cols-3 gap-2 text-xs bg-slate-50/50 p-2.5 rounded border border-slate-100">
                       <div>
-                        <span className="text-slate-400 block text-[10px] uppercase">Preferred Days</span>
-                        <span className="font-medium text-slate-700">{detailData.preferred_days || "Flexible"}</span>
+                        <span className="text-slate-400 block text-[10px] uppercase">
+                          Preferred Days
+                        </span>
+                        <span className="font-medium text-slate-700">
+                          {detailData.preferred_days || "Flexible"}
+                        </span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px] uppercase">Preferred Time</span>
-                        <span className="font-medium text-slate-700">{detailData.preferred_time || "Flexible"}</span>
+                        <span className="text-slate-400 block text-[10px] uppercase">
+                          Preferred Time
+                        </span>
+                        <span className="font-medium text-slate-700">
+                          {detailData.preferred_time || "Flexible"}
+                        </span>
                       </div>
                       <div>
                         <span className="text-slate-400 block text-[10px] uppercase">Timezone</span>
-                        <span className="font-medium text-slate-700">{detailData.timezone || "Local"}</span>
+                        <span className="font-medium text-slate-700">
+                          {detailData.timezone || "Local"}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -1095,15 +1186,21 @@ function AdminAdmissionsPage() {
                       <div className="grid grid-cols-3 gap-2 pt-1">
                         <div>
                           <span className="text-slate-500 block text-[10px]">Guardian Name</span>
-                          <span className="font-medium text-slate-900">{detailData.guardian_name}</span>
+                          <span className="font-medium text-slate-900">
+                            {detailData.guardian_name}
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-500 block text-[10px]">Guardian Phone</span>
-                          <span className="font-medium text-slate-900">{detailData.guardian_phone || "—"}</span>
+                          <span className="font-medium text-slate-900">
+                            {detailData.guardian_phone || "—"}
+                          </span>
                         </div>
                         <div>
                           <span className="text-slate-500 block text-[10px]">Guardian Email</span>
-                          <span className="font-medium text-slate-900">{detailData.guardian_email || "—"}</span>
+                          <span className="font-medium text-slate-900">
+                            {detailData.guardian_email || "—"}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1112,7 +1209,9 @@ function AdminAdmissionsPage() {
                   {/* Original Applicant Notes */}
                   {detailData.notes && (
                     <div className="space-y-1 text-xs">
-                      <span className="text-slate-400 block text-[10px] uppercase">Applicant's Message</span>
+                      <span className="text-slate-400 block text-[10px] uppercase">
+                        Applicant's Message
+                      </span>
                       <p className="text-slate-800 bg-slate-50 p-2.5 rounded border border-slate-100 italic">
                         "{detailData.notes}"
                       </p>
@@ -1122,16 +1221,42 @@ function AdminAdmissionsPage() {
                   {/* Metadata */}
                   <div className="pt-2 text-[10px] text-slate-400 flex items-center justify-between border-t border-slate-100">
                     <span>Source: {detailData.source_page || "Direct Form"}</span>
-                    <span>Created: {detailData.created_at ? new Date(detailData.created_at).toLocaleString() : "—"}</span>
+                    <span>
+                      Created:{" "}
+                      {detailData.created_at
+                        ? new Date(detailData.created_at).toLocaleString()
+                        : "—"}
+                    </span>
                   </div>
                 </div>
 
-                {/* Delivery & Integrations (Phase 7) */}
+                {/* Delivery & Integrations (Phase 7 & Phase 12E) */}
                 <div className="space-y-3 pt-2">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5 border-b border-slate-100 pb-1">
-                    <Mail className="h-3.5 w-3.5" />
-                    Delivery &amp; Integrations ({deliveryLogs.length})
-                  </h3>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5" />
+                      Delivery &amp; Integrations ({deliveryLogs.length} logged)
+                    </h3>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={isRetryingDelivery || isDetailLoading}
+                      onClick={handleRetryDeliveries}
+                      className="h-7 px-2.5 text-xs gap-1.5 font-medium border-slate-200 hover:bg-slate-50"
+                      title="Safely re-attempt failed or unconfigured secondary deliveries"
+                    >
+                      {isRetryingDelivery ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin text-primary" /> Retrying…
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-3 w-3 text-slate-500" /> Retry Deliveries
+                        </>
+                      )}
+                    </Button>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     {[
@@ -1151,8 +1276,9 @@ function AdminAdmissionsPage() {
                         desc: "Secondary backup sheet",
                       },
                     ].map((item) => {
-                      const log = deliveryLogs.find((l) => l.channel === item.channel);
-                      const status = log?.status || "skipped";
+                      const channelLogs = deliveryLogs.filter((l) => l.channel === item.channel);
+                      const latestLog = channelLogs[channelLogs.length - 1];
+                      const status = latestLog?.status || "skipped";
 
                       let badgeText = "Not Configured / Skipped";
                       let badgeClass = "bg-amber-50 text-amber-700 border-amber-200";
@@ -1181,15 +1307,20 @@ function AdminAdmissionsPage() {
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500">{item.desc}</p>
-                          {log?.created_at && (
+                          {latestLog?.created_at && (
                             <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-50 flex items-center justify-between">
-                              <span>Timestamp</span>
-                              <span>{new Date(log.created_at).toLocaleString()}</span>
+                              <span>Last Attempt</span>
+                              <span>{new Date(latestLog.created_at).toLocaleString()}</span>
                             </div>
                           )}
-                          {status === "failed" && log?.error_summary && (
-                            <p className="text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded border border-rose-100">
-                              Reason: {log.error_summary}
+                          {channelLogs.length > 1 && (
+                            <p className="text-[10px] text-slate-400">
+                              Attempts: {channelLogs.length}
+                            </p>
+                          )}
+                          {status === "failed" && latestLog?.error_summary && (
+                            <p className="text-[10px] text-rose-600 bg-rose-50/50 p-1.5 rounded border border-rose-100 break-words">
+                              Reason: {latestLog.error_summary}
                             </p>
                           )}
                         </div>
@@ -1210,7 +1341,10 @@ function AdminAdmissionsPage() {
                   ) : (
                     <div className="space-y-2">
                       {activities.map((act) => (
-                        <div key={act.id} className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-xs space-y-1">
+                        <div
+                          key={act.id}
+                          className="rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-xs space-y-1"
+                        >
                           <div className="flex items-center justify-between">
                             <span className="font-semibold text-slate-700 capitalize">
                               {act.action_type.replace(/_/g, " ")}

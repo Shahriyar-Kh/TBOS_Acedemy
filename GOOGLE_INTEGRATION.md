@@ -1,58 +1,70 @@
-# Google Sheets + Gmail Integration
+# Google Sheets + Gmail Integration (Webhook v2)
 
-Application and contact forms submit to a **Google Apps Script Web App**, which:
+TechBuilt Open School implements a resilient **HTTPS-First Webhook v2** architecture for Google Sheets mirroring and backup email delivery.
 
-1. Appends each submission as a row in a Google Sheet (with timestamp, form type, source page)
-2. Sends a formatted Gmail notification to your academy inbox
+## Architecture & Guarantees
 
-## 1. Create the Google Sheet
+1. **Supabase is the primary source of truth.** When a student applies, requests a demo, or contacts admissions, their record is first written directly to PostgreSQL (`public.admissions_requests`).
+2. **Secondary Mirroring:** After primary persistence, the server initiates an HTTPS-first call to Google Apps Script.
+3. **Idempotency & Deduplication:** Webhook v2 checks Column 1 (`referenceId`) of the Google Sheet. If the lead was already mirrored, it safely avoids duplicate row appends and skips duplicate notification emails.
+4. **SMTP Fallback Gating:** If Google Apps Script successfully processed the lead and sent the notification email, SMTP admin notification is skipped to avoid duplicate inboxes. If the Webhook fails or is unconfigured, the system automatically falls back to SMTP.
+5. **Audit Logging:** Every attempt (success, failed, skipped) is recorded in `public.admissions_delivery_log`.
 
-Create a sheet (e.g. "TechBuilt Leads"). The script writes the header row automatically.
+---
 
-## 2. Add the Apps Script
+## 1. Create or Open the Google Sheet
 
-In the sheet: **Extensions → Apps Script**, paste the code below, set `NOTIFY_EMAIL`, then
-**Deploy → New deployment → Web app** → Execute as **Me**, Access **Anyone** → copy the URL.
+1. Create a Google Sheet (e.g., "TBOS Admissions & Leads").
+2. The script automatically sets up the header row on first execution:
+   `referenceId`, `submittedAt`, `submissionKind`, `applicationType`, `selectedProgram`, `studentName`, `email`, `phone`, `country`, `city`, `age`, `educationLevel`, `institution`, `skillLevel`, `learningGoal`, `learningPreference`, `preferredDays`, `preferredTime`, `timezone`, `guardianName`, `guardianPhone`, `guardianEmail`, `notes`, `sourcePage`, `status`.
 
-```javascript
-const NOTIFY_EMAIL = "admissions@techbuiltopenschool.com";
+---
 
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postContents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+## 2. Deploy Webhook v2 (`TBOS_Admissions_Webhook.gs`)
 
-    const headers = [
-      "submittedAt","formType","sourcePage","fullName","guardianName","email","whatsapp",
-      "country","city","grade","courseType","selected","goal","preferredTime","classType","message"
-    ];
-    if (sheet.getLastRow() === 0) sheet.appendRow(headers);
-    sheet.appendRow(headers.map(function (h) { return data[h] || ""; }));
+1. In your Google Sheet, navigate to **Extensions → Apps Script**.
+2. Replace any existing script with the full code from:
+   `integrations/google-apps-script/TBOS_Admissions_Webhook.gs`
+3. Optionally set Script Properties:
+   - Key: `NOTIFY_EMAIL`
+   - Value: `admissions@techbuiltopenschool.com` (or your destination inbox)
+4. Click **Deploy → New deployment**.
+   - Select type: **Web app**
+   - Description: `TBOS Admissions Webhook v2`
+   - Execute as: **Me** (`your-account@gmail.com`)
+   - Who has access: **Anyone**
+5. Click **Deploy**, authorize permissions, and copy the Web App URL.
 
-    const body = headers.map(function (h) { return h + ": " + (data[h] || "-"); }).join("\n");
-    MailApp.sendEmail({
-      to: NOTIFY_EMAIL,
-      subject: "New " + (data.formType || "form") + " submission — " + (data.fullName || "Lead"),
-      body: "A new submission was received:\n\n" + body
-    });
+---
 
-    return ContentService.createTextOutput(JSON.stringify({ ok: true }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
+## 3. Verify Health Check
+
+Open the Web App URL in your browser or run curl:
+
+```bash
+curl -L https://script.google.com/macros/s/XXXXX/exec
+```
+
+Expected response:
+
+```json
+{
+  "ok": true,
+  "version": "2.0.0",
+  "service": "TBOS Admissions Webhook v2",
+  "timestamp": "2026-10-08T...",
+  "status": "active"
 }
 ```
 
-## 3. Connect it to the site
+---
 
-Add the server-only environment variable to your `.env.local` or hosting provider:
+## 4. Configure Environment Variables
+
+Add the Web App URL to your server environment:
 
 ```env
 GOOGLE_SCRIPT_URL=https://script.google.com/macros/s/XXXXXXXX/exec
 ```
 
-*(Note: The legacy client-side `VITE_GOOGLE_SCRIPT_URL` is deprecated and no longer exposed to browser code. All Google Sheet mirroring is executed securely server-side as a best-effort secondary mirror after Supabase persistence.)*
-
-See `docs/INTEGRATIONS_SETUP.md` for full instructions.
+_(Note: Never expose `GOOGLE_SCRIPT_URL` as a client-side `VITE_` variable. Mirroring is strictly executed server-side with timeout handling and exponential backoff retries.)_
