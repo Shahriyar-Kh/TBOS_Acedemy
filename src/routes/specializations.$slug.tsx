@@ -47,7 +47,7 @@ export const Route = createFileRoute("/specializations/$slug")({
       meta: buildMeta({
         title,
         description,
-        keywords: spec.keywords,
+        keywords: spec.keywords,\n        path: `/specializations/${spec.slug}`,
         type: "article",
       }),
       links: [{ rel: "canonical", href: `/specializations/${spec.slug}` }],
