@@ -4,41 +4,51 @@ export const faqs: Faq[] = [
   {
     question: "Who can study at TechBuilt Open School?",
     answer:
-      "We welcome students from Grade 5 right up to MS (Master's) level. This includes school students, college and university students, and adult learners looking to build technical skills. We support both academic subjects and technical courses.",
+      "Our current public catalog is designed for learners from Grade 5 through university and adult learning. Available technical courses, live cohorts, academic tutoring, and Quran or Islamic Studies options vary by program and tutor availability.",
   },
   {
     question: "How do online classes work?",
     answer:
-      "All classes are live and interactive, delivered online by expert tutors. You can choose one-to-one sessions for fully personalised learning, or small group classes. You only need a device with an internet connection — we handle the rest.",
+      "Classes are delivered live online. Depending on the program, the format may be one-to-one or a small group. Admissions confirms the exact schedule, class format, and availability before enrollment.",
   },
   {
-    question: "Do you teach international students?",
+    question: "Do you teach students outside Pakistan?",
     answer:
-      "Yes. We are an international online academy serving students across Pakistan and worldwide. We offer flexible scheduling across time zones, so families anywhere can access premium tutoring and courses.",
+      "Yes. Because classes are online, learners may apply from Pakistan or abroad. Final timing depends on the learner's time zone, tutor or cohort availability, and the confirmed schedule.",
   },
   {
     question: "What is the difference between a course and a specialization?",
     answer:
-      "A course focuses on a single subject or skill (for example, Python or Mathematics). A specialization is a complete, structured learning path made of multiple modules that takes you to a job-ready or advanced level (for example, Full Stack Development).",
+      "A course focuses on a defined technical subject or skill. A specialization is a broader structured learning path made up of multiple modules. Both are educational pathways; neither includes a guarantee of employment or income.",
   },
   {
     question: "How much do classes cost?",
     answer:
-      "We offer transparent, accessible monthly fees and structured term options tailored to individual learners and group cohorts. Submit an application and our team will share the complete fee details based on your chosen program.",
+      "Fees depend on the selected program, class format, and current offer where applicable. Admissions shares the applicable fee before paid classes begin, so you can review the schedule and cost before enrollment.",
   },
   {
-    question: "How do I enrol?",
+    question: "How do I enroll?",
     answer:
-      "Simply fill out the Apply Now form for your chosen course, specialization or tutoring subject. Our admissions team will review your application and reach out to confirm your schedule and enrollment.",
+      "Submit the Apply form for your chosen course, specialization, live batch, or tutoring subject. Admissions reviews the request and then confirms availability, schedule, applicable fee, and the next enrollment step.",
   },
   {
-    question: "Are the tutors qualified?",
+    question: "How are tutors or instructors assigned?",
     answer:
-      "Absolutely. Our tutors are experienced, qualified subject specialists and industry professionals, carefully selected for both expertise and teaching ability.",
+      "Tutor or instructor matching depends on the subject, learner level, schedule, and current availability. Admissions confirms the proposed tutor, instructor, or cohort arrangement before paid continuation.",
   },
   {
-    question: "Can parents track progress?",
+    question: "What is included in the Free Demo?",
     answer:
-      "Yes. Parents receive regular progress updates and reports, and can communicate directly with our team. Keeping families informed is a core part of our premium service.",
+      "The Free Demo is one live trial session only. It is intended to help assess teaching fit, discuss the learner's level, and understand the proposed learning path. It is not the complete course or tutoring program.",
+  },
+  {
+    question: "Can parents or guardians stay involved?",
+    answer:
+      "Yes. For minors, the application process collects parent or guardian details. Admissions can communicate important scheduling and learner-support information with the guardian as appropriate to the program.",
+  },
+  {
+    question: "Do you guarantee grades, jobs, or other outcomes?",
+    answer:
+      "No. We provide structured instruction and learning support, but we do not guarantee grades, employment, earnings, admissions results, or any other specific outcome. Progress depends on the learner's starting level, attendance, practice, and effort.",
   },
 ];

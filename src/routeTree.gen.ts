@@ -34,6 +34,7 @@ import { Route as SpecializationsIndexRouteImport } from './routes/specializatio
 import { Route as LiveBatchesIndexRouteImport } from './routes/live-batches.index'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as TutoringSlugRouteImport } from './routes/tutoring.$slug'
 import { Route as SpecializationsSlugRouteImport } from './routes/specializations.$slug'
 import { Route as LiveBatchesSlugRouteImport } from './routes/live-batches.$slug'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
@@ -179,6 +180,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TutoringSlugRoute = TutoringSlugRouteImport.update({
+  id: '/tutoring/$slug',
+  path: '/tutoring/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SpecializationsSlugRoute = SpecializationsSlugRouteImport.update({
   id: '/specializations/$slug',
   path: '/specializations/$slug',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin': typeof AdminIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/live-batches': typeof LiveBatchesIndexRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
+  '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/tutoring/$slug'
     | '/admin/'
     | '/courses/'
     | '/live-batches/'
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/tutoring/$slug'
     | '/admin'
     | '/courses'
     | '/live-batches'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
+    | '/tutoring/$slug'
     | '/admin/'
     | '/courses/'
     | '/live-batches/'
@@ -529,6 +541,7 @@ export interface RootRouteChildren {
   CoursesSlugRoute: typeof CoursesSlugRoute
   LiveBatchesSlugRoute: typeof LiveBatchesSlugRoute
   SpecializationsSlugRoute: typeof SpecializationsSlugRoute
+  TutoringSlugRoute: typeof TutoringSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   LiveBatchesIndexRoute: typeof LiveBatchesIndexRoute
@@ -717,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tutoring/$slug': {
+      id: '/tutoring/$slug'
+      path: '/tutoring/$slug'
+      fullPath: '/tutoring/$slug'
+      preLoaderRoute: typeof TutoringSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/specializations/$slug': {
       id: '/specializations/$slug'
       path: '/specializations/$slug'
@@ -869,6 +889,7 @@ const rootRouteChildren: RootRouteChildren = {
   CoursesSlugRoute: CoursesSlugRoute,
   LiveBatchesSlugRoute: LiveBatchesSlugRoute,
   SpecializationsSlugRoute: SpecializationsSlugRoute,
+  TutoringSlugRoute: TutoringSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   LiveBatchesIndexRoute: LiveBatchesIndexRoute,

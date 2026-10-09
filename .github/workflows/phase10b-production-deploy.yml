@@ -112,5 +112,5 @@ jobs:
       - name: Run production Playwright suite
         run: node ./node_modules/@playwright/test/cli.js test
 
-      - name: Run 69-route production audit
+      - name: Run 81-route production audit
         run: bun scripts/audit-all-routes.ts

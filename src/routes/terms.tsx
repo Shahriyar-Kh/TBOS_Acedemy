@@ -8,7 +8,8 @@ export const Route = createFileRoute("/terms")({
     meta: buildMeta({
       title: "Terms & Conditions | TechBuilt Open School",
       description:
-        "The terms and conditions governing use of the TechBuilt Open School website, online courses, tutoring services and enrolment.",
+        "The terms governing use of TechBuilt Open School's website, applications, Free Demo trial sessions, live courses, tutoring services and enrollment.",
+      path: "/terms",
     }),
     links: [{ rel: "canonical", href: `${site.url}/terms` }],
   }),
@@ -16,22 +17,65 @@ export const Route = createFileRoute("/terms")({
 });
 
 const sections = [
-  { h: "1. Acceptance of terms", p: "By accessing this website and using our services, you agree to these Terms & Conditions. If you do not agree, please do not use our website or services." },
-  { h: "2. Our services", p: "We provide live online tutoring and technical courses for students from Grade 5 to MS level. Course content, schedules and tutors may be adjusted to best meet learning needs." },
-  { h: "3. Enrolment & applications", p: "Submitting an application does not guarantee enrolment. Our team will contact you to confirm availability, schedule, tutor and plan. Enrolment is confirmed once arrangements and any applicable fees are agreed." },
-  { h: "4. Fees & payments", p: "Fees and available plans are communicated during the admissions process. Payment terms will be shared before classes begin. Fees are subject to the program or plan you select." },
-  { h: "5. Cancellations & rescheduling", p: "We aim to be flexible. Reasonable notice is appreciated for rescheduling or cancelling classes. Specific policies will be shared at enrolment." },
-  { h: "6. Code of conduct", p: "Students and guardians agree to engage respectfully with tutors and staff. We reserve the right to discontinue services in cases of misconduct." },
-  { h: "7. Intellectual property", p: "All course materials, content and resources provided remain the property of TechBuilt Open School and may not be redistributed without permission." },
-  { h: "8. Limitation of liability", p: "We deliver our services with care and professionalism but do not guarantee specific outcomes. We are not liable for indirect or incidental damages arising from use of our services." },
-  { h: "9. Changes to these terms", p: "We may update these terms from time to time. Continued use of our services after changes constitutes acceptance of the updated terms." },
-  { h: "10. Contact", p: `For any questions about these terms, contact us at ${site.email}.` },
+  {
+    h: "1. Acceptance of terms",
+    p: "By accessing this website or using our services, you agree to these Terms & Conditions. If you do not agree, please do not use the website or submit an application.",
+  },
+  {
+    h: "2. Our services",
+    p: "We provide live online technical education and tutoring services. Available programs, tutor assignments, schedules, class formats and curriculum details may vary by offering and are confirmed during admissions.",
+  },
+  {
+    h: "3. Applications & enrollment",
+    p: "Submitting an application, contact form or Free Demo request records your interest but does not guarantee admission, tutor availability, a cohort place, or immediate enrollment. Enrollment is confirmed only after admissions communicates the applicable arrangement.",
+  },
+  {
+    h: "4. Free Demo trial session",
+    p: "A Free Demo is one live trial session only. It may be used to discuss goals, assess teaching fit or review the proposed learning path. It is not the complete course, tutoring package or a promise of continued free classes.",
+  },
+  {
+    h: "5. Fees & payments",
+    p: "Applicable fees, payment timing and any current offer are communicated before paid classes begin. Fees vary by program, tutoring format or cohort and may change for future enrollments.",
+  },
+  {
+    h: "6. Scheduling, cancellations & rescheduling",
+    p: "Recurring schedules are confirmed based on learner, tutor or cohort availability. Reasonable notice is expected for rescheduling or cancellation. Any program-specific policy communicated at enrollment also applies.",
+  },
+  {
+    h: "7. Learning outcomes",
+    p: "We provide instruction and learning support but do not guarantee grades, examination results, employment, earnings, university admission, certification outcomes or any other specific result. Progress depends on factors including starting level, attendance, practice and individual effort.",
+  },
+  {
+    h: "8. Code of conduct",
+    p: "Students, guardians, tutors and staff are expected to communicate respectfully and use online classes appropriately. We may suspend or discontinue services where conduct materially disrupts learning or safety.",
+  },
+  {
+    h: "9. Intellectual property",
+    p: "Course materials, learning resources, branding and original content provided by TechBuilt Open School may not be copied, republished or redistributed without permission, except where a resource is explicitly offered for public use.",
+  },
+  {
+    h: "10. Website & service availability",
+    p: "We aim to keep the website and online services available, but temporary interruptions may occur because of maintenance, third-party services, internet connectivity or technical issues.",
+  },
+  {
+    h: "11. Changes to these terms",
+    p: "We may update these terms when our services or operational requirements change. The latest version published on this page applies from its stated update date.",
+  },
+  {
+    h: "12. Contact",
+    p: `For questions about these terms, contact us at ${site.email}.`,
+  },
 ];
 
 function TermsPage() {
   return (
     <>
-      <PageHeader eyebrow="Legal" title="Terms & Conditions" breadcrumb={[{ label: "Terms & Conditions" }]} />
+      <PageHeader
+        eyebrow="Legal"
+        title="Terms & Conditions"
+        description="Clear expectations for website use, applications, trial sessions, enrollment and online learning services."
+        breadcrumb={[{ label: "Terms & Conditions" }]}
+      />
       <section className="mx-auto max-w-3xl container-px py-16 sm:py-20">
         <p className="text-sm text-muted-foreground">Last updated: October 2026</p>
         <div className="mt-8 space-y-8">

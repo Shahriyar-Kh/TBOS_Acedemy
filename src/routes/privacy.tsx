@@ -9,6 +9,7 @@ export const Route = createFileRoute("/privacy")({
       title: "Privacy Policy | TechBuilt Open School",
       description:
         "Read how TechBuilt Open School collects, uses and protects your personal information when you use our online academy and submit application or contact forms.",
+      path: "/privacy",
     }),
     links: [{ rel: "canonical", href: `${site.url}/privacy` }],
   }),
@@ -18,11 +19,11 @@ export const Route = createFileRoute("/privacy")({
 const sections = [
   {
     h: "1. Information we collect",
-    p: "When you submit an application or contact form, we collect the details you provide — such as your name, parent/guardian name, email address, WhatsApp number, country, city, grade/level, selected course or subject, and your message. We may also collect basic technical information such as your browser type for security and quality purposes.",
+    p: "When you submit an application, Free Demo request, or contact form, we collect the details you provide — such as your name, parent/guardian details where applicable, email address, WhatsApp number, country, city, age or grade/level, selected program or subject, scheduling preferences, and your message. The website may also process limited technical metadata needed for security, analytics, or service operation.",
   },
   {
     h: "2. How we use your information",
-    p: "We use your information to respond to your enquiry, process your application, match you with a suitable tutor and plan, arrange classes, and communicate with you about your learning. We may contact you by email or WhatsApp regarding your request.",
+    p: "We use submitted information to respond to your enquiry, process admissions or trial-session requests, review program or tutor fit, arrange scheduling, and communicate about the requested learning service. We may contact you by email or WhatsApp regarding that request.",
   },
   {
     h: "3. Storage of form submissions",
@@ -30,11 +31,11 @@ const sections = [
   },
   {
     h: "4. Sharing your information",
-    p: "We do not sell your personal information. We only share it with the tutors and team members directly involved in delivering your requested service, and where required by law.",
+    p: "We do not sell personal information. Access is limited to authorised team members and service providers used to operate admissions, communications, analytics, or learning delivery, and to disclosures required by law.",
   },
   {
     h: "5. Data retention",
-    p: "We retain your information for as long as necessary to provide our services and meet legal or administrative requirements. You may request deletion of your data at any time.",
+    p: "We retain admissions and enquiry information only for as long as reasonably needed for service delivery, follow-up, operational records, security, or legal and administrative requirements. You may contact us to request deletion or correction, subject to any records we are required to keep.",
   },
   {
     h: "6. Your rights",
@@ -42,7 +43,7 @@ const sections = [
   },
   {
     h: "7. Cookies, analytics & advertising measurement",
-    p: "Our website may use essential storage and, when enabled, advertising or measurement technologies such as Meta Pixel to understand campaign performance and actions such as viewing a program or submitting an enquiry. Campaign parameters such as UTM source, medium, campaign and content may be retained with an admissions submission for attribution.",
+    p: "Our website may use essential browser storage and, when enabled, advertising or measurement technologies such as Meta Pixel to understand campaign performance and actions such as viewing a program or submitting an enquiry. Campaign parameters such as UTM source, medium, campaign and content may be retained with an admissions submission for attribution. These measurement tools are secondary to the admissions record itself.",
   },
   {
     h: "8. Contact us",

@@ -152,12 +152,11 @@ test.describe("Phase 12C Premium Catalog Suite", () => {
       "/specializations/data-science",
     ];
 
-    for (const width of viewports) {
-      await page.setViewportSize({ width, height: 800 });
-
-      for (const route of testRoutes) {
-        await page.goto(route, { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(200);
+    for (const route of testRoutes) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      for (const width of viewports) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.waitForTimeout(50);
 
         const overflow = await page.evaluate(() => {
           return document.documentElement.scrollWidth > window.innerWidth;

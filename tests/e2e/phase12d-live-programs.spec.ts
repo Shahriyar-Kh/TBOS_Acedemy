@@ -204,12 +204,11 @@ test.describe("Phase 12D Premium Live Programs Suite", () => {
       "/live-batches/python-data-analysis-research-ai",
     ];
 
-    for (const width of viewports) {
-      await page.setViewportSize({ width, height: 800 });
-
-      for (const route of testRoutes) {
-        await page.goto(route, { waitUntil: "domcontentloaded" });
-        await page.waitForTimeout(150);
+    for (const route of testRoutes) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      for (const width of viewports) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.waitForTimeout(50);
 
         const overflow = await page.evaluate(() => {
           return document.documentElement.scrollWidth > window.innerWidth;
