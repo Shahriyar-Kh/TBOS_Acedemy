@@ -25,7 +25,7 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
   test("2. All 12 tutoring detail routes load with single H1 and subject context", async ({
     page,
   }) => {
-    test.setTimeout(180000);
+    test.setTimeout(60000);
 
     for (const subject of tutoringSubjects) {
       const pageErrors: string[] = [];
@@ -117,7 +117,7 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
   test("6. Phase 12F pages have zero horizontal overflow across 7 viewports", async ({
     page,
   }) => {
-    test.setTimeout(180000);
+    test.setTimeout(60000);
 
     const viewports = [375, 390, 430, 768, 1024, 1280, 1440];
     const routes = [
@@ -131,28 +131,35 @@ test.describe("Phase 12F Tutoring & Trust Pages Suite", () => {
       "/terms",
     ];
 
-    const gotoResponsiveRoute = async (route: string) => {
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          await page.goto(route, { waitUntil: "domcontentloaded" });
-          return;
-        } catch (error) {
-          const isTransientAbort = String(error).includes("ERR_ABORTED");
-          if (!isTransientAbort || attempt === 1) throw error;
-          await page.waitForTimeout(250);
+    for (const route of routes) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      for (const width of viewports) {
+        await page.setViewportSize({ width, height: 900 });
+        await page.waitForTimeout(50);
+        const overflow = await page.evaluate(() => {
+          const doc = document.documentElement;
+          const body = document.body;
+          const hasOverflow = doc.scrollWidth > window.innerWidth || body.scrollWidth > window.innerWidth;
+          if (!hasOverflow) return false;
+          // Find offending element for rich diagnostics
+          const offending = Array.from(document.querySelectorAll("*")).filter((el) => {
+            const rect = el.getBoundingClientRect();
+            return rect.right > window.innerWidth + 1;
+          }).map((el) => ({
+            tag: el.tagName,
+            id: el.id,
+            className: el.className,
+            clientWidth: el.clientWidth,
+            scrollWidth: el.scrollWidth,
+            rectRight: el.getBoundingClientRect().right,
+          }));
+          return { hasOverflow: true, offending: offending.slice(0, 5) };
+        });
+        if (typeof overflow === "object" && overflow?.hasOverflow) {
+          expect(overflow, `Horizontal overflow at ${width}px on ${route}: ${JSON.stringify(overflow.offending)}`).toBe(false);
+        } else {
+          expect(overflow, `Horizontal overflow at ${width}px on ${route}`).toBe(false);
         }
-      }
-    };
-
-    for (const width of viewports) {
-      await page.setViewportSize({ width, height: 900 });
-      for (const route of routes) {
-        await gotoResponsiveRoute(route);
-        await page.waitForTimeout(100);
-        const overflow = await page.evaluate(
-          () => document.documentElement.scrollWidth > window.innerWidth,
-        );
-        expect(overflow, `Horizontal overflow at ${width}px on ${route}`).toBe(false);
       }
     }
   });
