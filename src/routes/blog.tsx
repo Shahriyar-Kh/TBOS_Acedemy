@@ -3,7 +3,7 @@ import { ArrowRight, BookOpen, Code2, GraduationCap, Lightbulb, Map, Target } fr
 import { PageHeader } from "@/components/PageHeader";
 import { Reveal } from "@/components/Reveal";
 import { CtaSection } from "@/components/sections/CtaSection";
-import { buildMeta } from "@/lib/seo";
+import { buildMeta, canonicalLink } from "@/lib/seo";
 
 export const Route = createFileRoute("/blog")({
   head: () => ({
@@ -11,9 +11,10 @@ export const Route = createFileRoute("/blog")({
       title: "Resources & Learning Guides | TechBuilt Open School",
       description:
         "Free learning guides and resources on coding, study skills, exam preparation and choosing the right online course or tutor. Helping students learn smarter.",
+      path: "/blog",
       keywords: ["learning resources", "study guides", "how to learn coding", "exam preparation tips"],
     }),
-    links: [{ rel: "canonical", href: "/blog" }],
+    links: [canonicalLink("/blog")],
   }),
   component: BlogPage,
 });
