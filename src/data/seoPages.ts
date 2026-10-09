@@ -1,5 +1,6 @@
 // SEO-focused landing pages targeting key search terms.
 // Each renders through a shared, conversion-focused template.
+// Copy must stay evidence-based: admissions confirms availability, schedule, tutor/cohort fit and fees.
 
 export type SeoPage = {
   slug: string;
@@ -22,43 +23,43 @@ export const seoPages: SeoPage[] = [
     h1: "Online Tutor Service in Pakistan",
     title: "Online Tutor Service in Pakistan | TechBuilt Open School",
     description:
-      "Premium online tutor service in Pakistan for Grade 5 to MS. Live one-to-one tutoring in maths, physics, computer science and technical skills. Apply today.",
-    eyebrow: "Trusted across Pakistan",
+      "Live online tutoring options in Pakistan for school, college and university learners. One-to-one and small-group formats are available subject to tutor scheduling.",
+    eyebrow: "Online Tutoring in Pakistan",
     intro:
-      "Get expert, affordable online tutoring from the comfort of your home — anywhere in Pakistan. Our qualified tutors deliver live, personalised lessons that improve grades and build real skills.",
+      "Explore live online tutoring from home with subject, level and schedule reviewed through admissions before enrollment.",
     bullets: [
-      "Live one-to-one and group classes",
-      "Qualified Pakistani and international tutors",
-      "Flexible timing for every city and schedule",
-      "Affordable, transparent monthly plans",
+      "One-to-one tutoring available",
+      "Small-group options when scheduled",
+      "Subject and level reviewed before tutor matching",
+      "Schedule and applicable fee confirmed before enrollment",
     ],
     sections: [
       {
-        heading: "Tutoring that fits every Pakistani student",
-        body: "From Karachi to Lahore, Islamabad to Peshawar — our online tutor service reaches students in every city. We follow Federal, Punjab, Sindh, Cambridge and university curricula, so lessons always match what your child is studying at school or college.",
+        heading: "Tutoring built around the learner's current needs",
+        body: "Share the learner's grade, syllabus, goals and preferred timing. Admissions reviews the request and confirms whether a suitable tutoring option and schedule are currently available.",
       },
       {
-        heading: "Subjects and skills we cover",
-        body: "Our tutors specialise in mathematics, physics, computer science and a wide range of technical courses including Python, JavaScript and web development. Whether you need exam preparation or career skills, we have the right tutor for you.",
+        heading: "Academic and technical learning options",
+        body: "The public catalog includes academic subjects, computer science, Quran and Islamic Studies tutoring, alongside separate technical courses and specializations. Exact subject coverage is confirmed against the learner's request.",
       },
       {
-        heading: "Why parents across Pakistan trust us",
-        body: "We combine premium teaching with transparent progress reports, safe online classrooms and dedicated support. Parents stay informed every step of the way while students enjoy engaging, confidence-building lessons.",
+        heading: "Clear next steps before paid continuation",
+        body: "Tutor availability, class format, recurring timetable and the applicable fee are confirmed before paid classes begin. A Free Demo is one trial session only and may be used to assess teaching fit.",
       },
     ],
     faqs: [
       {
-        question: "Is online tutoring effective for Pakistani students?",
+        question: "Can students in Pakistan request online tutoring?",
         answer:
-          "Yes. Our live, interactive lessons with one-to-one attention often produce faster results than crowded classrooms, with the convenience of learning from home.",
+          "Yes. Submit the learner's subject, level and preferred timing. Admissions will confirm current tutor availability and the proposed schedule before enrollment.",
       },
       {
         question: "Which curricula do you support?",
         answer:
-          "We support Federal, Punjab, Sindh, Cambridge (O/A Levels), and university curricula across Pakistan.",
+          "Curriculum coverage varies by subject and tutor availability. Share your board, syllabus or course details in the application so admissions can confirm the fit before enrollment.",
       },
     ],
-    ctaCourseType: "Tutor Service",
+    ctaCourseType: "Academic Tutoring",
     ctaSelected: "Online Tutoring in Pakistan",
     keywords: ["online tutor service pakistan", "online tutor pakistan", "home tutor online"],
   },
@@ -67,40 +68,40 @@ export const seoPages: SeoPage[] = [
     h1: "International Online Academy",
     title: "International Online Academy | TechBuilt Open School",
     description:
-      "A premium international online academy offering live tutoring and technical courses for students worldwide, from Grade 5 to MS level. Enrol today.",
-    eyebrow: "Global Online Academy",
+      "Live online technical programs and tutoring for learners in Pakistan and abroad, with scheduling and program availability confirmed through admissions.",
+    eyebrow: "Learn Online from Anywhere",
     intro:
-      "TechBuilt Open School is a premium international online academy bringing world-class tutoring and technical education to students across the globe, with flexible scheduling for every time zone.",
+      "TechBuilt Open School delivers live online technical education and tutoring. Learners outside Pakistan may apply, with timing and availability confirmed before enrollment.",
     bullets: [
-      "Live online classes from anywhere in the world",
-      "Flexible scheduling across all time zones",
-      "International and academic curricula supported",
-      "Premium, trusted learning experience",
+      "Live online learning",
+      "Applications accepted from Pakistan and abroad",
+      "Technical courses and tutoring pathways",
+      "Schedule and availability confirmed by admissions",
     ],
     sections: [
       {
-        heading: "Learn from anywhere in the world",
-        body: "Whether your family is in the UK, UAE, USA, Saudi Arabia or beyond, our international online academy delivers the same premium learning experience. All you need is an internet connection.",
+        heading: "Online access beyond one location",
+        body: "Because classes are delivered online, learners can apply from different countries. Final timing depends on the learner's time zone and the availability of the relevant tutor, instructor or cohort.",
       },
       {
-        heading: "Academic and technical excellence",
-        body: "From core school subjects to in-demand technical skills like full stack and Python development, our specialised tutors prepare students for academic success and modern careers.",
+        heading: "Technical and tutoring pathways",
+        body: "Learners can explore technical courses, structured specializations, scheduled live cohorts, academic tutoring, and Quran or Islamic Studies tutoring through the public catalog.",
       },
       {
-        heading: "A trusted, premium experience",
-        body: "We are built around quality, safety and results — with experienced instructors, structured curricula, and constant communication with parents and students.",
+        heading: "Clear enrollment expectations",
+        body: "Admissions confirms the selected learning option, class format, schedule and applicable fee before paid continuation. We do not guarantee grades, jobs, earnings or other specific outcomes.",
       },
     ],
     faqs: [
       {
-        question: "Can students outside Pakistan join?",
+        question: "Can learners outside Pakistan apply?",
         answer:
-          "Absolutely. We serve students worldwide with flexible scheduling across time zones and curricula tailored to each learner.",
+          "Yes. Online applications are open to learners abroad. Admissions confirms whether a suitable schedule and learning option are currently available.",
       },
       {
-        question: "What time zones do you teach in?",
+        question: "How are international class times arranged?",
         answer:
-          "All of them. We arrange class times that suit your local schedule, wherever you are based.",
+          "Share your local time zone and preferred timing when applying. Admissions confirms a workable schedule based on tutor, instructor or cohort availability.",
       },
     ],
     ctaCourseType: "Other Inquiry",
@@ -112,39 +113,40 @@ export const seoPages: SeoPage[] = [
     h1: "Online Classes for Students",
     title: "Online Classes for Students | TechBuilt Open School",
     description:
-      "Live, interactive online classes for school, college and university students. Academic tutoring and technical courses from Grade 5 to MS. Join today.",
-    eyebrow: "Live & interactive",
+      "Live online learning options for school, college, university and adult learners, including technical courses and tutoring subject to current scheduling.",
+    eyebrow: "Live Online Learning",
     intro:
-      "Engaging, live online classes designed for real learning — not pre-recorded videos. Our students get genuine interaction, instant feedback, and personalised attention from expert tutors.",
+      "Explore live online classes with instructor interaction, guided practice and structured learning paths. The exact class format depends on the selected program.",
     bullets: [
-      "100% live, interactive lessons",
-      "One-to-one or small group classes",
-      "Academic subjects and technical skills",
-      "Recordings and notes for revision",
+      "Live online instruction",
+      "One-to-one and small-group formats where available",
+      "Technical courses and tutoring options",
+      "Program fit and schedule confirmed before enrollment",
     ],
     sections: [
       {
-        heading: "Real classes, real teachers, real results",
-        body: "Our online classes recreate the best of a premium classroom online. Students ask questions, get instant feedback and stay fully engaged throughout each session.",
+        heading: "Structured live learning",
+        body: "Available programs are delivered live online with opportunities to ask questions and work through guided examples. Course and tutoring formats vary by offering.",
       },
       {
-        heading: "Built around each student",
-        body: "We assess every student's level and goals, then tailor lessons accordingly. This personalised approach helps students learn faster and retain more.",
+        heading: "Choose the right learning path",
+        body: "Admissions reviews the learner's level, selected subject or program, and preferred schedule before confirming the most suitable available option.",
       },
       {
-        heading: "For every grade and subject",
-        body: "From Grade 5 fundamentals to MS-level specialisation, and from maths and physics to coding and web development — we have classes for every student.",
+        heading: "Options across different learning stages",
+        body: "The catalog includes school-level tutoring, university-level support, technical courses and structured specializations. Exact eligibility and coverage are confirmed for each request.",
       },
     ],
     faqs: [
       {
         question: "Are classes live or recorded?",
         answer:
-          "All classes are live and interactive. We also provide recordings and notes so students can revise anytime.",
+          "The programs advertised on this site are centered on live online instruction. Any recordings or additional resources depend on the specific program and are confirmed separately.",
       },
       {
-        question: "What do students need to join?",
-        answer: "Just a laptop, tablet or smartphone with an internet connection.",
+        question: "What does a learner need to join?",
+        answer:
+          "A reliable internet connection and a device suitable for the selected class are required. Technical courses may have additional software or computer requirements.",
       },
     ],
     ctaCourseType: "Other Inquiry",
@@ -156,43 +158,43 @@ export const seoPages: SeoPage[] = [
     h1: "Grade 5 to MS Online Learning",
     title: "Grade 5 to MS Online Learning | TechBuilt Open School",
     description:
-      "Continuous online learning from Grade 5 to MS level. Academic tutoring and technical courses tailored to every stage of education. Apply now.",
-    eyebrow: "Every stage of learning",
+      "Explore online tutoring and technical learning options across school, college and university levels, with exact coverage confirmed through admissions.",
+    eyebrow: "Different Stages of Learning",
     intro:
-      "From early school years to advanced Master's-level study, TechBuilt Open School supports students at every stage with personalised online tutoring and technical courses.",
+      "The TBOS catalog includes learning options for younger students, college learners, university students and adults. The suitable path depends on the learner's current level and goal.",
     bullets: [
-      "School support (Grade 5 onwards)",
-      "College and intermediate tutoring",
-      "University and MS-level guidance",
-      "Career-focused technical specializations",
+      "School-level tutoring options",
+      "College and intermediate support",
+      "University-level subject support where available",
+      "Technical courses and specializations",
     ],
     sections: [
       {
-        heading: "A learning partner for the whole journey",
-        body: "Education is a journey. We support students from Grade 5 through MS level, adapting our teaching as students grow — building strong foundations early and advanced expertise later.",
+        heading: "Learning options for different stages",
+        body: "Younger learners may use tutoring for subject foundations, while older learners can also explore technical courses and structured specializations. Availability varies by subject and program.",
       },
       {
         heading: "Academic and technical pathways",
-        body: "Younger students benefit from subject tutoring and concept building, while older students can pursue technical specializations that prepare them for university and careers.",
+        body: "The academy separates academic tutoring from technical courses so learners can choose a pathway that matches their immediate goal.",
       },
       {
-        heading: "Personalised at every level",
-        body: "Each student gets a learning plan matched to their grade, curriculum and goals — ensuring meaningful progress at every stage.",
+        heading: "Fit confirmed before enrollment",
+        body: "Admissions reviews the learner's current level, selected subject or program and schedule before confirming availability and the applicable fee.",
       },
     ],
     faqs: [
       {
-        question: "Do you teach younger school students?",
+        question: "Do you offer options for school students?",
         answer:
-          "Yes, we support students from Grade 5 upwards with age-appropriate, engaging tutoring.",
+          "Yes. The tutoring catalog includes options for school learners. Exact subject, grade and tutor availability are confirmed before enrollment.",
       },
       {
-        question: "Can MS-level students get support?",
+        question: "Can university or MS-level learners apply?",
         answer:
-          "Yes, we provide advanced guidance and technical specializations suitable for university and MS-level students.",
+          "Yes. Some tutoring and technical learning options are suitable for university-level learners. Submit your requirements so admissions can confirm the current fit.",
       },
     ],
-    ctaCourseType: "Academic Subject",
+    ctaCourseType: "Academic Tutoring",
     ctaSelected: "Grade 5 to MS Online Learning",
     keywords: ["grade 5 to ms online learning", "online learning all grades"],
   },
@@ -201,42 +203,43 @@ export const seoPages: SeoPage[] = [
     h1: "Computer Science Tutoring",
     title: "Computer Science Tutoring Online | TechBuilt Open School",
     description:
-      "Expert online computer science tutoring for school, college and university students. Concept-clear lessons, exam prep and coding support. Apply today.",
-    eyebrow: "Concept-clear CS",
+      "Live online computer science tutoring for school, college and university learners, with syllabus coverage and tutor availability confirmed before enrollment.",
+    eyebrow: "Computer Science Support",
     intro:
-      "Master computer science with patient, expert tutors. We make programming, algorithms, databases and theory genuinely clear — for every grade and curriculum.",
+      "Request computer science tutoring for programming concepts, theory, databases, algorithms or syllabus support. Admissions confirms the available tutor and scope.",
     bullets: [
-      "Curriculum-aligned CS tutoring",
-      "Programming and theory made simple",
-      "Exam and assignment support",
-      "School to university level",
+      "Live online tutoring",
+      "Programming and theory support",
+      "Syllabus and assignment guidance",
+      "Tutor match confirmed before enrollment",
     ],
     sections: [
       {
-        heading: "Computer science, finally clear",
-        body: "Many students find CS abstract. Our tutors break concepts into clear, practical steps with real coding examples, so students truly understand — not just memorise.",
+        heading: "Computer science concepts with guided practice",
+        body: "Tutoring can cover theory and practical programming depending on the learner's syllabus, current level and the available tutor's subject coverage.",
       },
       {
-        heading: "Exam and assignment ready",
-        body: "We align tutoring to your exact syllabus and prepare students for exams, assignments and practicals with focused, personalised practice.",
+        heading: "Support aligned to your syllabus",
+        body: "Share the relevant curriculum, assignment topics or exam areas when applying so the proposed tutoring plan can be matched to the actual requirement.",
       },
       {
-        heading: "From basics to advanced",
-        body: "Whether you're starting with programming basics or tackling advanced algorithms and databases, we have a specialist tutor for you.",
+        heading: "From foundations to advanced topics",
+        body: "The public tutoring catalog covers multiple learner levels. Exact advanced-topic coverage is confirmed before the recurring schedule is agreed.",
       },
     ],
     faqs: [
       {
-        question: "Do you cover programming and theory?",
+        question: "Can tutoring include both programming and theory?",
         answer:
-          "Yes — we teach both practical programming and computer science theory, aligned to your curriculum.",
+          "Yes, where the available tutor covers both. Share the required topics in your application so admissions can confirm the scope.",
       },
       {
-        question: "Which level do you teach?",
-        answer: "From school (Grade 5+) to university and MS level.",
+        question: "Which levels can apply?",
+        answer:
+          "School, college and university learners may apply. The suitable tutoring level is confirmed from the learner's current syllabus and goals.",
       },
     ],
-    ctaCourseType: "Academic Subject",
+    ctaCourseType: "Academic Tutoring",
     ctaSelected: "Computer Science",
     keywords: ["computer science tutoring", "cs tutor online", "computer science tutor"],
   },
@@ -245,42 +248,43 @@ export const seoPages: SeoPage[] = [
     h1: "Maths Tutor Online",
     title: "Maths Tutor Online | TechBuilt Open School",
     description:
-      "Qualified online maths tutors for Grade 5 to university level. Build confidence and top grades with personalised, exam-focused tutoring. Apply now.",
-    eyebrow: "Top grades in maths",
+      "Live online mathematics tutoring with one-to-one and small-group options subject to tutor availability, syllabus fit and scheduling.",
+    eyebrow: "Mathematics Tutoring",
     intro:
-      "Turn maths from a struggle into a strength. Our expert online maths tutors deliver clear, step-by-step teaching and exam-focused practice for every level.",
+      "Request structured mathematics support based on the learner's current syllabus, level and goals. Admissions confirms tutor availability and scheduling before enrollment.",
     bullets: [
-      "One-to-one online maths tutoring",
-      "Grade 5 to university level",
-      "Exam and board preparation",
-      "Clear, confidence-building teaching",
+      "One-to-one tutoring available",
+      "Topic and syllabus-based support",
+      "Exam-preparation practice where requested",
+      "Schedule and fee confirmed before enrollment",
     ],
     sections: [
       {
-        heading: "Maths made simple",
-        body: "Our tutors break down difficult topics into clear steps, building strong fundamentals so students can tackle any problem with confidence.",
+        heading: "Build understanding step by step",
+        body: "Tutoring focuses on the learner's current topics and areas of difficulty, using guided explanation and practice appropriate to the confirmed level.",
       },
       {
-        heading: "Results that show",
-        body: "With personalised plans and regular practice, our students consistently improve their grades and exam performance.",
+        heading: "Practice for the learner's actual goals",
+        body: "Share the relevant board, syllabus, exam or assignment requirements so tutoring can be planned around the learner's real priorities.",
       },
       {
-        heading: "Every topic, every level",
-        body: "From arithmetic and algebra to calculus and statistics, we cover the full maths curriculum from Grade 5 to university.",
+        heading: "Coverage confirmed before classes begin",
+        body: "Mathematics spans many levels and topics. Admissions confirms whether the requested coverage and recurring schedule can be supported before paid continuation.",
       },
     ],
     faqs: [
       {
-        question: "Can you help with exam preparation?",
+        question: "Can I request maths exam preparation?",
         answer:
-          "Yes — we provide focused past-paper practice and exam strategies tailored to your board or curriculum.",
+          "Yes. Include the exam, board or syllabus in your request. Admissions will confirm whether a suitable tutor and schedule are available.",
       },
       {
         question: "Do you offer one-to-one maths tutoring?",
-        answer: "Yes, one-to-one is our most popular option for maximum personalised attention.",
+        answer:
+          "One-to-one tutoring is an available format, subject to tutor scheduling and confirmation by admissions.",
       },
     ],
-    ctaCourseType: "Academic Subject",
+    ctaCourseType: "Academic Tutoring",
     ctaSelected: "Mathematics",
     keywords: ["maths tutor online", "math tutor", "online maths tuition"],
   },
@@ -289,41 +293,43 @@ export const seoPages: SeoPage[] = [
     h1: "Physics Tutor Online",
     title: "Physics Tutor Online | TechBuilt Open School",
     description:
-      "Expert online physics tutoring that makes concepts clear. Numerical practice, exam prep and curriculum-aligned lessons for Grade 8 to MS. Apply now.",
-    eyebrow: "Understand physics",
+      "Live online physics tutoring for concept review, numerical practice and syllabus support, subject to tutor availability and scheduling.",
+    eyebrow: "Physics Tutoring",
     intro:
-      "Learn physics by understanding, not memorising. Our tutors use real examples, clear diagrams and numerical practice to make every concept click.",
+      "Request physics tutoring for concept review, numerical practice and syllabus-based support. The proposed scope is confirmed before enrollment.",
     bullets: [
-      "Concept-focused physics tutoring",
+      "Concept-focused explanations",
       "Numerical and problem-solving practice",
-      "Board and entrance exam preparation",
-      "Curriculum-aligned, personalised lessons",
+      "Syllabus and exam support where requested",
+      "Tutor availability confirmed before enrollment",
     ],
     sections: [
       {
-        heading: "Physics that finally makes sense",
-        body: "From mechanics to modern physics, our tutors connect theory to the real world so students genuinely understand the why behind every formula.",
+        heading: "Understand concepts before applying formulas",
+        body: "Tutoring can combine explanation, worked examples and numerical practice based on the learner's current syllabus and starting level.",
       },
       {
-        heading: "Strong on numericals",
-        body: "We build confident problem solvers through structured numerical practice and exam-style questions.",
+        heading: "Structured numerical practice",
+        body: "Where relevant to the learner's goals, sessions can include guided problem solving and exam-style practice matched to the confirmed subject coverage.",
       },
       {
-        heading: "Exam-ready preparation",
-        body: "Lessons are aligned to your syllabus and focused on the topics and question types that matter most for your exams.",
+        heading: "Support matched to the learner's syllabus",
+        body: "Share the required topics, board or course outline when applying. Admissions confirms whether the requested level and schedule are currently supported.",
       },
     ],
     faqs: [
       {
-        question: "Do you help with physics numericals?",
-        answer: "Yes — numerical problem solving is a core part of our physics tutoring.",
+        question: "Can tutoring include physics numericals?",
+        answer:
+          "Yes, where numerical problem solving is part of the confirmed tutoring scope.",
       },
       {
-        question: "Which levels do you teach?",
-        answer: "From Grade 8 up to university and MS level.",
+        question: "Which physics levels can apply?",
+        answer:
+          "Learners at different school, college and university levels may apply. Exact coverage depends on the requested topics and tutor availability.",
       },
     ],
-    ctaCourseType: "Academic Subject",
+    ctaCourseType: "Academic Tutoring",
     ctaSelected: "Physics",
     keywords: ["physics tutor online", "physics tuition", "online physics tutor"],
   },
@@ -332,40 +338,40 @@ export const seoPages: SeoPage[] = [
     h1: "Python Course Online",
     title: "Python Course Online | TechBuilt Open School",
     description:
-      "Learn Python online with live, expert-led classes. From fundamentals to real projects, automation and data. Beginner-friendly. Enrol today.",
-    eyebrow: "Beginner friendly",
+      "Learn Python through live online instruction, structured practice and project work, with the available course format and schedule confirmed before enrollment.",
+    eyebrow: "Python Learning Path",
     intro:
-      "Start your coding journey with the world's most popular language. Our live, online Python course takes you from complete beginner to building real projects.",
+      "Build Python foundations through live instruction, guided exercises and practical project work. Choose a catalog course or active live cohort based on your learning goal.",
     bullets: [
-      "Live, expert-led Python classes",
-      "Beginner to advanced path",
-      "Real projects and automation",
-      "One-to-one or group learning",
+      "Live online instruction",
+      "Beginner-friendly foundations available",
+      "Practical exercises and project work",
+      "One-to-one or scheduled cohort options",
     ],
     sections: [
       {
-        heading: "The perfect first language",
-        body: "Python's clean, readable syntax makes it ideal for beginners — while its power makes it essential for automation, data and AI.",
+        heading: "Start with clear Python foundations",
+        body: "Python learning options cover core syntax, problem solving and practical programming. The exact syllabus depends on the selected catalog course or live cohort.",
       },
       {
-        heading: "Learn by building",
-        body: "Every concept is reinforced with hands-on projects, so you learn practical, portfolio-ready skills from day one.",
+        heading: "Practice by building",
+        body: "Project work is included where specified in the selected curriculum so learners can apply concepts beyond isolated examples.",
       },
       {
-        heading: "Career-ready foundations",
-        body: "Python opens doors to web development, automation, data science and more. Our course builds the strong foundation you need.",
+        heading: "Continue into related technical paths",
+        body: "Python can lead into web development, automation, data analysis and AI foundations. TBOS lists these as separate courses or specializations so learners can continue through a structured path.",
       },
     ],
     faqs: [
       {
-        question: "Do I need prior experience?",
+        question: "Can beginners apply for Python learning?",
         answer:
-          "No — our Python course is designed for complete beginners as well as those who want to advance.",
+          "Yes. Beginner-friendly Python options are available in the catalog. Admissions can help identify the appropriate starting point.",
       },
       {
-        question: "Will I build real projects?",
+        question: "Will the course include projects?",
         answer:
-          "Yes, you'll build practical projects throughout the course and a capstone project at the end.",
+          "Project work depends on the selected Python course or live program. Review the published curriculum or ask admissions to confirm the project scope.",
       },
     ],
     ctaCourseType: "Single Course",
@@ -377,38 +383,40 @@ export const seoPages: SeoPage[] = [
     h1: "Web Development Course Online",
     title: "Web Development Course Online | TechBuilt Open School",
     description:
-      "Learn web development online with live classes. Build responsive, modern websites with HTML, CSS, JavaScript and more. Portfolio-ready. Enrol today.",
-    eyebrow: "Build real websites",
+      "Learn web development through live online instruction and practical project work across HTML, CSS, JavaScript and related tools.",
+    eyebrow: "Web Development Learning",
     intro:
-      "Become a web developer with our live, project-based online course. Learn to build modern, responsive websites and launch a professional portfolio.",
+      "Explore a structured web development path with live instruction, guided practice and practical projects. The exact stack depends on the selected course or specialization.",
     bullets: [
-      "HTML, CSS, JavaScript and frameworks",
-      "Responsive, modern web design",
-      "Live, project-based learning",
-      "Portfolio-ready by the end",
+      "HTML, CSS and JavaScript foundations",
+      "Responsive web development practice",
+      "Live online instruction",
+      "Project work defined by the selected curriculum",
     ],
     sections: [
       {
-        heading: "From beginner to builder",
-        body: "Start with the fundamentals and progress to building complete, responsive websites and web applications with modern tools.",
+        heading: "Progress from foundations to complete interfaces",
+        body: "Web development options begin with core browser technologies and can continue into frontend, backend or full-stack learning through the relevant courses and specializations.",
       },
       {
-        heading: "Project-based and practical",
-        body: "You'll build real projects throughout the course, ending with a portfolio that showcases your skills to employers and clients.",
+        heading: "Use projects to apply the concepts",
+        body: "Practical assignments and project work are included where listed in the selected curriculum, helping learners connect technical concepts to implementation.",
       },
       {
-        heading: "A path to freelancing or a career",
-        body: "Web development is one of the most in-demand and flexible skills today — perfect for careers and freelance work.",
+        heading: "Choose the path that matches your goal",
+        body: "Learners can start with a single technology course or follow a broader specialization. Admissions can clarify the available format, schedule and fee before enrollment.",
       },
     ],
     faqs: [
       {
-        question: "Is this course suitable for beginners?",
-        answer: "Yes — we start from the basics and build up to professional skills step by step.",
+        question: "Are beginner web development options available?",
+        answer:
+          "Yes. The catalog includes foundational web development courses. Review the prerequisites on the selected course page before applying.",
       },
       {
-        question: "Will I have a portfolio at the end?",
-        answer: "Yes, you'll finish with real projects and a portfolio to showcase your abilities.",
+        question: "Will I build projects?",
+        answer:
+          "Project work depends on the selected course or specialization and is described in its published curriculum.",
       },
     ],
     ctaCourseType: "Single Course",
