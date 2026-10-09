@@ -25,7 +25,7 @@ export const Route = createFileRoute("/courses/")({
     meta: buildMeta({
       title: "Programming & Technology Courses Catalog | TechBuilt Open School",
       description:
-        "Explore 32 live instructor-led technical courses in Web Development, Python, C++, Java, Databases, and AI/ML foundations. 1-on-1 instruction and small group cohorts.",
+        "Explore 32 technical courses in Web Development, Python, C++, Java, Databases, and AI/ML foundations, with live online formats available by program.",
       path: "/courses",
       keywords: [
         "programming courses catalog",
