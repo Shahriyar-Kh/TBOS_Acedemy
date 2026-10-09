@@ -31,49 +31,49 @@ const resources: Resource[] = [
   {
     icon: Code2,
     tag: "Coding",
-    title: "How to start learning to code in 2026",
+    title: "Explore a beginner Python learning path",
     excerpt:
-      "A beginner's roadmap covering which language to learn first, how to practise, and how to stay motivated on your coding journey.",
+      "Review the Python learning option, published curriculum direction, and next steps for beginners.",
     to: "/python-course-online",
   },
   {
     icon: Map,
     tag: "Career",
-    title: "Web developer roadmap: from beginner to job-ready",
+    title: "Explore the web development learning path",
     excerpt:
-      "The exact skills, projects and milestones that take you from your first webpage to a professional web development career.",
+      "See how web fundamentals, responsive development and project work connect across the available learning options.",
     to: "/web-development-course-online",
   },
   {
     icon: Target,
     tag: "Study skills",
-    title: "Smart exam preparation strategies that actually work",
+    title: "Mathematics tutoring for syllabus and exam support",
     excerpt:
-      "Proven, science-backed study techniques to revise effectively, manage time and walk into exams with confidence.",
+      "Review the mathematics tutoring pathway and how syllabus or exam requirements can be shared with admissions.",
     to: "/maths-tutor",
   },
   {
     icon: GraduationCap,
     tag: "Parents",
-    title: "Choosing the right online tutor for your child",
+    title: "How the online tutoring request process works",
     excerpt:
-      "What to look for in an online tutor, the questions to ask, and how to set your child up for success in online classes.",
+      "Understand tutor matching, scheduling, class formats, and what admissions confirms before paid continuation.",
     to: "/online-tutor-service-pakistan",
   },
   {
     icon: Lightbulb,
     tag: "Maths",
-    title: "Making maths simple: building real understanding",
+    title: "Mathematics topic support by learner level",
     excerpt:
-      "Why so many students fear maths — and the step-by-step approach our tutors use to turn confusion into confidence.",
+      "Explore how learners can request topic-based mathematics support matched to their syllabus and current level.",
     to: "/maths-tutor",
   },
   {
     icon: BookOpen,
     tag: "Physics",
-    title: "Understanding physics instead of memorising it",
+    title: "Physics concepts and numerical practice",
     excerpt:
-      "How connecting physics to the real world helps students master concepts and solve numericals with ease.",
+      "Review the physics tutoring option for concept explanation, numerical practice, and syllabus-based support.",
     to: "/physics-tutor",
   },
 ];
@@ -105,7 +105,7 @@ function BlogPage() {
                 <h2 className="mt-2 text-lg font-bold text-foreground">{r.title}</h2>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{r.excerpt}</p>
                 <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary group-hover:text-gold-foreground">
-                  Read & explore
+                  Explore related page
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
