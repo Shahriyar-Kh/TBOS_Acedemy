@@ -102,8 +102,11 @@ test.describe("Phase 13 Final SEO, Accessibility & Acceptance", () => {
   test("6. Homepage includes performance-safe font and hero-image hints", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    const fontStylesheet = page.locator('link[href*="fonts.googleapis.com"]').last();
-    await expect(fontStylesheet).toHaveAttribute("href", /display=swap/);
+    const fontStylesheet = page.locator(
+      'link[rel="stylesheet"][href^="https://fonts.googleapis.com/css2"]',
+    );
+    await expect(fontStylesheet).toHaveCount(1);
+    await expect(fontStylesheet).toHaveAttribute("href", /[?&]display=swap(?:&|$)/);
 
     const heroImage = page.locator("main img").first();
     await expect(heroImage).toHaveAttribute("fetchpriority", "high");
