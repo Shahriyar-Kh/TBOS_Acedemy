@@ -15,7 +15,7 @@ export function PageHeader({
 }) {
   return (
     <section className="relative overflow-hidden bg-gradient-hero">
-      <div className="pointer-events-none absolute -right-20 -top-16 h-64 w-64 rounded-full bg-gold/15 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-16 h-64 w-64 rounded-full bg-gold/15 blur-3xl" />
       <div className="mx-auto max-w-4xl container-px py-14 text-center sm:py-20">
         {breadcrumb && (
           <nav aria-label="Breadcrumb" className="mb-5 flex items-center justify-center gap-1.5 text-xs text-primary-foreground/70">
