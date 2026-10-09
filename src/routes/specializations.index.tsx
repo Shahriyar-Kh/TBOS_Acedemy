@@ -22,7 +22,7 @@ export const Route = createFileRoute("/specializations/")({
     meta: buildMeta({
       title: "Technology Specializations | Developer Learning Tracks | TechBuilt Open School",
       description:
-        "Structured multi-month learning paths in Full Stack, Frontend, Backend, Python, Database, Mobile, Data Analysis, and AI/ML engineering. Guided by expert instructors.",
+        "Structured multi-month learning paths in Full Stack, Frontend, Backend, Python, Database, Mobile, Data Analysis, and AI/ML engineering with live mentoring and project work.",
       path: "/specializations",
       keywords: [
         "full stack development specialization",
