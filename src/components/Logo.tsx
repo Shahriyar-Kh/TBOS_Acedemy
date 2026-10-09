@@ -16,7 +16,7 @@ export function Logo({ light = false, className }: { light?: boolean; className?
           light ? "bg-gold text-gold-foreground" : "bg-gradient-hero text-primary-foreground",
         )}
       >
-        <GraduationCap className="h-5 w-5" />
+        <GraduationCap className="h-5 w-5" aria-hidden="true" />
       </span>
       <span className="flex flex-col leading-none">
         <span
