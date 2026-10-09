@@ -43,8 +43,7 @@ export function Footer() {
           <div>
             <Logo light />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-primary-foreground/75">
-              A premium international online academy delivering live tutoring and technical
-              courses to students from Grade 5 to MS level — across Pakistan and worldwide.
+              {site.description}
             </p>
             <div className="mt-5 flex gap-2">
               {[

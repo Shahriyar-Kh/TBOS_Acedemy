@@ -116,7 +116,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@type": "EducationalOrganization",
           name: site.fullName,
           description: site.description,
+          url: site.url,
           email: site.email,
+          telephone: site.phoneDisplay,
           sameAs: [
             site.social.facebook,
             site.social.instagram,
@@ -163,8 +165,16 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AdminAuthProvider>
         <div className="flex min-h-screen flex-col">
+          {!isAdminRoute && (
+            <a
+              href="#main-content"
+              className="sr-only z-[100] rounded-md bg-background px-4 py-2 font-semibold text-foreground shadow-card focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              Skip to main content
+            </a>
+          )}
           {!isAdminRoute && <Header />}
-          <main className="flex-1">
+          <main id="main-content" tabIndex={-1} className="flex-1">
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
           </main>

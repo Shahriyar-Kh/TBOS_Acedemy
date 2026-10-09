@@ -43,7 +43,7 @@ export const Route = createFileRoute("/live-batches/")({
   component: LiveBatchesPage,
 });
 
-export function LiveBatchesPage() {
+function LiveBatchesPage() {
   const { offers: loadedOffers } = Route.useLoaderData();
   const allOffers = loadedOffers && loadedOffers.length > 0 ? loadedOffers : activeLiveOffers;
 

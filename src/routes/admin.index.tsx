@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { adminNoIndexMeta } from "@/lib/seo";
 import { useEffect } from "react";
 import { useAdminAuth } from "@/lib/adminAuthContext";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
+  head: () => ({ meta: adminNoIndexMeta("TBOS Admin") }),
   component: AdminIndexPage,
 });
 
