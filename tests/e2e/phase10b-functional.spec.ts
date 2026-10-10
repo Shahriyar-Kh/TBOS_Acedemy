@@ -142,6 +142,10 @@ test.describe("TBOS Phase10B functional coverage", () => {
     }
 
     await page.goto("/apply", { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    // Production can reach DOMContentLoaded before React hydration binds form validation.
+    await page.waitForTimeout(1200);
+
     const email = "tbos-minor-validation@example.com";
     try {
       if (liveFormMode) await cleanupEmail(email);
