@@ -92,7 +92,7 @@ test.describe("Phase 12D Premium Live Programs Suite", () => {
       },
       {
         slug: "python-data-analysis-research-ai",
-        title: /Python for Data Analysis/i,
+        title: /Data Analyst Professional Program/i,
         imageSubstr: "live-data-ai-research.webp",
         duration: "6 months",
         frequency: "4 classes/week",
@@ -159,13 +159,14 @@ test.describe("Phase 12D Premium Live Programs Suite", () => {
     await expect(page.getByText(/6 months/i).first()).toBeVisible();
     await expect(page.getByText(/2–3 classes\/week/i).first()).toBeVisible();
 
-    // Data / Research / AI: communicates 6 months, 4 classes/week, researchers/scholars/professionals
+    // Data Analyst: communicates the approved 6-month, 96-class business-analysis pathway
     await page.goto("/live-batches/python-data-analysis-research-ai", {
       waitUntil: "domcontentloaded",
     });
     await expect(page.getByText(/6 months/i).first()).toBeVisible();
     await expect(page.getByText(/4 classes\/week/i).first()).toBeVisible();
-    await expect(page.getByText(/BS.*MS.*MPhil.*PhD|Scholars/i).first()).toBeVisible();
+    await expect(page.getByText(/96 live classes/i).first()).toBeVisible();
+    await expect(page.getByText(/Python.*MySQL.*Statistics.*Power BI/i).first()).toBeVisible();
   });
 
   test("4. UTM-loaded live page renders normally and preserves ViewContent tracking call", async ({

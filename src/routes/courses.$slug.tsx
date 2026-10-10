@@ -16,11 +16,13 @@ import { Reveal } from "@/components/Reveal";
 import { CourseVisual } from "@/components/catalog/CourseVisual";
 import { QuickFacts } from "@/components/catalog/QuickFacts";
 import { LearningPathTimeline } from "@/components/catalog/LearningPathTimeline";
+import { CourseChapterRoadmap } from "@/components/catalog/CourseChapterRoadmap";
 import { CourseCatalogCard } from "@/components/catalog/CourseCatalogCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCourse, courses } from "@/data/courses";
+import { getCourseRoadmap } from "@/data/courseRoadmaps";
 import { getCourseCatalogVisual } from "@/data/catalogVisuals";
 import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
@@ -71,6 +73,8 @@ export const Route = createFileRoute("/courses/$slug")({
 function CourseDetail() {
   const { course } = Route.useLoaderData();
   const visual = getCourseCatalogVisual(course.slug);
+  const roadmap = getCourseRoadmap(course.slug);
+  const approvedDuration = roadmap?.duration ?? course.duration;
 
   const related = courses
     .filter((c) => c.slug !== course.slug && c.category === course.category)
@@ -145,7 +149,7 @@ function CourseDetail() {
                     {course.level}
                   </Badge>
                   <span className="glass inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
-                    <Clock className="h-3 w-3 text-cyan" /> {course.duration}
+                    <Clock className="h-3 w-3 text-cyan" /> {approvedDuration}
                   </span>
                 </div>
 
@@ -214,7 +218,7 @@ function CourseDetail() {
         {/* 2. Quick Facts Row */}
         <Reveal>
           <QuickFacts
-            duration={course.duration}
+            duration={approvedDuration}
             level={course.level}
             mode={course.mode}
             format="1-on-1 & small cohorts"
@@ -260,13 +264,17 @@ function CourseDetail() {
             </Reveal>
 
             {/* 5. Progressive Curriculum Roadmap */}
-            <Reveal>
-              <LearningPathTimeline
-                items={course.curriculum}
-                title="Curriculum & Syllabus"
-                subtitle="Progressive modules designed around real programming assignments, clean code, and feedback."
-              />
-            </Reveal>
+            {roadmap ? (
+              <CourseChapterRoadmap roadmap={roadmap} />
+            ) : (
+              <Reveal>
+                <LearningPathTimeline
+                  items={course.curriculum}
+                  title="Curriculum & Syllabus"
+                  subtitle="Progressive modules designed around real programming assignments, clean code, and feedback."
+                />
+              </Reveal>
+            )}
 
             {/* 6. Prerequisites (if any) */}
             {prereqList.length > 0 && (
@@ -359,7 +367,7 @@ function CourseDetail() {
                   <li className="flex items-center gap-2.5">
                     <Clock className="h-4 w-4 text-cyan" />
                     <span>
-                      Duration: <strong className="text-foreground">{course.duration}</strong>
+                      Duration: <strong className="text-foreground">{approvedDuration}</strong>
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5">

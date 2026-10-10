@@ -3,10 +3,12 @@ import { ArrowRight, Clock, BarChart3 } from "lucide-react";
 import { CourseVisual } from "@/components/catalog/CourseVisual";
 import { getCourseCatalogVisual } from "@/data/catalogVisuals";
 import type { Course } from "@/data/courses";
+import { getCourseRoadmap } from "@/data/courseRoadmaps";
 import { cn } from "@/lib/utils";
 
 export function CourseCatalogCard({ course, className }: { course: Course; className?: string }) {
   const visual = getCourseCatalogVisual(course.slug);
+  const roadmap = getCourseRoadmap(course.slug);
 
   return (
     <Link
@@ -65,7 +67,8 @@ export function CourseCatalogCard({ course, className }: { course: Course; class
         {/* Card Footer: Duration & CTA */}
         <div className="mt-5 flex items-center justify-between border-t border-border/80 pt-3.5">
           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <Clock className="h-3.5 w-3.5 text-gold-foreground" /> {course.duration}
+            <Clock className="h-3.5 w-3.5 text-gold-foreground" />{" "}
+            {roadmap?.duration ?? course.duration}
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:text-gold-foreground transition-colors">
             View course

@@ -16,11 +16,13 @@ import { Reveal } from "@/components/Reveal";
 import { Icon } from "@/components/Icon";
 import { QuickFacts } from "@/components/catalog/QuickFacts";
 import { LearningPathTimeline } from "@/components/catalog/LearningPathTimeline";
+import { ProgramCoursesRoadmap } from "@/components/catalog/ProgramCoursesRoadmap";
 import { SpecializationCatalogCard } from "@/components/catalog/SpecializationCatalogCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSpecialization, specializations } from "@/data/specializations";
+import { getSpecializationRoadmap } from "@/data/specializationRoadmaps";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
 import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
@@ -71,6 +73,7 @@ function SpecializationDetail() {
   const { spec } = Route.useLoaderData();
   const visual = getSpecializationCatalogVisual(spec.slug);
   const tags = deriveSpecializationTags(spec.modules);
+  const structuredRoadmap = getSpecializationRoadmap(spec.slug);
 
   const related = specializations.filter((s) => s.slug !== spec.slug).slice(0, 3);
 
@@ -242,13 +245,23 @@ function SpecializationDetail() {
             )}
 
             {/* 4. Learning Modules Roadmap */}
-            <Reveal>
-              <LearningPathTimeline
-                items={spec.modules}
-                title="Specialization Learning Modules"
-                subtitle="Progressive engineering pathway from fundamental concepts to full-scale project architecture."
+            {structuredRoadmap ? (
+              <ProgramCoursesRoadmap
+                courses={structuredRoadmap.courses}
+                capstoneProject={structuredRoadmap.capstoneProject}
+                eyebrow="SPECIALIZATION COURSE ARCHITECTURE"
+                title="Included Courses, Chapters & Projects"
+                description="This specialization is a complete pathway made from individual courses. Every course has its own chapter roadmap and practical project before the final specialization capstone."
               />
-            </Reveal>
+            ) : (
+              <Reveal>
+                <LearningPathTimeline
+                  items={spec.modules}
+                  title="Specialization Learning Modules"
+                  subtitle="Progressive engineering pathway from fundamental concepts to full-scale project architecture."
+                />
+              </Reveal>
+            )}
 
             {/* 5. Outcomes */}
             <Reveal>
@@ -341,6 +354,20 @@ function SpecializationDetail() {
                     </span>
                   </li>
                 </ul>
+
+                {structuredRoadmap && (
+                  <div className="mt-5 rounded-xl border border-gold/30 bg-gold/10 p-4">
+                    <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-gold-foreground">
+                      One-to-One Monthly Fee Range
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-foreground">
+                      {structuredRoadmap.oneToOneFee}
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                      {structuredRoadmap.classesPerWeek}. {structuredRoadmap.pricingNote}
+                    </p>
+                  </div>
+                )}
 
                 {/* Primary Apply Button */}
                 <Button
