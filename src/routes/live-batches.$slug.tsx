@@ -80,7 +80,7 @@ export const Route = createFileRoute("/live-batches/$slug")({
   component: LiveOfferDetail,
 });
 
-export function LiveOfferDetail() {
+function LiveOfferDetail() {
   const { offer } = Route.useLoaderData();
   const visual = getLiveProgramVisual(offer.slug);
   const relatedOffers = activeLiveOffers.filter((o) => o.slug !== offer.slug);

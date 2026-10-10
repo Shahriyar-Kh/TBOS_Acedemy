@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { adminNoIndexMeta } from "@/lib/seo";
 import { useEffect, useState, useCallback } from "react";
 import { useAdminAuth } from "@/lib/adminAuthContext";
 import type { CmsContentKind } from "@/lib/cms";
@@ -34,6 +35,7 @@ import {
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/content")({
+  head: () => ({ meta: adminNoIndexMeta("TBOS Content Admin") }),
   component: AdminContentPage,
 });
 

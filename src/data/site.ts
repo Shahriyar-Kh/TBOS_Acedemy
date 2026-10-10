@@ -7,7 +7,7 @@ export const site = {
   shortName: "TechBuilt Open School",
   tagline: "International Online Academy",
   description:
-    "Premium international online academy offering live tutoring and technical courses for students from Grade 5 to MS level — across Pakistan and worldwide.",
+    "Live online technical programs and tutoring with structured learning paths, one-to-one and small-group options, and admissions support for learners in Pakistan and abroad.",
   url: "https://techbuiltos.online",
   email: "admissions@techbuiltopenschool.com",
   phoneDisplay: "+92 329 5448590",

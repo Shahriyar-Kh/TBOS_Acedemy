@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { adminNoIndexMeta } from "@/lib/seo";
 import { useState, useEffect } from "react";
 import { useAdminAuth } from "@/lib/adminAuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { ShieldCheck, Lock, Mail, AlertCircle, Info, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/login")({
+  head: () => ({ meta: adminNoIndexMeta("TBOS Admin Login") }),
   component: AdminLoginPage,
 });
 

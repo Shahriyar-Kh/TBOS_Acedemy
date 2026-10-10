@@ -6,7 +6,7 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { specializations } from "@/data/specializations";
 import { getCmsSpecializationsFn } from "@/lib/cmsFunctions";
-import { buildMeta } from "@/lib/seo";
+import { buildMeta, canonicalLink } from "@/lib/seo";
 
 export const Route = createFileRoute("/specializations/")({
   loader: async () => {
@@ -22,7 +22,8 @@ export const Route = createFileRoute("/specializations/")({
     meta: buildMeta({
       title: "Technology Specializations | Developer Learning Tracks | TechBuilt Open School",
       description:
-        "Structured multi-month learning paths in Full Stack, Frontend, Backend, Python, Database, Mobile, Data Analysis, and AI/ML engineering. Guided by expert instructors.",
+        "Structured multi-month learning paths in Full Stack, Frontend, Backend, Python, Database, Mobile, Data Analysis, and AI/ML engineering with live mentoring and project work.",
+      path: "/specializations",
       keywords: [
         "full stack development specialization",
         "web development learning path",
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/specializations/")({
         "ai machine learning specialization",
       ],
     }),
-    links: [{ rel: "canonical", href: "/specializations" }],
+    links: [canonicalLink("/specializations")],
   }),
   component: SpecializationsPage,
 });

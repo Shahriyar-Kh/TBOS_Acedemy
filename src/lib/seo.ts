@@ -1,4 +1,5 @@
 import { site } from "@/data/site";
+import type { SeoPage } from "@/data/seoPages";
 
 type MetaInput = {
   title: string;
@@ -71,4 +72,31 @@ export function courseJsonLd(name: string, description: string) {
       },
     }),
   };
+}
+
+
+export function canonicalLink(path: string) {
+  return { rel: "canonical", href: new URL(path, site.url).toString() };
+}
+
+export function seoLandingHead(page: SeoPage) {
+  const path = `/${page.slug}`;
+  return {
+    meta: buildMeta({
+      title: page.title,
+      description: page.description,
+      keywords: page.keywords,
+      path,
+    }),
+    links: [canonicalLink(path)],
+    scripts: [faqJsonLd(page.faqs)],
+  };
+}
+
+export function adminNoIndexMeta(title = "TBOS Admin") {
+  return [
+    { title },
+    { name: "robots", content: "noindex,nofollow,noarchive,nosnippet" },
+    { name: "googlebot", content: "noindex,nofollow,noarchive,nosnippet" },
+  ];
 }

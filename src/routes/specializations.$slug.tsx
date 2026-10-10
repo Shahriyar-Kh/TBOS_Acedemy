@@ -24,7 +24,7 @@ import { getSpecialization, specializations } from "@/data/specializations";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
 import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
-import { whatsappLink } from "@/data/site";
+import { site, whatsappLink } from "@/data/site";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/specializations/$slug")({
@@ -48,9 +48,10 @@ export const Route = createFileRoute("/specializations/$slug")({
         title,
         description,
         keywords: spec.keywords,
+        path: `/specializations/${spec.slug}`,
         type: "article",
       }),
-      links: [{ rel: "canonical", href: `/specializations/${spec.slug}` }],
+      links: [{ rel: "canonical", href: `${site.url}/specializations/${spec.slug}` }],
       scripts: [courseJsonLd(spec.title, spec.summary)],
     };
   },

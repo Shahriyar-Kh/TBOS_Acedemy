@@ -47,6 +47,7 @@ export const Route = createFileRoute("/courses/$slug")({
         title,
         description,
         keywords: course.keywords,
+        path: `/courses/${course.slug}`,
         type: "article",
       }),
       links: [{ rel: "canonical", href: `${site.url}/courses/${course.slug}` }],

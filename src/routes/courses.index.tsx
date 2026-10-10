@@ -9,7 +9,7 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { courses, type CourseCategory } from "@/data/courses";
 import { getCmsCoursesFn } from "@/lib/cmsFunctions";
-import { buildMeta } from "@/lib/seo";
+import { buildMeta, canonicalLink } from "@/lib/seo";
 
 export const Route = createFileRoute("/courses/")({
   loader: async () => {
@@ -25,7 +25,8 @@ export const Route = createFileRoute("/courses/")({
     meta: buildMeta({
       title: "Programming & Technology Courses Catalog | TechBuilt Open School",
       description:
-        "Explore 32 live instructor-led technical courses in Web Development, Python, C++, Java, Databases, and AI/ML foundations. 1-on-1 instruction and small group cohorts.",
+        "Explore 32 technical courses in Web Development, Python, C++, Java, Databases, and AI/ML foundations, with live online formats available by program.",
+      path: "/courses",
       keywords: [
         "programming courses catalog",
         "python course online",
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/courses/")({
         "computer science courses",
       ],
     }),
-    links: [{ rel: "canonical", href: "/courses" }],
+    links: [canonicalLink("/courses")],
   }),
   component: CoursesPage,
 });
