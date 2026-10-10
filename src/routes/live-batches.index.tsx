@@ -26,7 +26,7 @@ export const Route = createFileRoute("/live-batches/")({
     meta: buildMeta({
       title: "Active Live Group Classes & Batches | TechBuilt Open School",
       description:
-        "Explore active live group coding batches at TechBuilt Open School. Instructor-led online cohorts in Python, Data Analysis & AI, and Young Developers with Free Demo sessions.",
+        "Explore active live group coding batches at TechBuilt Open School. Instructor-led online cohorts in Core Python, Data Analysis, and Young Developers with Free Demo sessions.",
       path: "/live-batches",
       image: "/images/home/live-100-days-python.webp",
       keywords: [

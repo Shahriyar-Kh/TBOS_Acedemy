@@ -3,6 +3,7 @@ import { ArrowRight, BarChart3, Clock } from "lucide-react";
 import { Icon } from "@/components/Icon";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
 import type { Specialization } from "@/data/specializations";
+import { getSpecializationRoadmap } from "@/data/specializationRoadmaps";
 import { cn } from "@/lib/utils";
 
 export function SpecializationCatalogCard({
@@ -14,6 +15,7 @@ export function SpecializationCatalogCard({
 }) {
   const visual = getSpecializationCatalogVisual(spec.slug);
   const tags = deriveSpecializationTags(spec.modules);
+  const roadmap = getSpecializationRoadmap(spec.slug);
 
   return (
     <Link
@@ -88,10 +90,18 @@ export function SpecializationCatalogCard({
           </ul>
         )}
 
+        {roadmap && (
+          <p className="mt-4 text-[11px] font-semibold text-gold-foreground">
+            One-to-one: PKR 15k–30k/month · negotiable by scope
+          </p>
+        )}
+
         {/* Card Footer */}
         <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
           <span className="text-xs font-medium text-muted-foreground">
-            {spec.modules.length} progressive modules
+            {roadmap
+              ? `${roadmap.courses.length} included courses`
+              : `${spec.modules.length} progressive modules`}
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:text-gold-foreground transition-colors">
             Explore track

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Course, CourseCategory } from "@/data/courses";
 import type { Specialization } from "@/data/specializations";
-import type { LiveOffer, OfferRoadmapPhase } from "@/data/liveOffers";
+import { getLiveOffer, type LiveOffer, type OfferRoadmapPhase } from "@/data/liveOffers";
 import type { TutoringSubject, TutoringCategory } from "@/data/tutoring";
 
 export type CmsContentKind = "courses" | "specializations" | "live-offers" | "tutoring";
@@ -99,12 +99,21 @@ export interface CmsTutoringRecord extends CmsBaseRecord {
 export const slugRegex = /^[a-z0-9-]+$/;
 
 export const cmsCourseSchema = z.object({
-  slug: z.string().trim().min(2).max(100).regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
   title: z.string().trim().min(2).max(150),
   category: z.enum(["Programming", "Web Development", "Computer Science", "Database", "Data & AI"]),
   level: z.string().trim().min(2).max(50),
   duration: z.string().trim().min(2).max(50),
-  mode: z.string().trim().max(150).default("Live online · One-to-one available · Group batches when scheduled"),
+  mode: z
+    .string()
+    .trim()
+    .max(150)
+    .default("Live online · One-to-one available · Group batches when scheduled"),
   tagline: z.string().trim().max(250).default(""),
   summary: z.string().trim().min(10).max(1000),
   description: z.string().trim().min(10),
@@ -125,7 +134,12 @@ export const cmsCourseSchema = z.object({
 export const cmsCoursePatchSchema = cmsCourseSchema.partial();
 
 export const cmsSpecializationSchema = z.object({
-  slug: z.string().trim().min(2).max(100).regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
   title: z.string().trim().min(2).max(150),
   category: z.string().trim().max(50).default("Specialization"),
   tagline: z.string().trim().max(250).default(""),
@@ -152,7 +166,12 @@ export const cmsSpecializationSchema = z.object({
 export const cmsSpecializationPatchSchema = cmsSpecializationSchema.partial();
 
 export const cmsLiveOfferSchema = z.object({
-  slug: z.string().trim().min(2).max(100).regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
   title: z.string().trim().min(2).max(150),
   short_title: z.string().trim().min(2).max(100),
   status: z.enum(["active", "upcoming", "archived"]).default("active"),
@@ -167,9 +186,21 @@ export const cmsLiveOfferSchema = z.object({
   currency: z.string().trim().max(10).default("PKR"),
   billing_period: z.string().trim().max(50).default("month"),
   free_demo: z.boolean().default(true),
-  free_demo_note: z.string().trim().max(250).default("Free trial demo session available before enrollment"),
-  paid_note: z.string().trim().max(250).default("Full program is paid monthly at the group offer rate"),
-  schedule_note: z.string().trim().max(250).default("Contact admissions for next confirmed batch schedule"),
+  free_demo_note: z
+    .string()
+    .trim()
+    .max(250)
+    .default("Free trial demo session available before enrollment"),
+  paid_note: z
+    .string()
+    .trim()
+    .max(250)
+    .default("Full program is paid monthly at the group offer rate"),
+  schedule_note: z
+    .string()
+    .trim()
+    .max(250)
+    .default("Contact admissions for next confirmed batch schedule"),
   tagline: z.string().trim().max(250).default(""),
   summary: z.string().trim().min(10).max(1000),
   description: z.string().trim().min(10),
@@ -189,7 +220,12 @@ export const cmsLiveOfferSchema = z.object({
 export const cmsLiveOfferPatchSchema = cmsLiveOfferSchema.partial();
 
 export const cmsTutoringSchema = z.object({
-  slug: z.string().trim().min(2).max(100).regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
+  slug: z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
   title: z.string().trim().min(2).max(150),
   category: z.enum(["Academic", "Quran & Islamic Studies"]),
   level: z.string().trim().min(2).max(100),
@@ -198,8 +234,16 @@ export const cmsTutoringSchema = z.object({
   topics: z.array(z.string().trim()).default([]),
   icon: z.string().trim().max(50).default("BookOpen"),
   keywords: z.array(z.string().trim()).default([]),
-  delivery_options: z.string().trim().max(150).default("One-to-One Private Tuition & Small Custom Batches"),
-  pricing_notes: z.string().trim().max(150).default("Customized hourly or monthly packages available"),
+  delivery_options: z
+    .string()
+    .trim()
+    .max(150)
+    .default("One-to-One Private Tuition & Small Custom Batches"),
+  pricing_notes: z
+    .string()
+    .trim()
+    .max(150)
+    .default("Customized hourly or monthly packages available"),
   published: z.boolean().default(false),
   featured: z.boolean().default(false),
   sort_order: z.number().int().default(0),
@@ -258,7 +302,7 @@ export function mapCmsSpecializationToSpec(row: CmsSpecializationRecord): Specia
 }
 
 export function mapCmsLiveOfferToOffer(row: CmsLiveOfferRecord): LiveOffer {
-  return {
+  const mapped: LiveOffer = {
     slug: row.slug,
     title: row.title,
     shortTitle: row.short_title,
@@ -289,6 +333,36 @@ export function mapCmsLiveOfferToOffer(row: CmsLiveOfferRecord): LiveOffer {
     featured: row.featured,
     seoTitle: row.seo_title || undefined,
     seoDescription: row.seo_description || undefined,
+  };
+
+  // Curriculum and public positioning are version-controlled and reviewed with
+  // the teaching roadmaps. Keep mutable operational fields (status, fees and
+  // demo notes) from CMS, while preventing an older seeded record from
+  // replacing the approved course structure or program identity.
+  const approved = getLiveOffer(row.slug);
+  if (!approved) return mapped;
+
+  return {
+    ...mapped,
+    title: approved.title,
+    shortTitle: approved.shortTitle,
+    audience: approved.audience,
+    ageOrEducationLevel: approved.ageOrEducationLevel,
+    duration: approved.duration,
+    classesPerWeek: approved.classesPerWeek,
+    sessionDuration: approved.sessionDuration,
+    format: approved.format,
+    tagline: approved.tagline,
+    summary: approved.summary,
+    description: approved.description,
+    highlights: approved.highlights,
+    roadmap: approved.roadmap,
+    prerequisites: approved.prerequisites,
+    idealFor: approved.idealFor,
+    icon: approved.icon,
+    keywords: approved.keywords,
+    seoTitle: approved.seoTitle ?? mapped.seoTitle,
+    seoDescription: approved.seoDescription ?? mapped.seoDescription,
   };
 }
 

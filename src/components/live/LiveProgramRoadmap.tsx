@@ -1,8 +1,25 @@
 import { Award, CheckCircle2, Layers } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { ProgramCoursesRoadmap } from "@/components/catalog/ProgramCoursesRoadmap";
 import type { LiveOffer } from "@/data/liveOffers";
+import { getLiveOfferCourseRoadmap } from "@/data/liveOfferRoadmaps";
 
 export function LiveProgramRoadmap({ offer }: { offer: LiveOffer }) {
+  const approvedRoadmap = getLiveOfferCourseRoadmap(offer.slug);
+
+  if (approvedRoadmap) {
+    return (
+      <ProgramCoursesRoadmap
+        courses={approvedRoadmap.courses}
+        capstoneProject={approvedRoadmap.capstoneProject}
+        eyebrow="VERIFIED LIVE-BATCH CURRICULUM"
+        title="Courses, Chapters & Portfolio Projects"
+        description="The live batch is organized as complete courses. Each course has a locked chapter sequence, one practical project, and a final integrated capstone."
+        sourceNote={approvedRoadmap.sourceNote}
+      />
+    );
+  }
+
   return (
     <section className="py-16 sm:py-20">
       <Reveal>
