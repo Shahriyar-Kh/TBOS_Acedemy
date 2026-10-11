@@ -19,6 +19,8 @@ const staticRoutes = [
   "/testimonials",
   "/faq",
   "/blog",
+  "/how-it-works",
+  "/for-students",
   "/privacy",
   "/terms",
   "/computer-science-tutoring",

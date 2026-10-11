@@ -20,8 +20,10 @@ import { Route as OnlineTutorServicePakistanRouteImport } from './routes/online-
 import { Route as OnlineClassesForStudentsRouteImport } from './routes/online-classes-for-students'
 import { Route as MathsTutorRouteImport } from './routes/maths-tutor'
 import { Route as InternationalOnlineAcademyRouteImport } from './routes/international-online-academy'
+import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as Grade5ToMsOnlineLearningRouteImport } from './routes/grade-5-to-ms-online-learning'
 import { Route as FreeDemoRouteImport } from './routes/free-demo'
+import { Route as ForStudentsRouteImport } from './routes/for-students'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ComputerScienceTutoringRouteImport } from './routes/computer-science-tutoring'
@@ -109,6 +111,11 @@ const InternationalOnlineAcademyRoute =
     path: '/international-online-academy',
     getParentRoute: () => rootRouteImport,
   } as any)
+const HowItWorksRoute = HowItWorksRouteImport.update({
+  id: '/how-it-works',
+  path: '/how-it-works',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Grade5ToMsOnlineLearningRoute =
   Grade5ToMsOnlineLearningRouteImport.update({
     id: '/grade-5-to-ms-online-learning',
@@ -118,6 +125,11 @@ const Grade5ToMsOnlineLearningRoute =
 const FreeDemoRoute = FreeDemoRouteImport.update({
   id: '/free-demo',
   path: '/free-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForStudentsRoute = ForStudentsRouteImport.update({
+  id: '/for-students',
+  path: '/for-students',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -264,8 +276,10 @@ export interface FileRoutesByFullPath {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
   '/online-classes-for-students': typeof OnlineClassesForStudentsRoute
@@ -306,8 +320,10 @@ export interface FileRoutesByTo {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
   '/online-classes-for-students': typeof OnlineClassesForStudentsRoute
@@ -349,8 +365,10 @@ export interface FileRoutesById {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
+  '/how-it-works': typeof HowItWorksRoute
   '/international-online-academy': typeof InternationalOnlineAcademyRoute
   '/maths-tutor': typeof MathsTutorRoute
   '/online-classes-for-students': typeof OnlineClassesForStudentsRoute
@@ -393,8 +411,10 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
+    | '/how-it-works'
     | '/international-online-academy'
     | '/maths-tutor'
     | '/online-classes-for-students'
@@ -435,8 +455,10 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
+    | '/how-it-works'
     | '/international-online-academy'
     | '/maths-tutor'
     | '/online-classes-for-students'
@@ -477,8 +499,10 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
+    | '/how-it-works'
     | '/international-online-academy'
     | '/maths-tutor'
     | '/online-classes-for-students'
@@ -520,8 +544,10 @@ export interface RootRouteChildren {
   ComputerScienceTutoringRoute: typeof ComputerScienceTutoringRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
+  ForStudentsRoute: typeof ForStudentsRoute
   FreeDemoRoute: typeof FreeDemoRoute
   Grade5ToMsOnlineLearningRoute: typeof Grade5ToMsOnlineLearningRoute
+  HowItWorksRoute: typeof HowItWorksRoute
   InternationalOnlineAcademyRoute: typeof InternationalOnlineAcademyRoute
   MathsTutorRoute: typeof MathsTutorRoute
   OnlineClassesForStudentsRoute: typeof OnlineClassesForStudentsRoute
@@ -632,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InternationalOnlineAcademyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-it-works': {
+      id: '/how-it-works'
+      path: '/how-it-works'
+      fullPath: '/how-it-works'
+      preLoaderRoute: typeof HowItWorksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/grade-5-to-ms-online-learning': {
       id: '/grade-5-to-ms-online-learning'
       path: '/grade-5-to-ms-online-learning'
@@ -644,6 +677,13 @@ declare module '@tanstack/react-router' {
       path: '/free-demo'
       fullPath: '/free-demo'
       preLoaderRoute: typeof FreeDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-students': {
+      id: '/for-students'
+      path: '/for-students'
+      fullPath: '/for-students'
+      preLoaderRoute: typeof ForStudentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -868,8 +908,10 @@ const rootRouteChildren: RootRouteChildren = {
   ComputerScienceTutoringRoute: ComputerScienceTutoringRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
+  ForStudentsRoute: ForStudentsRoute,
   FreeDemoRoute: FreeDemoRoute,
   Grade5ToMsOnlineLearningRoute: Grade5ToMsOnlineLearningRoute,
+  HowItWorksRoute: HowItWorksRoute,
   InternationalOnlineAcademyRoute: InternationalOnlineAcademyRoute,
   MathsTutorRoute: MathsTutorRoute,
   OnlineClassesForStudentsRoute: OnlineClassesForStudentsRoute,

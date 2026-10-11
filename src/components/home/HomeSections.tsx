@@ -343,6 +343,15 @@ export function LearningJourney() {
             <Link to="/specializations">See Specialization Roadmaps</Link>
           </Button>
         </Reveal>
+        <Reveal className="mt-6 text-center">
+          <Link
+            to="/how-it-works"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-cyan transition-colors hover:bg-primary-foreground/10 hover:text-primary-foreground"
+          >
+            See the complete admissions-to-learning journey
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </Reveal>
       </div>
     </section>
   );
