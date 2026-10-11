@@ -85,14 +85,21 @@ export function CourseChapterRoadmap({
         </div>
       </Reveal>
 
-      <ol className="space-y-5">
+      <ol className="relative space-y-5 before:absolute before:bottom-8 before:left-6 before:top-8 before:hidden before:w-px before:bg-gradient-to-b before:from-primary/50 before:via-cyan/40 before:to-gold/50 sm:before:block">
         {roadmap.chapters.map((chapter, index) => (
           <Reveal key={chapter.title} delay={index * 35}>
             <li
-              className="overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft"
+              className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card shadow-soft transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-card motion-reduce:transform-none motion-reduce:transition-none sm:ml-12"
               data-course-chapter
             >
-              <div className="border-b border-border/70 bg-muted/35 px-5 py-4 sm:px-6">
+              <span className="absolute -left-[3.8rem] top-5 z-10 hidden h-8 w-8 place-items-center rounded-full border-4 border-background bg-primary font-mono text-[10px] font-bold text-primary-foreground shadow-soft sm:grid">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div className="relative border-b border-border/70 bg-gradient-to-r from-muted/60 via-muted/25 to-transparent px-5 py-4 sm:px-6">
+                <span
+                  className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-primary to-cyan"
+                  aria-hidden="true"
+                />
                 <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-cyan">
                   Chapter {String(index + 1).padStart(2, "0")}
                 </span>
@@ -119,7 +126,7 @@ export function CourseChapterRoadmap({
                   </ul>
                 </div>
 
-                <div className="rounded-xl border border-primary/15 bg-accent/45 p-4">
+                <div className="rounded-xl border border-primary/15 bg-gradient-to-br from-accent/70 to-background p-4 transition-colors duration-300 group-hover:border-primary/25 motion-reduce:transition-none">
                   <div className="flex items-center gap-2 text-primary">
                     <ClipboardCheck className="h-4 w-4" />
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-wider">
@@ -138,9 +145,13 @@ export function CourseChapterRoadmap({
 
       <Reveal>
         <div
-          className="rounded-2xl border border-gold/35 bg-gold/10 p-5 sm:p-6"
+          className="relative overflow-hidden rounded-3xl border border-gold/35 bg-gradient-to-br from-gold/15 via-gold/5 to-card p-5 shadow-soft sm:p-7"
           data-course-capstone
         >
+          <div
+            className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full bg-gold/15 blur-3xl"
+            aria-hidden="true"
+          />
           <div className="flex items-start gap-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gold/20 text-gold-foreground">
               <Award className="h-5 w-5" />
