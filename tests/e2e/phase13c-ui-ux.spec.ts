@@ -103,12 +103,12 @@ test.describe("Phase 13C Premium UI/UX Refinement Suite", () => {
     // Verify Full-Stack card shows PKR 20,000
     const fullStackCard = page.locator('[data-specialization-card="full-stack-developer"]');
     await expect(fullStackCard).toContainText(/PKR 20,000\/month/i);
-    await expect(fullStackCard).toContainText(/4 live classes\/wk/i);
+    await expect(fullStackCard).toContainText(/4 live classes\/week/i);
 
     // Verify Frontend Developer card shows PKR 15,000
     const frontendCard = page.locator('[data-specialization-card="frontend-developer"]');
     await expect(frontendCard).toContainText(/PKR 15,000\/month/i);
-    await expect(frontendCard).toContainText(/4 live classes\/wk/i);
+    await expect(frontendCard).toContainText(/4 live classes\/week/i);
   });
 
   test("4. Course catalog cards render uniform presentation, badges, and CTAs", async ({
