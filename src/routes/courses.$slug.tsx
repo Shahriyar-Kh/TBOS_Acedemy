@@ -15,7 +15,7 @@ import {
 import { Reveal } from "@/components/Reveal";
 import { CourseVisual } from "@/components/catalog/CourseVisual";
 import { QuickFacts } from "@/components/catalog/QuickFacts";
-import { LearningPathTimeline } from "@/components/catalog/LearningPathTimeline";
+import { CourseRoadmap } from "@/components/catalog/CourseRoadmap";
 import { CourseCatalogCard } from "@/components/catalog/CourseCatalogCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
@@ -177,7 +177,7 @@ function CourseDetail() {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
+                    className="border-primary-foreground/35 bg-navy-deep/60 backdrop-blur-md font-semibold text-primary-foreground hover:bg-navy-deep hover:border-cyan/60 hover:text-cyan transition-all shadow-soft"
                   >
                     <Link
                       to="/free-demo"
@@ -261,11 +261,7 @@ function CourseDetail() {
 
             {/* 5. Progressive Curriculum Roadmap */}
             <Reveal>
-              <LearningPathTimeline
-                items={course.curriculum}
-                title="Curriculum & Syllabus"
-                subtitle="Progressive modules designed around real programming assignments, clean code, and feedback."
-              />
+              <CourseRoadmap course={course} />
             </Reveal>
 
             {/* 6. Prerequisites (if any) */}
@@ -405,7 +401,7 @@ function CourseDetail() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="mt-3 w-full font-semibold border-primary/25 hover:border-primary/50"
+                  className="mt-3 w-full font-semibold border-primary/30 hover:border-cyan hover:bg-accent/50 text-foreground transition-all"
                 >
                   <Link
                     to="/free-demo"

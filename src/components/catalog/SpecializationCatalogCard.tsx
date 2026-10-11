@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, BarChart3, Clock } from "lucide-react";
+import { ArrowRight, BarChart3, Clock, Sparkles } from "lucide-react";
 import { Icon } from "@/components/Icon";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
+import { getSpecializationPricing } from "@/data/curriculumRoadmaps";
 import type { Specialization } from "@/data/specializations";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ export function SpecializationCatalogCard({
 }) {
   const visual = getSpecializationCatalogVisual(spec.slug);
   const tags = deriveSpecializationTags(spec.modules);
+  const pricing = getSpecializationPricing(spec.slug);
 
   return (
     <Link
@@ -21,7 +23,7 @@ export function SpecializationCatalogCard({
       params={{ slug: spec.slug }}
       data-specialization-card={spec.slug}
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:border-cyan/50 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:border-cyan/50 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:transform-none",
         className,
       )}
     >
@@ -35,7 +37,7 @@ export function SpecializationCatalogCard({
           loading="lazy"
           decoding="async"
           className={cn(
-            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105",
+            "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:transition-none motion-reduce:transform-none",
             visual.objectPosition ?? "object-center",
           )}
         />
@@ -44,8 +46,14 @@ export function SpecializationCatalogCard({
           className="pointer-events-none absolute inset-0 bg-gradient-to-t from-navy-deep/90 via-navy-deep/20 to-transparent"
         />
 
+        {/* Floating Fixed Tuition Badge */}
+        <span className="glass absolute left-4 top-4 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-navy-deep/80 px-2.5 py-1 font-mono text-[11px] font-bold text-gold shadow-sm">
+          <Sparkles className="h-3 w-3 text-gold" aria-hidden="true" />
+          {pricing.formattedMonthlyFee}
+        </span>
+
         {/* Floating Glass Icon */}
-        <span className="glass absolute bottom-4 left-4 grid h-12 w-12 place-items-center rounded-2xl text-cyan transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 shadow-soft">
+        <span className="glass absolute bottom-4 left-4 grid h-12 w-12 place-items-center rounded-2xl text-cyan transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3 motion-reduce:transition-none motion-reduce:transform-none shadow-soft">
           <Icon name={spec.icon} className="h-6 w-6" />
         </span>
 
@@ -88,14 +96,24 @@ export function SpecializationCatalogCard({
           </ul>
         )}
 
+        {/* Delivery & Fixed Pricing Strip */}
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-border/70 bg-muted/40 px-3 py-2 text-[11px]">
+          <span className="font-mono font-semibold text-foreground">
+            {pricing.formattedMonthlyFee}
+          </span>
+          <span className="text-muted-foreground">
+            4 live classes/wk • 1-on-1
+          </span>
+        </div>
+
         {/* Card Footer */}
-        <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
           <span className="text-xs font-medium text-muted-foreground">
             {spec.modules.length} progressive modules
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:text-gold-foreground transition-colors">
             Explore track
-            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:transform-none" />
           </span>
         </div>
       </div>

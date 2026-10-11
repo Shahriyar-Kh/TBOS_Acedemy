@@ -15,13 +15,14 @@ import {
 import { Reveal } from "@/components/Reveal";
 import { Icon } from "@/components/Icon";
 import { QuickFacts } from "@/components/catalog/QuickFacts";
-import { LearningPathTimeline } from "@/components/catalog/LearningPathTimeline";
+import { SpecializationJourney } from "@/components/catalog/SpecializationJourney";
 import { SpecializationCatalogCard } from "@/components/catalog/SpecializationCatalogCard";
 import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getSpecialization, specializations } from "@/data/specializations";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
+import { getSpecializationPricing } from "@/data/curriculumRoadmaps";
 import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
 import { buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
@@ -71,6 +72,7 @@ function SpecializationDetail() {
   const { spec } = Route.useLoaderData();
   const visual = getSpecializationCatalogVisual(spec.slug);
   const tags = deriveSpecializationTags(spec.modules);
+  const pricing = getSpecializationPricing(spec.slug);
 
   const related = specializations.filter((s) => s.slug !== spec.slug).slice(0, 3);
 
@@ -125,6 +127,9 @@ function SpecializationDetail() {
                   <span className="glass inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-primary-foreground">
                     <Clock className="h-3 w-3 text-cyan" /> {spec.duration}
                   </span>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/15 px-3 py-1 font-mono text-xs font-semibold text-gold">
+                    Fixed Tuition: {pricing.formattedMonthlyFee}
+                  </span>
                 </div>
 
                 <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-primary-foreground sm:text-4xl lg:text-5xl">
@@ -147,7 +152,7 @@ function SpecializationDetail() {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
+                    className="border-primary-foreground/35 bg-navy-deep/60 backdrop-blur-md font-semibold text-primary-foreground hover:bg-navy-deep hover:border-cyan/60 hover:text-cyan transition-all shadow-soft"
                   >
                     <Link to="/free-demo" search={{ type: "Specialization", selected: spec.title }}>
                       <Sparkles className="mr-1.5 h-4 w-4 text-gold" /> Request Free Demo
@@ -243,11 +248,7 @@ function SpecializationDetail() {
 
             {/* 4. Learning Modules Roadmap */}
             <Reveal>
-              <LearningPathTimeline
-                items={spec.modules}
-                title="Specialization Learning Modules"
-                subtitle="Progressive engineering pathway from fundamental concepts to full-scale project architecture."
-              />
+              <SpecializationJourney spec={spec} />
             </Reveal>
 
             {/* 5. Outcomes */}
@@ -305,39 +306,72 @@ function SpecializationDetail() {
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Reveal delay={120}>
               <div className="rounded-3xl border border-border/80 bg-card p-6 sm:p-7 shadow-card">
-                <p className="font-mono text-xs font-semibold uppercase tracking-wider text-gold-foreground">
-                  {spec.tagline}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-mono text-xs font-semibold uppercase tracking-wider text-gold-foreground">
+                    {spec.tagline}
+                  </p>
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-primary">
+                    Live Track
+                  </span>
+                </div>
                 <h3 className="mt-1 font-display text-2xl font-bold text-foreground">
                   Join {spec.title}
                 </h3>
-                <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+
+                {/* Fixed Pricing Header */}
+                <div className="mt-4 rounded-2xl border border-gold/30 bg-gold/5 p-4">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    Fixed Program Tuition
+                  </span>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="font-display text-2xl font-extrabold text-foreground sm:text-3xl">
+                      {pricing.formattedMonthlyFee}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground leading-normal">
+                    {pricing.feeTransparencyNote}
+                  </p>
+                </div>
+
+                <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
                   Start with a 1-on-1 roadmap consultation and trial session with a senior mentor.
                 </p>
 
-                <ul className="mt-6 space-y-3.5 border-t border-border/80 pt-5 text-xs text-muted-foreground">
+                <ul className="mt-5 space-y-3 border-t border-border/80 pt-4 text-xs text-muted-foreground">
                   <li className="flex items-center gap-2.5">
-                    <Clock className="h-4 w-4 text-cyan" />
+                    <Clock className="h-4 w-4 shrink-0 text-cyan" />
                     <span>
                       Duration: <strong className="text-foreground">{spec.duration}</strong>
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <BarChart3 className="h-4 w-4 text-cyan" />
+                    <BarChart3 className="h-4 w-4 shrink-0 text-cyan" />
                     <span>
                       Level: <strong className="text-foreground">{spec.level}</strong>
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <Monitor className="h-4 w-4 text-cyan" />
+                    <Monitor className="h-4 w-4 shrink-0 text-cyan" />
                     <span>
-                      Delivery: <strong className="text-foreground">Live Online Classes</strong>
+                      Schedule: <strong className="text-foreground">4 live online classes/week</strong>
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5">
-                    <Users className="h-4 w-4 text-cyan" />
+                    <Users className="h-4 w-4 shrink-0 text-cyan" />
                     <span>
-                      Format: <strong className="text-foreground">1-on-1 or cohort batches</strong>
+                      Format: <strong className="text-foreground">1-on-1 live mentoring or small cohort</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-gold-foreground" />
+                    <span>
+                      Lectures: <strong className="text-foreground">Recorded sessions for review</strong>
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-gold-foreground" />
+                    <span>
+                      Deliverables: <strong className="text-foreground">Multiple projects + Final capstone</strong>
                     </span>
                   </li>
                 </ul>
