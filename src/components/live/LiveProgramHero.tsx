@@ -191,8 +191,11 @@ export function LiveProgramHero({ offer }: { offer: LiveOffer }) {
                 </div>
               </div>
 
-              {/* Pricing & Enrollment Card */}
-              <div className="rounded-2xl border border-white/15 bg-navy/90 p-5 backdrop-blur-xl shadow-card text-primary-foreground">
+              {/* Pricing Summary Card */}
+              <div
+                data-program-pricing-card
+                className="rounded-2xl border border-white/15 bg-navy/90 p-5 backdrop-blur-xl shadow-card text-primary-foreground"
+              >
                 <div className="flex items-baseline justify-between border-b border-white/10 pb-3">
                   <div>
                     <span className="text-xs uppercase font-mono tracking-wider text-primary-foreground/60">
@@ -232,36 +235,6 @@ export function LiveProgramHero({ offer }: { offer: LiveOffer }) {
                     <span className="text-primary-foreground/60">Next Cohort:</span>
                     <span className="font-medium text-gold">Confirmed with admissions</span>
                   </div>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-2 gap-2">
-                  <Button asChild variant="default" size="sm" className="w-full">
-                    <Link
-                      to="/apply"
-                      search={{
-                        type: "Live Group Offer",
-                        selected: offer.title,
-                      }}
-                    >
-                      Apply Now
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="sm"
-                    className="w-full border-white/20 text-white hover:bg-white/10"
-                  >
-                    <Link
-                      to="/free-demo"
-                      search={{
-                        type: "Live Group Offer",
-                        selected: offer.title,
-                      }}
-                    >
-                      Free Demo
-                    </Link>
-                  </Button>
                 </div>
               </div>
             </div>

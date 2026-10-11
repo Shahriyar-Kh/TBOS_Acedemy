@@ -136,6 +136,11 @@ test.describe("Phase 12D Premium Live Programs Suite", () => {
       expect(demoHref).toContain("/free-demo");
       expect(demoHref).toContain("type=Live+Group+Offer");
 
+      // Pricing card is informational; conversion actions live once in the hero CTA group.
+      const pricingCard = page.locator("[data-program-pricing-card]");
+      await expect(pricingCard).toBeVisible();
+      await expect(pricingCard.locator('a[href*="/apply"], a[href*="/free-demo"]')).toHaveCount(0);
+
       // Verify WhatsApp CTA exists and references program
       const waBtn = page.locator('a[href*="wa.me"]').first();
       await expect(waBtn).toBeVisible();
