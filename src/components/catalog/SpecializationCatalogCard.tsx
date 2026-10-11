@@ -92,7 +92,7 @@ export function SpecializationCatalogCard({
 
         {roadmap && (
           <p className="mt-4 text-[11px] font-semibold text-gold-foreground">
-            One-to-one: PKR 15k–30k/month · negotiable by scope
+            One-to-one: {roadmap.oneToOneFee} · 4 live classes/week · recordings included
           </p>
         )}
 

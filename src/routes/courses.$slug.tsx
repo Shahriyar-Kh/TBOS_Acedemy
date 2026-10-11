@@ -22,6 +22,7 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getCourse, courses } from "@/data/courses";
+import { getCourseCurriculumSources } from "@/data/courseCurriculumSources";
 import { getCourseRoadmap } from "@/data/courseRoadmaps";
 import { getCourseCatalogVisual } from "@/data/catalogVisuals";
 import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
@@ -74,6 +75,7 @@ function CourseDetail() {
   const { course } = Route.useLoaderData();
   const visual = getCourseCatalogVisual(course.slug);
   const roadmap = getCourseRoadmap(course.slug);
+  const curriculumSources = getCourseCurriculumSources(course.slug);
   const approvedDuration = roadmap?.duration ?? course.duration;
 
   const related = courses
@@ -177,18 +179,14 @@ function CourseDetail() {
                     </Link>
                   </Button>
 
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
-                  >
+                  <Button asChild variant="outline-light" size="lg" className="font-semibold">
                     <Link
                       to="/free-demo"
                       search={{
                         type: "Single Course",
                         selected: course.title,
                       }}
+                      data-hero-secondary-cta
                     >
                       <Sparkles className="mr-1.5 h-4 w-4 text-gold" /> Request Free Demo
                     </Link>
@@ -265,7 +263,7 @@ function CourseDetail() {
 
             {/* 5. Progressive Curriculum Roadmap */}
             {roadmap ? (
-              <CourseChapterRoadmap roadmap={roadmap} />
+              <CourseChapterRoadmap roadmap={roadmap} sources={curriculumSources} />
             ) : (
               <Reveal>
                 <LearningPathTimeline

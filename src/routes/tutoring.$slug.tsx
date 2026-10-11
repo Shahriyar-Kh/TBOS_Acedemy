@@ -47,9 +47,7 @@ export const Route = createFileRoute("/tutoring/$slug")({
 
     return {
       meta: buildMeta({
-        title:
-          subject.seoTitle ||
-          `${subject.title} Online Tutoring | TechBuilt Open School`,
+        title: subject.seoTitle || `${subject.title} Online Tutoring | TechBuilt Open School`,
         description:
           subject.seoDescription ||
           `${subject.summary} Live online tutoring with one-to-one and small-group options, subject to tutor availability.`,
@@ -76,7 +74,9 @@ export const Route = createFileRoute("/tutoring/$slug")({
 function TutoringDetailPage() {
   const { subject } = Route.useLoaderData();
   const type =
-    subject.category === "Quran & Islamic Studies" ? "Quran & Islamic Studies" : "Academic Tutoring";
+    subject.category === "Quran & Islamic Studies"
+      ? "Quran & Islamic Studies"
+      : "Academic Tutoring";
 
   const related = tutoringSubjects
     .filter((item) => item.slug !== subject.slug && item.category === subject.category)
@@ -160,16 +160,12 @@ function TutoringDetailPage() {
                       Request this tutor <ArrowRight className="ml-1.5 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
-                  >
+                  <Button asChild variant="outline-light" size="lg" className="font-semibold">
                     <Link
                       to="/free-demo"
                       search={{ type, selected: subject.title }}
                       data-tutoring-demo
+                      data-hero-secondary-cta
                     >
                       <Sparkles className="mr-1.5 h-4 w-4 text-gold" />
                       Request Free Demo
@@ -309,7 +305,10 @@ function TutoringDetailPage() {
                       desc: "Where available, use the one-session Free Demo to assess teaching fit before paid continuation.",
                     },
                   ].map((item) => (
-                    <div key={item.step} className="rounded-2xl border border-border/70 bg-card p-5">
+                    <div
+                      key={item.step}
+                      className="rounded-2xl border border-border/70 bg-card p-5"
+                    >
                       <span className="font-mono text-xs font-bold text-primary">{item.step}</span>
                       <h3 className="mt-2 text-sm font-bold text-foreground">{item.title}</h3>
                       <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
@@ -357,24 +356,26 @@ function TutoringDetailPage() {
                 <ul className="mt-6 space-y-3 border-t border-border/80 pt-5 text-xs text-muted-foreground">
                   <li className="flex items-start gap-2.5">
                     <BookOpen className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
-                    <span>Subject: <strong className="text-foreground">{subject.title}</strong></span>
+                    <span>
+                      Subject: <strong className="text-foreground">{subject.title}</strong>
+                    </span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <UserRound className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
-                    <span>Level: <strong className="text-foreground">{subject.level}</strong></span>
+                    <span>
+                      Level: <strong className="text-foreground">{subject.level}</strong>
+                    </span>
                   </li>
                   <li className="flex items-start gap-2.5">
                     <Clock4 className="mt-0.5 h-4 w-4 shrink-0 text-cyan" />
-                    <span>Timing: <strong className="text-foreground">Confirmed after review</strong></span>
+                    <span>
+                      Timing: <strong className="text-foreground">Confirmed after review</strong>
+                    </span>
                   </li>
                 </ul>
 
                 <Button asChild variant="hero" size="lg" className="mt-6 w-full font-semibold">
-                  <Link
-                    to="/apply"
-                    search={{ type, selected: subject.title }}
-                    data-tutoring-apply
-                  >
+                  <Link to="/apply" search={{ type, selected: subject.title }} data-tutoring-apply>
                     Request this tutor <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
