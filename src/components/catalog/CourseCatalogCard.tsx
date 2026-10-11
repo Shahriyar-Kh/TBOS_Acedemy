@@ -16,7 +16,7 @@ export function CourseCatalogCard({ course, className }: { course: Course; class
       params={{ slug: course.slug }}
       data-course-card={course.slug}
       className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-soft transition-all duration-300 hover:-translate-y-1.5 hover:shadow-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none motion-reduce:transform-none",
         visual.borderGlow,
         className,
       )}
@@ -72,7 +72,7 @@ export function CourseCatalogCard({ course, className }: { course: Course; class
           </span>
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary group-hover:text-gold-foreground transition-colors">
             View course
-            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:transform-none" />
           </span>
         </div>
       </div>
