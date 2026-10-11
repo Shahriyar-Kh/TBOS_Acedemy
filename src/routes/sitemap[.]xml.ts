@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { getCmsCourses, getCmsSpecializations, getCmsLiveOffers, getCmsTutoring } from "@/lib/cms.server";
+import {
+  getCmsCourses,
+  getCmsSpecializations,
+  getCmsLiveOffers,
+  getCmsTutoring,
+} from "@/lib/cms.server";
 import { seoPages } from "../data/seoPages";
 import { site } from "../data/site";
 
@@ -20,6 +25,8 @@ export const Route = createFileRoute("/sitemap.xml")({
         const staticPaths = [
           "/",
           "/about",
+          "/how-it-works",
+          "/for-students",
           "/courses",
           "/live-batches",
           "/specializations",
