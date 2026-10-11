@@ -142,12 +142,7 @@ export function LiveProgramHero({ offer }: { offer: LiveOffer }) {
                   </Link>
                 </Button>
 
-                <Button
-                  asChild
-                  variant="outline"
-                  size="lg"
-                  className="border-white/20 text-primary-foreground hover:bg-white/10"
-                >
+                <Button asChild variant="outline-light" size="lg">
                   <Link
                     data-program-demo
                     to="/free-demo"
@@ -155,6 +150,7 @@ export function LiveProgramHero({ offer }: { offer: LiveOffer }) {
                       type: "Live Group Offer",
                       selected: offer.title,
                     }}
+                    data-hero-secondary-cta
                   >
                     <Sparkles className="h-4 w-4 mr-1.5 text-gold" /> Request Free Demo
                   </Link>

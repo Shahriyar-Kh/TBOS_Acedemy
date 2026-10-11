@@ -146,13 +146,12 @@ function SpecializationDetail() {
                     </Link>
                   </Button>
 
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="glass border-primary-foreground/25 font-semibold text-primary-foreground hover:bg-white/10"
-                  >
-                    <Link to="/free-demo" search={{ type: "Specialization", selected: spec.title }}>
+                  <Button asChild variant="outline-light" size="lg" className="font-semibold">
+                    <Link
+                      to="/free-demo"
+                      search={{ type: "Specialization", selected: spec.title }}
+                      data-hero-secondary-cta
+                    >
                       <Sparkles className="mr-1.5 h-4 w-4 text-gold" /> Request Free Demo
                     </Link>
                   </Button>
@@ -358,7 +357,7 @@ function SpecializationDetail() {
                 {structuredRoadmap && (
                   <div className="mt-5 rounded-xl border border-gold/30 bg-gold/10 p-4">
                     <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-gold-foreground">
-                      One-to-One Monthly Fee Range
+                      Fixed One-to-One Monthly Fee
                     </p>
                     <p className="mt-1 text-lg font-bold text-foreground">
                       {structuredRoadmap.oneToOneFee}

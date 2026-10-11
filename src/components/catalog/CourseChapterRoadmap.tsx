@@ -1,8 +1,23 @@
-import { Award, CalendarDays, CheckCircle2, ClipboardCheck, Clock3 } from "lucide-react";
+import {
+  Award,
+  BookOpenCheck,
+  CalendarDays,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  ExternalLink,
+} from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import type { CourseCurriculumSource } from "@/data/courseCurriculumSources";
 import type { CourseRoadmap } from "@/data/courseRoadmaps";
 
-export function CourseChapterRoadmap({ roadmap }: { roadmap: CourseRoadmap }) {
+export function CourseChapterRoadmap({
+  roadmap,
+  sources,
+}: {
+  roadmap: CourseRoadmap;
+  sources: CourseCurriculumSource[];
+}) {
   return (
     <section aria-labelledby="course-roadmap-heading" className="space-y-7" data-course-roadmap>
       <Reveal>
@@ -30,6 +45,42 @@ export function CourseChapterRoadmap({ roadmap }: { roadmap: CourseRoadmap }) {
             <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1.5">
               <Clock3 className="h-3.5 w-3.5" /> {roadmap.classesPerWeek}
             </span>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal>
+        <div
+          className="rounded-2xl border border-primary/15 bg-accent/35 p-4 sm:p-5"
+          data-curriculum-sources
+        >
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+              <BookOpenCheck className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-primary">
+                Curriculum Validation Basis
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Core chapters are cross-checked against current official technology documentation
+                and authoritative standards or academic references.
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {sources.map((source) => (
+                  <li key={source.url}>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-background px-3 py-1.5 text-[11px] font-semibold text-primary transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      {source.label} <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </Reveal>

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { courses } from "../../src/data/courses";
+import { courseCurriculumSources } from "../../src/data/courseCurriculumSources";
 import { courseRoadmaps } from "../../src/data/courseRoadmaps";
 import { specializations } from "../../src/data/specializations";
 import { specializationRoadmaps } from "../../src/data/specializationRoadmaps";
@@ -9,6 +10,9 @@ import { liveOfferCourseRoadmaps } from "../../src/data/liveOfferRoadmaps";
 test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
   test("1. Every catalog record has a complete structured roadmap", () => {
     expect(Object.keys(courseRoadmaps).sort()).toEqual(courses.map((course) => course.slug).sort());
+    expect(Object.keys(courseCurriculumSources).sort()).toEqual(
+      courses.map((course) => course.slug).sort(),
+    );
     expect(Object.keys(specializationRoadmaps).sort()).toEqual(
       specializations.map((spec) => spec.slug).sort(),
     );
@@ -27,13 +31,32 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
       }
     }
 
-    for (const roadmap of Object.values(specializationRoadmaps)) {
-      expect(roadmap.oneToOneFee).toBe("PKR 15,000–30,000/month");
+    const premiumSpecializations = new Set([
+      "full-stack-developer",
+      "data-analyst",
+      "data-science",
+      "ai-machine-learning",
+    ]);
+
+    for (const [slug, roadmap] of Object.entries(specializationRoadmaps)) {
+      expect(roadmap.oneToOneFee).toBe(
+        premiumSpecializations.has(slug) ? "PKR 20,000/month" : "PKR 15,000/month",
+      );
+      expect(roadmap.classesPerWeek).toBe("4 live online classes/week");
+      expect(roadmap.pricingNote).toMatch(/recorded lectures.*multiple portfolio projects/i);
       expect(roadmap.courses.length).toBeGreaterThanOrEqual(5);
       expect(roadmap.capstoneProject.length).toBeGreaterThan(30);
       for (const course of roadmap.courses) {
         expect(course.chapters.length).toBeGreaterThanOrEqual(4);
         expect(course.project.length).toBeGreaterThan(20);
+      }
+    }
+
+    for (const sources of Object.values(courseCurriculumSources)) {
+      expect(sources.length).toBeGreaterThanOrEqual(1);
+      for (const source of sources) {
+        expect(source.label.length).toBeGreaterThan(5);
+        expect(source.url).toMatch(/^https:\/\//);
       }
     }
 
@@ -59,6 +82,8 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
       expect(await page.locator("[data-course-chapter]").count()).toBeGreaterThanOrEqual(5);
       await expect(page.getByText("Guided chapter task", { exact: true }).first()).toBeVisible();
       await expect(page.locator("[data-course-capstone]")).toBeVisible();
+      await expect(page.locator("[data-curriculum-sources]")).toBeVisible();
+      expect(await page.locator("[data-curriculum-sources] a").count()).toBeGreaterThanOrEqual(1);
     }
   });
 
@@ -98,7 +123,7 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
     await expect(roadmap.getByText(/Python \+ MySQL \+ Power BI workflow/i)).toBeVisible();
   });
 
-  test("5. Specializations expose included courses, projects, capstone and negotiable one-to-one range", async ({
+  test("5. Specializations expose included courses, projects, capstone and fixed one-to-one pricing", async ({
     page,
   }) => {
     await page.goto("/specializations/data-analyst", { waitUntil: "domcontentloaded" });
@@ -111,10 +136,9 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
     ).toBeVisible();
     await expect(roadmap.getByText("Course project", { exact: true }).first()).toBeVisible();
     await expect(roadmap.locator("[data-program-capstone]")).toBeVisible();
-    await expect(page.getByText("PKR 15,000–30,000/month", { exact: true })).toBeVisible();
-    await expect(
-      page.getByText(/negotiable.*scope|scope.*duration.*frequency/i).first(),
-    ).toBeVisible();
+    await expect(page.getByText("PKR 20,000/month", { exact: true })).toBeVisible();
+    await expect(page.getByText(/4 live online classes\/week/i).first()).toBeVisible();
+    await expect(page.getByText(/recorded lectures.*multiple portfolio projects/i)).toBeVisible();
   });
 
   test("6. Deep curriculum pages remain responsive at 375px", async ({ page }) => {
@@ -131,6 +155,23 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
         () => document.documentElement.scrollWidth > window.innerWidth,
       );
       expect(hasOverflow, `Horizontal overflow detected on ${route}`).toBe(false);
+    }
+  });
+
+  test("7. Secondary hero actions remain readable on dark backgrounds", async ({ page }) => {
+    const routes = [
+      "/courses/css3",
+      "/specializations/full-stack-developer",
+      "/tutoring/mathematics",
+      "/live-batches/100-days-complete-python",
+    ];
+
+    for (const route of routes) {
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      const cta = page.locator("[data-hero-secondary-cta]").first();
+      await expect(cta).toBeVisible();
+      await expect(cta).toHaveClass(/text-primary-foreground/);
+      await expect(cta).toHaveClass(/bg-primary-foreground\/5/);
     }
   });
 });

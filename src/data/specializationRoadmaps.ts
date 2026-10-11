@@ -27,10 +27,10 @@ type CourseReference =
     };
 
 const commonDelivery = {
-  classesPerWeek: "3–4 live classes/week (customizable for one-to-one learners)",
-  oneToOneFee: "PKR 15,000–30,000/month",
+  classesPerWeek: "4 live online classes/week",
+  oneToOneFee: "PKR 15,000/month",
   pricingNote:
-    "One-to-one specialization fees are negotiable within this range. The final monthly fee depends on course scope, program duration, weekly class frequency, and the learner's current level.",
+    "Fixed one-to-one monthly fee. Recorded lectures, guided practice, and multiple portfolio projects are included.",
 };
 
 function resolveCourse(reference: CourseReference): SpecializationCoursePlan {
@@ -54,9 +54,11 @@ function resolveCourse(reference: CourseReference): SpecializationCoursePlan {
 function specialization(
   references: CourseReference[],
   capstoneProject: string,
+  oneToOneFee = commonDelivery.oneToOneFee,
 ): SpecializationRoadmap {
   return {
     ...commonDelivery,
+    oneToOneFee,
     courses: references.map(resolveCourse),
     capstoneProject,
   };
@@ -182,6 +184,7 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
       },
     ],
     "Build and deploy a complete SaaS-style application with responsive frontend, secure Python API, PostgreSQL, authentication, admin workflows, tests, and CI/CD.",
+    "PKR 20,000/month",
   ),
 
   "python-developer": specialization(
@@ -308,6 +311,7 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
       },
     ],
     "Complete an end-to-end business analytics portfolio case using Python, MySQL, statistics, and Power BI, with a reproducible repository and executive recommendation.",
+    "PKR 20,000/month",
   ),
 
   "data-science": specialization(
@@ -322,6 +326,7 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
       { courseSlug: "scikit-learn" },
     ],
     "Complete a reproducible data-science lifecycle project from SQL extraction and EDA through feature engineering, model evaluation, limitations, and stakeholder presentation.",
+    "PKR 20,000/month",
   ),
 
   "ai-machine-learning": specialization(
@@ -349,6 +354,7 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
       },
     ],
     "Build, evaluate, document, and demonstrate a practical ML pipeline with an inference API, model card, reproducible experiments, and clearly stated limitations.",
+    "PKR 20,000/month",
   ),
 };
 
