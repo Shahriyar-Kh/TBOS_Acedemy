@@ -13,6 +13,8 @@ export const mainNav: NavItem[] = [
 export const footerLinks = {
   academy: [
     { label: "About Us", to: "/about" },
+    { label: "How It Works", to: "/how-it-works" },
+    { label: "For Students", to: "/for-students" },
     { label: "Our Standards", to: "/testimonials" },
     { label: "FAQ", to: "/faq" },
     { label: "Resources", to: "/blog" },
