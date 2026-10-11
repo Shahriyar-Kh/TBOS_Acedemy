@@ -24,6 +24,7 @@ import { Route as HowItWorksRouteImport } from './routes/how-it-works'
 import { Route as Grade5ToMsOnlineLearningRouteImport } from './routes/grade-5-to-ms-online-learning'
 import { Route as FreeDemoRouteImport } from './routes/free-demo'
 import { Route as ForStudentsRouteImport } from './routes/for-students'
+import { Route as ForParentsRouteImport } from './routes/for-parents'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ComputerScienceTutoringRouteImport } from './routes/computer-science-tutoring'
@@ -130,6 +131,11 @@ const FreeDemoRoute = FreeDemoRouteImport.update({
 const ForStudentsRoute = ForStudentsRouteImport.update({
   id: '/for-students',
   path: '/for-students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForParentsRoute = ForParentsRouteImport.update({
+  id: '/for-parents',
+  path: '/for-parents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-parents': typeof ForParentsRoute
   '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-parents': typeof ForParentsRoute
   '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/for-parents': typeof ForParentsRoute
   '/for-students': typeof ForStudentsRoute
   '/free-demo': typeof FreeDemoRoute
   '/grade-5-to-ms-online-learning': typeof Grade5ToMsOnlineLearningRoute
@@ -411,6 +420,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-parents'
     | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
@@ -455,6 +465,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-parents'
     | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
+    | '/for-parents'
     | '/for-students'
     | '/free-demo'
     | '/grade-5-to-ms-online-learning'
@@ -544,6 +556,7 @@ export interface RootRouteChildren {
   ComputerScienceTutoringRoute: typeof ComputerScienceTutoringRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
+  ForParentsRoute: typeof ForParentsRoute
   ForStudentsRoute: typeof ForStudentsRoute
   FreeDemoRoute: typeof FreeDemoRoute
   Grade5ToMsOnlineLearningRoute: typeof Grade5ToMsOnlineLearningRoute
@@ -684,6 +697,13 @@ declare module '@tanstack/react-router' {
       path: '/for-students'
       fullPath: '/for-students'
       preLoaderRoute: typeof ForStudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/for-parents': {
+      id: '/for-parents'
+      path: '/for-parents'
+      fullPath: '/for-parents'
+      preLoaderRoute: typeof ForParentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -908,6 +928,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComputerScienceTutoringRoute: ComputerScienceTutoringRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
+  ForParentsRoute: ForParentsRoute,
   ForStudentsRoute: ForStudentsRoute,
   FreeDemoRoute: FreeDemoRoute,
   Grade5ToMsOnlineLearningRoute: Grade5ToMsOnlineLearningRoute,

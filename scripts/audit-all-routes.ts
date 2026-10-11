@@ -21,6 +21,7 @@ const staticRoutes = [
   "/blog",
   "/how-it-works",
   "/for-students",
+  "/for-parents",
   "/privacy",
   "/terms",
   "/computer-science-tutoring",
@@ -113,7 +114,9 @@ async function runAudit() {
 
     if (!success) {
       failures++;
-      console.log(`❌ [${i + 1}/${allRoutes.length}] FAIL: ${route} (status: ${status}, crash: ${crashDetected}, errors: ${pageErrors.join(" | ")})`);
+      console.log(
+        `❌ [${i + 1}/${allRoutes.length}] FAIL: ${route} (status: ${status}, crash: ${crashDetected}, errors: ${pageErrors.join(" | ")})`,
+      );
     } else {
       console.log(`✅ [${i + 1}/${allRoutes.length}] PASS: ${route} (status: ${status})`);
     }
@@ -129,11 +132,15 @@ async function runAudit() {
   if (failures > 0) {
     console.error(`\nFAILED ROUTES:`);
     for (const r of results.filter((r) => !r.success)) {
-      console.error(`- ${r.route}: status=${r.status}, crash=${r.crashDetected}, errors=${r.pageErrors.join(", ")}`);
+      console.error(
+        `- ${r.route}: status=${r.status}, crash=${r.crashDetected}, errors=${r.pageErrors.join(", ")}`,
+      );
     }
     process.exit(1);
   } else {
-    console.log(`\n🎉 100% OF ALL ${allRoutes.length} ROUTES PASSED REAL-BROWSER AUDIT WITH ZERO ERRORS!`);
+    console.log(
+      `\n🎉 100% OF ALL ${allRoutes.length} ROUTES PASSED REAL-BROWSER AUDIT WITH ZERO ERRORS!`,
+    );
     process.exit(0);
   }
 }
