@@ -29,6 +29,7 @@ export const footerLinks = {
     { label: "Apply Now", to: "/apply" },
   ],
   popular: [
+    { label: "International Online Academy", to: "/international-online-academy" },
     { label: "Online Tutor Service in Pakistan", to: "/online-tutor-service-pakistan" },
     { label: "Maths Tutor Online", to: "/maths-tutor" },
     { label: "Physics Tutor Online", to: "/physics-tutor" },

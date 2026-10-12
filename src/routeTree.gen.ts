@@ -28,7 +28,6 @@ import { Route as ForParentsRouteImport } from './routes/for-parents'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as ComputerScienceTutoringRouteImport } from './routes/computer-science-tutoring'
-import { Route as BlogRouteImport } from './routes/blog'
 import { Route as ApplyRouteImport } from './routes/apply'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -36,11 +35,13 @@ import { Route as TutoringIndexRouteImport } from './routes/tutoring.index'
 import { Route as SpecializationsIndexRouteImport } from './routes/specializations.index'
 import { Route as LiveBatchesIndexRouteImport } from './routes/live-batches.index'
 import { Route as CoursesIndexRouteImport } from './routes/courses.index'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as TutoringSlugRouteImport } from './routes/tutoring.$slug'
 import { Route as SpecializationsSlugRouteImport } from './routes/specializations.$slug'
 import { Route as LiveBatchesSlugRouteImport } from './routes/live-batches.$slug'
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiAdmissionsRouteImport } from './routes/api.admissions'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminDemosRouteImport } from './routes/admin.demos'
@@ -153,11 +154,6 @@ const ComputerScienceTutoringRoute = ComputerScienceTutoringRouteImport.update({
   path: '/computer-science-tutoring',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogRoute = BlogRouteImport.update({
-  id: '/blog',
-  path: '/blog',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApplyRoute = ApplyRouteImport.update({
   id: '/apply',
   path: '/apply',
@@ -193,6 +189,11 @@ const CoursesIndexRoute = CoursesIndexRouteImport.update({
   path: '/courses/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
@@ -216,6 +217,11 @@ const LiveBatchesSlugRoute = LiveBatchesSlugRouteImport.update({
 const CoursesSlugRoute = CoursesSlugRouteImport.update({
   id: '/courses/$slug',
   path: '/courses/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdmissionsRoute = ApiAdmissionsRouteImport.update({
@@ -278,7 +284,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apply': typeof ApplyRoute
-  '/blog': typeof BlogRoute
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -303,11 +308,13 @@ export interface FileRoutesByFullPath {
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
   '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
   '/specializations/': typeof SpecializationsIndexRoute
@@ -323,7 +330,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apply': typeof ApplyRoute
-  '/blog': typeof BlogRoute
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -348,11 +354,13 @@ export interface FileRoutesByTo {
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
   '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/blog': typeof BlogIndexRoute
   '/courses': typeof CoursesIndexRoute
   '/live-batches': typeof LiveBatchesIndexRoute
   '/specializations': typeof SpecializationsIndexRoute
@@ -369,7 +377,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/apply': typeof ApplyRoute
-  '/blog': typeof BlogRoute
   '/computer-science-tutoring': typeof ComputerScienceTutoringRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -394,11 +401,13 @@ export interface FileRoutesById {
   '/admin/demos': typeof AdminDemosRoute
   '/admin/login': typeof AdminLoginRoute
   '/api/admissions': typeof ApiAdmissionsRoute
+  '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
   '/live-batches/$slug': typeof LiveBatchesSlugRoute
   '/specializations/$slug': typeof SpecializationsSlugRoute
   '/tutoring/$slug': typeof TutoringSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/blog/': typeof BlogIndexRoute
   '/courses/': typeof CoursesIndexRoute
   '/live-batches/': typeof LiveBatchesIndexRoute
   '/specializations/': typeof SpecializationsIndexRoute
@@ -416,7 +425,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apply'
-    | '/blog'
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
@@ -441,11 +449,13 @@ export interface FileRouteTypes {
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
     | '/tutoring/$slug'
     | '/admin/'
+    | '/blog/'
     | '/courses/'
     | '/live-batches/'
     | '/specializations/'
@@ -461,7 +471,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apply'
-    | '/blog'
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
@@ -486,11 +495,13 @@ export interface FileRouteTypes {
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
     | '/tutoring/$slug'
     | '/admin'
+    | '/blog'
     | '/courses'
     | '/live-batches'
     | '/specializations'
@@ -506,7 +517,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/apply'
-    | '/blog'
     | '/computer-science-tutoring'
     | '/contact'
     | '/faq'
@@ -531,11 +541,13 @@ export interface FileRouteTypes {
     | '/admin/demos'
     | '/admin/login'
     | '/api/admissions'
+    | '/blog/$slug'
     | '/courses/$slug'
     | '/live-batches/$slug'
     | '/specializations/$slug'
     | '/tutoring/$slug'
     | '/admin/'
+    | '/blog/'
     | '/courses/'
     | '/live-batches/'
     | '/specializations/'
@@ -552,7 +564,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   ApplyRoute: typeof ApplyRoute
-  BlogRoute: typeof BlogRoute
   ComputerScienceTutoringRoute: typeof ComputerScienceTutoringRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
@@ -577,11 +588,13 @@ export interface RootRouteChildren {
   AdminDemosRoute: typeof AdminDemosRoute
   AdminLoginRoute: typeof AdminLoginRoute
   ApiAdmissionsRoute: typeof ApiAdmissionsRoute
+  BlogSlugRoute: typeof BlogSlugRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
   LiveBatchesSlugRoute: typeof LiveBatchesSlugRoute
   SpecializationsSlugRoute: typeof SpecializationsSlugRoute
   TutoringSlugRoute: typeof TutoringSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  BlogIndexRoute: typeof BlogIndexRoute
   CoursesIndexRoute: typeof CoursesIndexRoute
   LiveBatchesIndexRoute: typeof LiveBatchesIndexRoute
   SpecializationsIndexRoute: typeof SpecializationsIndexRoute
@@ -727,13 +740,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComputerScienceTutoringRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blog': {
-      id: '/blog'
-      path: '/blog'
-      fullPath: '/blog'
-      preLoaderRoute: typeof BlogRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/apply': {
       id: '/apply'
       path: '/apply'
@@ -783,6 +789,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CoursesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/admin'
@@ -816,6 +829,13 @@ declare module '@tanstack/react-router' {
       path: '/courses/$slug'
       fullPath: '/courses/$slug'
       preLoaderRoute: typeof CoursesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admissions': {
@@ -924,7 +944,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   ApplyRoute: ApplyRoute,
-  BlogRoute: BlogRoute,
   ComputerScienceTutoringRoute: ComputerScienceTutoringRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
@@ -949,11 +968,13 @@ const rootRouteChildren: RootRouteChildren = {
   AdminDemosRoute: AdminDemosRoute,
   AdminLoginRoute: AdminLoginRoute,
   ApiAdmissionsRoute: ApiAdmissionsRoute,
+  BlogSlugRoute: BlogSlugRoute,
   CoursesSlugRoute: CoursesSlugRoute,
   LiveBatchesSlugRoute: LiveBatchesSlugRoute,
   SpecializationsSlugRoute: SpecializationsSlugRoute,
   TutoringSlugRoute: TutoringSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
+  BlogIndexRoute: BlogIndexRoute,
   CoursesIndexRoute: CoursesIndexRoute,
   LiveBatchesIndexRoute: LiveBatchesIndexRoute,
   SpecializationsIndexRoute: SpecializationsIndexRoute,

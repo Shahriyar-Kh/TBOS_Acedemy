@@ -3,8 +3,9 @@ import { courses } from "../src/data/courses";
 import { specializations } from "../src/data/specializations";
 import { liveOffers } from "../src/data/liveOffers";
 import { tutoringSubjects } from "../src/data/tutoring";
+import { articles } from "../src/data/articles";
 
-const BASE_URL = process.env.TEST_URL || "https://techbuiltos.online";
+const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
 const staticRoutes = [
   "/",
@@ -42,6 +43,7 @@ const allRoutes = [
   ...specializations.map((s) => `/specializations/${s.slug}`),
   ...liveOffers.map((o) => `/live-batches/${o.slug}`),
   ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
+  ...articles.map((a) => `/blog/${a.slug}`),
 ];
 
 console.log(`Starting real-browser Chromium audit against ${BASE_URL}`);

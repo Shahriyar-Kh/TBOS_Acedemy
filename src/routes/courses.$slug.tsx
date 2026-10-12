@@ -43,7 +43,10 @@ export const Route = createFileRoute("/courses/$slug")({
   head: ({ loaderData }) => {
     const course = loaderData?.course;
     if (!course) return { meta: buildMeta({ title: "Course", description: "Course details." }) };
-    const title = course.seoTitle || `${course.title} Course Online | TechBuilt Open School`;
+    const title =
+      course.slug === "python"
+        ? "Python Programming Course Online | TechBuilt Open School"
+        : course.seoTitle || `${course.title} Course Online | TechBuilt Open School`;
     const description = course.seoDescription || `${course.summary} ${course.priceNote}.`;
     return {
       meta: buildMeta({

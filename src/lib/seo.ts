@@ -74,6 +74,63 @@ export function courseJsonLd(name: string, description: string) {
   };
 }
 
+export function articleJsonLd(article: {
+  title: string;
+  description: string;
+  url: string;
+  publishedAt: string;
+  updatedAt?: string;
+  authorName?: string;
+  imageUrl?: string;
+}) {
+  return {
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: article.title,
+      description: article.description,
+      url: article.url,
+      mainEntityOfPage: {
+        "@type": "WebPage",
+        "@id": article.url,
+      },
+      datePublished: article.publishedAt,
+      dateModified: article.updatedAt || article.publishedAt,
+      author: {
+        "@type": "Organization",
+        name: article.authorName || site.fullName,
+        url: site.url,
+      },
+      publisher: {
+        "@type": "Organization",
+        name: site.fullName,
+        url: site.url,
+        logo: {
+          "@type": "ImageObject",
+          url: new URL("/favicon.svg", site.url).toString(),
+        },
+      },
+      ...(article.imageUrl ? { image: [new URL(article.imageUrl, site.url).toString()] } : {}),
+    }),
+  };
+}
+
+export function breadcrumbJsonLd(items: { name: string; path?: string }[]) {
+  return {
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: items.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        ...(item.path ? { item: new URL(item.path, site.url).toString() } : {}),
+      })),
+    }),
+  };
+}
 
 export function canonicalLink(path: string) {
   return { rel: "canonical", href: new URL(path, site.url).toString() };

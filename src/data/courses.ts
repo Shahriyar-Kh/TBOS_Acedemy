@@ -196,7 +196,8 @@ export const courses: Course[] = [
       "Utility types: Partial, Pick, Omit, Record & Readonly",
       "Project: Type-safe CRUD application module",
     ],
-    audience: "Developers familiar with JavaScript who want to write scalable, production-grade code.",
+    audience:
+      "Developers familiar with JavaScript who want to write scalable, production-grade code.",
     prerequisites: "Solid understanding of JavaScript (ES6+).",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "FileCode",
@@ -229,7 +230,8 @@ export const courses: Course[] = [
       "Asynchronous requests with $.ajax() and $.getJSON()",
       "Project: Interactive image gallery & accordion FAQ with jQuery",
     ],
-    audience: "Web designers, WordPress theme customizers, and junior developers maintaining web systems.",
+    audience:
+      "Web designers, WordPress theme customizers, and junior developers maintaining web systems.",
     prerequisites: "Basic HTML, CSS, and introductory JavaScript.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Code2",
@@ -298,7 +300,8 @@ export const courses: Course[] = [
       "SEO metadata, OpenGraph tags & performance tuning",
       "Project: Full-stack dynamic blog or portfolio platform",
     ],
-    audience: "React developers ready to build performant, SEO-friendly production web applications.",
+    audience:
+      "React developers ready to build performant, SEO-friendly production web applications.",
     prerequisites: "Good foundation in React and TypeScript / JavaScript.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Globe",
@@ -372,7 +375,8 @@ export const courses: Course[] = [
       "MVC architecture fundamentals",
       "Project: Dynamic content management system (CMS) with database",
     ],
-    audience: "Students wanting reliable server-side skills for web applications and CMS development.",
+    audience:
+      "Students wanting reliable server-side skills for web applications and CMS development.",
     prerequisites: "Basic knowledge of HTML and CSS.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Server",
@@ -440,7 +444,8 @@ export const courses: Course[] = [
       "API security overview: CORS, rate limiting & API keys / tokens",
       "Project: Comprehensive Postman test collection and documented API specification",
     ],
-    audience: "Frontend, backend, and full-stack developers needing clear API communication standards.",
+    audience:
+      "Frontend, backend, and full-stack developers needing clear API communication standards.",
     prerequisites: "Basic programming familiarity in any language.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Globe",
@@ -453,6 +458,7 @@ export const courses: Course[] = [
   {
     slug: "python",
     title: "Python",
+    seoTitle: "Python Programming Course Online | TechBuilt Open School",
     category: "Programming",
     level: "Beginner to Intermediate",
     duration: "8 weeks",
@@ -513,7 +519,8 @@ export const courses: Course[] = [
       "Structures, unions & file I/O operations",
       "Project: Custom memory-efficient console application (e.g. Student Record Manager)",
     ],
-    audience: "Computer science undergraduate students, engineering majors, and systems enthusiasts.",
+    audience:
+      "Computer science undergraduate students, engineering majors, and systems enthusiasts.",
     prerequisites: "Basic computer familiarity.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Cpu",
@@ -547,7 +554,8 @@ export const courses: Course[] = [
       "STL algorithms: sort, search, binary search & iterators",
       "Project: Complete object-oriented simulation or console management system",
     ],
-    audience: "Students preparing for software engineering, game dev fundamentals, and technical interviews.",
+    audience:
+      "Students preparing for software engineering, game dev fundamentals, and technical interviews.",
     prerequisites: "Familiarity with C or basic procedural programming.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Cpu",
@@ -616,8 +624,10 @@ export const courses: Course[] = [
       "Introduction to common Gang of Four design patterns",
       "Project: Object-oriented software architecture simulation",
     ],
-    audience: "Developers wanting to level up code quality, design clean architectures, and pass technical interviews.",
-    prerequisites: "Familiarity with any modern programming language (Python, Java, C++, or JavaScript).",
+    audience:
+      "Developers wanting to level up code quality, design clean architectures, and pass technical interviews.",
+    prerequisites:
+      "Familiarity with any modern programming language (Python, Java, C++, or JavaScript).",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Layers",
     keywords: ["oop course", "object oriented programming concepts", "solid principles"],
@@ -650,7 +660,8 @@ export const courses: Course[] = [
       "Trees: Binary Search Trees (BST), traversals (Pre, In, Post, Level-order)",
       "Graph representations, Breadth-First Search (BFS) & Depth-First Search (DFS)",
     ],
-    audience: "Computer science university students and developers preparing for technical coding interviews.",
+    audience:
+      "Computer science university students and developers preparing for technical coding interviews.",
     prerequisites: "Good foundation in Python, C++, Java, or JavaScript.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Binary",
@@ -685,7 +696,8 @@ export const courses: Course[] = [
       "Pull requests, code reviews & collaborative open-source workflows",
       "Project: Published multi-branch repository portfolio on GitHub",
     ],
-    audience: "Anyone learning to code, developers, and students wanting to publish their work professionally.",
+    audience:
+      "Anyone learning to code, developers, and students wanting to publish their work professionally.",
     prerequisites: "Basic computer familiarity.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "GitBranch",
@@ -859,7 +871,8 @@ export const courses: Course[] = [
       "Indexing strategies and performance optimization",
       "Project: Document-based database structure for a social or catalog app",
     ],
-    audience: "Full-stack and backend developers working with Node.js, Python, or modern web stacks.",
+    audience:
+      "Full-stack and backend developers working with Node.js, Python, or modern web stacks.",
     prerequisites: "Basic programming knowledge and JSON familiarity.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Database",
@@ -1000,7 +1013,8 @@ export const courses: Course[] = [
       "Correlation metrics (Pearson, Spearman) & simple linear regression",
       "Project: Statistical hypothesis testing report on an experimental dataset",
     ],
-    audience: "Students, researchers, and developers seeking real statistical rigor for data and AI.",
+    audience:
+      "Students, researchers, and developers seeking real statistical rigor for data and AI.",
     prerequisites: "High school mathematics and basic Python familiarity.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Sigma",
@@ -1069,7 +1083,8 @@ export const courses: Course[] = [
       "Unsupervised learning introduction: K-Means clustering",
       "Project: End-to-end predictive data science project with full evaluation",
     ],
-    audience: "Learners seeking a structured bridge from data analysis into predictive machine learning.",
+    audience:
+      "Learners seeking a structured bridge from data analysis into predictive machine learning.",
     prerequisites: "Python, Pandas, and basic statistics understanding.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Cpu",
@@ -1140,7 +1155,8 @@ export const courses: Course[] = [
       "Hyperparameter optimization with GridSearchCV and RandomizedSearchCV",
       "Project: Production-ready scikit-learn pipeline for tabular prediction",
     ],
-    audience: "Data analysts and Python programmers wanting structured, reusable machine learning pipelines.",
+    audience:
+      "Data analysts and Python programmers wanting structured, reusable machine learning pipelines.",
     prerequisites: "Python, Pandas, and basic machine learning concepts.",
     priceNote: "Contact admissions for current fee and available learning formats",
     icon: "Binary",

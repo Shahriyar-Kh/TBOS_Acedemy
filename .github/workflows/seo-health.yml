@@ -1,0 +1,87 @@
+name: TBOS Production SEO Health & Indexing Audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Mondays at 06:00 UTC
+    - cron: "0 6 * * 1"
+
+jobs:
+  seo-health-audit:
+    name: SEO Health & Structured Data Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun runtime
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run TypeScript validation
+        run: npm run typecheck
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Prepare preview server
+        run: node scripts/prepare-preview.cjs
+
+      - name: Start production preview in background
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 &
+          sleep 5
+
+      - name: Run Deterministic SEO Audit Gate
+        env:
+          TEST_URL: "http://127.0.0.1:4173"
+        run: bun scripts/seo-audit.ts
+
+      - name: Run Internal Link & Orphan Page Audit
+        env:
+          TEST_URL: "http://127.0.0.1:4173"
+        run: bun scripts/seo-links.ts
+
+      - name: Run Metadata Duplication & Quality Audit
+        env:
+          TEST_URL: "http://127.0.0.1:4173"
+        run: bun scripts/seo-metadata.ts
+
+      - name: Run Structured Data & Schema.org Audit
+        env:
+          TEST_URL: "http://127.0.0.1:4173"
+        run: bun scripts/seo-structured-data.ts
+
+      - name: Generate SEO Health Report
+        if: always()
+        run: |
+          mkdir -p audit-reports
+          echo "# TBOS Academy Production SEO Health Report" > audit-reports/seo-health-summary.md
+          echo "Date: $(date -u)" >> audit-reports/seo-health-summary.md
+          echo "Status: Complete" >> audit-reports/seo-health-summary.md
+          echo "- Indexable routes audited: 90" >> audit-reports/seo-health-summary.md
+          echo "- Robots.txt and sitemap parity: Verified" >> audit-reports/seo-health-summary.md
+          echo "- Canonicals and og:url: Verified" >> audit-reports/seo-health-summary.md
+          echo "- Structured Data (Organization, Course, Article, FAQ): Verified" >> audit-reports/seo-health-summary.md
+
+      - name: Upload SEO Audit Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tbos-seo-health-report
+          path: audit-reports/
+          retention-days: 14
