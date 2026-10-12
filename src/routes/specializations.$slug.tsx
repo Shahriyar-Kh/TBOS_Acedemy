@@ -25,7 +25,7 @@ import { getSpecialization, specializations } from "@/data/specializations";
 import { getSpecializationRoadmap } from "@/data/specializationRoadmaps";
 import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data/catalogVisuals";
 import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
-import { buildMeta, courseJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +54,14 @@ export const Route = createFileRoute("/specializations/$slug")({
         type: "article",
       }),
       links: [{ rel: "canonical", href: `${site.url}/specializations/${spec.slug}` }],
-      scripts: [courseJsonLd(spec.title, spec.summary)],
+      scripts: [
+        courseJsonLd(spec.title, spec.summary),
+        breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Specializations", path: "/specializations" },
+          { name: spec.title, path: `/specializations/${spec.slug}` },
+        ]),
+      ],
     };
   },
   notFoundComponent: () => (

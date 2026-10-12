@@ -26,7 +26,7 @@ import { getCourseCurriculumSources } from "@/data/courseCurriculumSources";
 import { getCourseRoadmap } from "@/data/courseRoadmaps";
 import { getCourseCatalogVisual } from "@/data/catalogVisuals";
 import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
-import { buildMeta, courseJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
 
 export const Route = createFileRoute("/courses/$slug")({
@@ -43,11 +43,15 @@ export const Route = createFileRoute("/courses/$slug")({
   head: ({ loaderData }) => {
     const course = loaderData?.course;
     if (!course) return { meta: buildMeta({ title: "Course", description: "Course details." }) };
+    const approvedCourse = getCourse(course.slug);
     const title =
-      course.slug === "python"
-        ? "Python Programming Course Online | TechBuilt Open School"
-        : course.seoTitle || `${course.title} Course Online | TechBuilt Open School`;
-    const description = course.seoDescription || `${course.summary} ${course.priceNote}.`;
+      course.seoTitle ||
+      approvedCourse?.seoTitle ||
+      `${course.title} Course Online | TechBuilt Open School`;
+    const description =
+      course.seoDescription ||
+      approvedCourse?.seoDescription ||
+      `${course.summary} ${course.priceNote}.`;
     return {
       meta: buildMeta({
         title,
@@ -57,7 +61,14 @@ export const Route = createFileRoute("/courses/$slug")({
         type: "article",
       }),
       links: [{ rel: "canonical", href: `${site.url}/courses/${course.slug}` }],
-      scripts: [courseJsonLd(course.title, course.summary)],
+      scripts: [
+        courseJsonLd(course.title, course.summary),
+        breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Courses", path: "/courses" },
+          { name: course.title, path: `/courses/${course.slug}` },
+        ]),
+      ],
     };
   },
   notFoundComponent: () => (

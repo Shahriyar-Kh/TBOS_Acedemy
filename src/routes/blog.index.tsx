@@ -6,6 +6,15 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { articles } from "@/data/articles";
 import { buildMeta, canonicalLink, breadcrumbJsonLd } from "@/lib/seo";
 
+function formatArticleDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
 export const Route = createFileRoute("/blog/")({
   head: () => ({
     meta: buildMeta({
@@ -89,7 +98,10 @@ function BlogIndexPage() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      Reviewed: {article.updatedAt}
+                      Reviewed:{" "}
+                      <time dateTime={article.updatedAt}>
+                        {formatArticleDate(article.updatedAt)}
+                      </time>
                     </span>
                     <Link
                       to={`/blog/${article.slug}` as any}

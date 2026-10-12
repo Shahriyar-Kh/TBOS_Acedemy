@@ -1,22 +1,41 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import {
   ArrowRight,
-  BookOpen,
   Calendar,
   CheckCircle2,
   ChevronRight,
   Clock,
   HelpCircle,
-  Share2,
-  Sparkles,
   User,
 } from "lucide-react";
-import { PageHeader } from "@/components/PageHeader";
-import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
 import { getArticleBySlug, articles } from "@/data/articles";
 import { site, whatsappLink } from "@/data/site";
 import { buildMeta, canonicalLink, articleJsonLd, breadcrumbJsonLd, faqJsonLd } from "@/lib/seo";
+
+function formatArticleDate(value: string) {
+  return new Intl.DateTimeFormat("en", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function renderInlineCode(value: string) {
+  return value.split(/(`[^`]+`)/g).map((part, index) =>
+    part.startsWith("`") && part.endsWith("`") ? (
+      <code
+        key={`${part}-${index}`}
+        className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.9em] text-foreground"
+      >
+        {part.slice(1, -1)}
+      </code>
+    ) : (
+      part
+    ),
+  );
+}
 
 export const Route = createFileRoute("/blog/$slug")({
   loader: async ({ params }) => {
@@ -117,7 +136,10 @@ function ArticleDetailPage() {
 
             <div className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4 text-primary" />
-              <span>Reviewed: {article.updatedAt}</span>
+              <span>
+                Reviewed:{" "}
+                <time dateTime={article.updatedAt}>{formatArticleDate(article.updatedAt)}</time>
+              </span>
             </div>
 
             <div className="flex items-center gap-1.5">
@@ -165,7 +187,9 @@ function ArticleDetailPage() {
 
                   <div className="mt-4 space-y-4 text-base leading-relaxed text-muted-foreground">
                     {section.paragraphs.map((p, pIndex) => (
-                      <p key={pIndex}>{p}</p>
+                      <p key={pIndex} className="whitespace-pre-line">
+                        {renderInlineCode(p)}
+                      </p>
                     ))}
                   </div>
 
@@ -178,7 +202,7 @@ function ArticleDetailPage() {
                         {section.keyTakeaways.map((point, kIndex) => (
                           <li key={kIndex} className="flex items-start gap-2">
                             <CheckCircle2 className="h-4 w-4 shrink-0 text-primary mt-0.5" />
-                            <span>{point}</span>
+                            <span>{renderInlineCode(point)}</span>
                           </li>
                         ))}
                       </ul>
@@ -191,7 +215,7 @@ function ArticleDetailPage() {
                         {section.listItems.map((item, lIndex) => (
                           <li key={lIndex} className="flex items-start gap-2">
                             <span className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                            <span className="text-foreground">{item}</span>
+                            <span className="text-foreground">{renderInlineCode(item)}</span>
                           </li>
                         ))}
                       </ul>
