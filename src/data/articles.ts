@@ -1,5 +1,5 @@
 // Authoritative dataset of evergreen educational resource articles for TechBuilt Open School.
-// All content is evidence-based, transparent, people-first, and accurately references TBOS programs.
+// Content is reviewed against the approved TBOS catalog and avoids outcome guarantees.
 
 export interface ArticleSection {
   id: string;
@@ -64,7 +64,7 @@ export const articles: Article[] = [
     excerpt:
       "A clear, practical guide designed for total beginners to master Python fundamentals, develop computational thinking, and build functional real-world projects without tutorial overwhelm.",
     category: "Python",
-    publishedAt: "2026-03-10",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "8 min read",
     author: {
@@ -92,20 +92,20 @@ export const articles: Article[] = [
         id: "why-python",
         heading: "1. Why Python Is Ideal for Beginners",
         paragraphs: [
-          "Python has become the universal first programming language across schools, universities, and industry teams for a simple reason: its syntax reads almost like standard English. While low-level languages require complex memory management and boilerplate ceremonies just to display a greeting, Python lets you express computational logic directly and clearly.",
-          "Starting with Python teaches core problem-solving discipline—such as branching, iteration, data abstraction, and algorithmic thinking—without getting bogged down in low-level memory syntax. These concepts transfer seamlessly if you later learn JavaScript, C++, or Java.",
+          "Python is a common first programming language because its syntax is comparatively readable and it can be used across automation, web development, data analysis, and introductory AI work.",
+          "Starting with Python teaches core problem-solving ideas—such as branching, iteration, data abstraction, and algorithmic thinking—without requiring low-level memory management at the beginning. These concepts also help when you later learn JavaScript, C++, or Java.",
         ],
         keyTakeaways: [
           "Readable, minimal syntax helps learners focus on problem-solving logic rather than boilerplate punctuation.",
-          "Massive ecosystem spanning web applications, data analytics, automated scripting, and artificial intelligence.",
-          "Huge global community providing extensive documentation, libraries, and beginner-friendly tooling.",
+          "Broad ecosystem spanning web applications, data analytics, automated scripting, and artificial intelligence.",
+          "Extensive official documentation, third-party libraries, and beginner-friendly tooling.",
         ],
       },
       {
         id: "phase-1-syntax",
         heading: "2. Phase 1: Core Syntax & Decision Logic",
         paragraphs: [
-          "Your first two to three weeks should be dedicated solely to mastering foundational syntax and execution flow. Rather than rushing ahead into complex libraries, make sure you understand how the Python interpreter executes code line by line.",
+          "Begin by mastering foundational syntax and execution flow. Rather than rushing into complex libraries, make sure you understand how the Python interpreter executes code line by line.",
           "Begin with variables, dynamic typing, primitive data types (integers, floats, strings, booleans), arithmetic operators, and conditional branching (`if`, `elif`, `else`). Practice writing small command-line utilities that calculate values, validate user input, and respond appropriately.",
         ],
         listItems: [
@@ -146,7 +146,7 @@ export const articles: Article[] = [
         id: "phase-4-tools",
         heading: "5. Phase 4: Virtual Environments & File Handling",
         paragraphs: [
-          "Professional Python development requires proper workflow hygiene. Never install third-party packages globally on your computer. Learn how to create isolated virtual environments using `python -m venv .venv` and manage dependencies via `pip` and `requirements.txt`.",
+          "For project dependencies, prefer an isolated virtual environment instead of a shared global environment. Learn how to create one with `python -m venv .venv` and manage dependencies via `pip` and `requirements.txt`.",
           "Additionally, learn how to persist data outside memory. Master reading and writing text files, comma-separated values (CSV), and structured JSON payloads using Python's built-in `open()`, `csv`, and `json` modules.",
         ],
         listItems: [
@@ -160,7 +160,7 @@ export const articles: Article[] = [
         id: "starter-projects",
         heading: "6. Beginner Projects to Build",
         paragraphs: [
-          "The fastest way to leave 'tutorial hell' is to build projects without following video code-alongs line by line. When you design a program yourself, you encounter real syntax errors and edge cases that solidify your problem-solving resilience.",
+          "Independent projects help you move beyond tutorial dependence. When you design a program yourself, you encounter syntax errors and edge cases that require genuine problem solving.",
           "Start with these three practical starter projects:",
         ],
         listItems: [
@@ -182,7 +182,7 @@ export const articles: Article[] = [
       {
         question: "How long does it take for a beginner to learn Python basics?",
         answer:
-          "With consistent study of 5 to 7 hours per week, most beginners acquire core syntax and basic programming logic within 6 to 10 weeks. True fluency comes from building several independent projects over 3 to 6 months.",
+          "Learning time varies by experience, practice quality, and weekly availability. A steady schedule of several focused hours per week can build core syntax and programming logic, while fluency requires continued independent project work.",
       },
       {
         question: "Do I need a strong mathematics background to learn Python?",
@@ -192,12 +192,12 @@ export const articles: Article[] = [
       {
         question: "Should I learn Python 2 or Python 3?",
         answer:
-          "Always learn Python 3. Python 2 reached official End-of-Life in 2020 and is no longer maintained. Modern courses and frameworks exclusively target modern Python 3.10+.",
+          "Learn Python 3. Python 2 reached official end-of-life in 2020 and is no longer maintained; current learning materials and actively maintained frameworks target Python 3.",
       },
       {
         question: "What hardware or operating system do I need?",
         answer:
-          "Python runs seamlessly on Windows, macOS, and Linux. Any standard laptop or desktop capable of running a modern web browser and code editor (like VS Code) is sufficient for learning.",
+          "Python supports Windows, macOS, and Linux. A laptop or desktop capable of running a current browser and code editor is generally sufficient for beginner exercises; larger data or AI workloads may need stronger hardware or cloud resources.",
       },
     ],
     relatedPrograms: [
@@ -213,7 +213,7 @@ export const articles: Article[] = [
         to: "/live-batches/100-days-complete-python",
         badge: "Live Cohort",
         description:
-          "Intensive 4-month live cohort with 4 live classes per week, practical milestones, and capstone work.",
+          "Structured 100-day live cohort with 3–4 classes per week, practical milestones, and capstone work.",
       },
       {
         title: "Python Developer Specialization",
@@ -227,7 +227,7 @@ export const articles: Article[] = [
       eyebrow: "Begin Your Coding Journey",
       title: "Master Python with Live Mentorship",
       description:
-        "Learn Python directly from experienced instructors with structured weekly classes, guided code reviews, and personal feedback.",
+        "Learn Python through structured weekly classes, guided code reviews, and instructor feedback.",
       primaryBtn: { text: "Request a Free Demo", to: "/free-demo" },
       secondaryBtnText: "Explore Python Course",
       secondaryBtnTo: "/courses/python",
@@ -242,9 +242,9 @@ export const articles: Article[] = [
       "A realistic, phase-by-phase 100-day Python study guide: daily habits, core syntax, data structures, OOP, APIs, and capstone portfolio projects.",
     eyebrow: "100-Day Study Strategy",
     excerpt:
-      "Transform programming from an intimidating theory into an instinctive daily habit with a proven phase-by-phase 100-day study plan covering syntax, OOP, APIs, and portfolio projects.",
+      "Turn programming theory into a practical daily habit with a phase-by-phase 100-day study plan covering syntax, OOP, APIs, and portfolio projects.",
     category: "Python",
-    publishedAt: "2026-03-15",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "9 min read",
     author: {
@@ -273,10 +273,10 @@ export const articles: Article[] = [
         heading: "1. The Power of Daily Consistency",
         paragraphs: [
           "The biggest reason beginners abandon programming is not lack of intelligence; it is inconsistent pacing. Spending seven hours on a single Sunday cramming syntax tutorials and then taking six days off creates a cycle of forgetting and restarting.",
-          "The 100-day methodology replaces cramming with deliberate daily contact. Committing 60 to 90 minutes each day forces neural reinforcement, builds muscle memory in your code editor, and makes debugging feel normal rather than frustrating.",
+          "The 100-day methodology replaces cramming with deliberate, regular practice. A focused daily session builds familiarity with the code editor and makes debugging a normal part of the learning process.",
         ],
         keyTakeaways: [
-          "60 minutes of daily hands-on practice beats an 8-hour weekend binge every time.",
+          "Short, regular hands-on sessions are usually easier to sustain than occasional long study sessions.",
           "Code directly in an editor from Day 1—do not simply watch videos passively.",
           "Document your daily progress to create an accountability trail.",
         ],
@@ -352,7 +352,7 @@ export const articles: Article[] = [
         id: "avoid-burnout",
         heading: "7. Avoiding Burnout and Tutorial Hell",
         paragraphs: [
-          "Tutorial hell occurs when you can follow a video instructor with ease, but stare at a blank screen when asked to create something on your own. Break this cycle by adopting the 20/80 rule: spend 20% of your time absorbing concepts and 80% actively writing, breaking, and debugging code.",
+          "Tutorial dependence occurs when you can follow an instructor but struggle to start an independent project. Break this cycle by spending less time passively watching and more time actively writing, testing, and debugging code.",
           "If you miss a day, do not feel discouraged. Simply resume the next day without trying to cram two days into one.",
         ],
       },
@@ -371,7 +371,7 @@ export const articles: Article[] = [
       {
         question: "Is 1 hour a day really enough?",
         answer:
-          "Yes, provided it is focused, hands-on coding rather than passive video watching. 100 hours of active, deliberate coding creates meaningful technical competency.",
+          "A focused hour can be useful when it is spent writing and debugging code rather than only watching videos. Progress still depends on prior experience, project difficulty, feedback, and consistency.",
       },
     ],
     relatedPrograms: [
@@ -380,7 +380,7 @@ export const articles: Article[] = [
         to: "/live-batches/100-days-complete-python",
         badge: "Live Cohort",
         description:
-          "Structured 4-month cohort with 4 live classes per week, instructor guidance, and capstone reviews.",
+          "Structured 100-day cohort with 3–4 live classes per week, instructor guidance, and capstone reviews.",
       },
       {
         title: "Git & GitHub Course",
@@ -401,7 +401,7 @@ export const articles: Article[] = [
       eyebrow: "Live Cohort Learning",
       title: "Join the 100 Days Python Live Program",
       description:
-        "Learn Python with structured weekly classes, live code reviews, and personal guidance from seasoned instructors.",
+        "Learn Python with structured weekly classes, live code reviews, and instructor guidance.",
       primaryBtn: { text: "View 100 Days Cohort", to: "/live-batches/100-days-complete-python" },
       secondaryBtnText: "Book a Free Demo",
       secondaryBtnTo: "/free-demo",
@@ -418,7 +418,7 @@ export const articles: Article[] = [
     excerpt:
       "A comprehensive, practical roadmap for aspiring data analysts. Master the four core pillars: SQL databases, Python data wrangling, applied business statistics, and Power BI dashboard design.",
     category: "Data Science",
-    publishedAt: "2026-03-18",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "9 min read",
     author: {
@@ -536,7 +536,7 @@ export const articles: Article[] = [
       {
         question: "Is Power BI better to learn than Tableau?",
         answer:
-          "Both are powerful BI platforms. Power BI has strong industry adoption worldwide due to Microsoft 365 ecosystem integration and cost-effectiveness. The core principles of data modeling and visual storytelling apply to both.",
+          "Both are capable BI platforms. Choose based on the tools used by your target team, available licensing, and the surrounding data stack; the core principles of data modeling and visual storytelling apply to both.",
       },
       {
         question: "Do I need machine learning to be a data analyst?",
@@ -571,7 +571,7 @@ export const articles: Article[] = [
       eyebrow: "Advance Your Career",
       title: "Master Data Analytics with Live Mentorship",
       description:
-        "Learn SQL, Python, statistics, and Power BI through structured classes, hands-on projects, and expert feedback.",
+        "Learn SQL, Python, statistics, and Power BI through structured classes, hands-on projects, and instructor feedback.",
       primaryBtn: {
         text: "Explore Data Analyst Specialization",
         to: "/specializations/data-analyst",
@@ -591,7 +591,7 @@ export const articles: Article[] = [
     excerpt:
       "A compassionate, practical guide for parents and guardians. Discover how coding develops structured reasoning, how to choose age-appropriate paths, and how to turn screen time into productive creativity.",
     category: "Education Guide",
-    publishedAt: "2026-03-22",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "8 min read",
     author: {
@@ -618,24 +618,24 @@ export const articles: Article[] = [
         id: "why-code-early",
         heading: "1. Why Coding Matters for Young Minds",
         paragraphs: [
-          "When parents hear 'computer programming', they often imagine complex commercial software engineering. But for children and teenagers, learning to code is fundamentally an exercise in cognitive development.",
+          "When parents hear 'computer programming', they may imagine complex commercial software engineering. For children and teenagers, beginner coding can instead be introduced through age-appropriate problem solving and creative projects.",
           "Programming teaches computational thinking: how to decompose a large problem into manageable subproblems, recognize patterns, think sequentially, and systematically troubleshoot when something fails. Unlike school subjects where errors often carry penalties, programming frames bugs as normal feedback puzzles that reward patience and curiosity.",
         ],
         keyTakeaways: [
           "Builds computational thinking, sequential logic, and resilience through debugging.",
           "Strengthens mathematical intuition by applying variables, coordinates, and logic practically.",
-          "Shifts children from passive digital consumers into empowered creators.",
+          "Encourages learners to create interactive projects instead of only consuming digital media.",
         ],
       },
       {
         id: "age-milestones",
         heading: "2. Age-Appropriate Learning Milestones",
         paragraphs: [
-          "Forcing a 10-year-old into abstract syntax or memory pointers will quickly extinguish their enthusiasm. Coding education must respect developmental stages:",
+          "The right starting point depends on reading level, keyboard confidence, attention span, and prior exposure—not age alone. The following bands are flexible examples that should be adapted after a readiness check:",
         ],
         listItems: [
           "Ages 8–11 (Exploratory Stage): Focus on visual block-based programming (such as Scratch) and logic games. Children learn sequential execution, loops, and conditional events through colorful, interactive stories.",
-          "Ages 12–15 (Transition to Real Code): Ready for text-based programming. Python is the ideal vehicle due to its clean syntax. Students build text adventures, math calculators, and graphical games with Turtle or Pygame.",
+          "Ages 12–15 (Possible transition to text code): Many learners can begin Python with support, building text adventures, math calculators, and graphical projects with Turtle or Pygame.",
           "Ages 16–18 (Pre-University & Technical Foundations): Students can tackle full web development (HTML, CSS, JavaScript) or deeper Python programming, database concepts, and introductory algorithmic thinking.",
         ],
       },
@@ -648,15 +648,15 @@ export const articles: Article[] = [
         ],
         keyTakeaways: [
           "Distinguish passive consumption (social media, endless streaming) from active production (coding, writing, digital design).",
-          "Active creation builds self-esteem and pride of accomplishment.",
+          "Finishing and explaining a project can give learners a concrete sense of progress.",
         ],
       },
       {
         id: "live-vs-recorded",
         heading: "4. Live Mentorship vs Recorded Video Platforms",
         paragraphs: [
-          "Many parents purchase inexpensive video courses only to find their child abandons the course within three days. Young learners quickly encounter a syntax error—like a missing colon or indentation typo—that a video cannot diagnose.",
-          "Live, instructor-led learning provides patient human guidance. A skilled mentor watches the student's screen, identifies points of confusion, gently guides the student toward finding the fix, and celebrates progress in real time.",
+          "Young learners can lose momentum when a syntax error—such as a missing colon or indentation mistake—blocks progress and no instructor is available to diagnose it.",
+          "Live, instructor-led learning can provide real-time guidance. An instructor can review the student's screen, identify a point of confusion, and guide the learner toward finding the fix.",
         ],
       },
       {
@@ -690,7 +690,7 @@ export const articles: Article[] = [
       {
         question: "Will learning to code interfere with school grades?",
         answer:
-          "When balanced properly (2 to 4 hours per week), programming frequently improves academic performance by sharpening mathematical logic, reading comprehension, and structured study habits.",
+          "A balanced weekly schedule can help learners practise decomposition, logical sequencing, and structured problem solving without displacing schoolwork, rest, or physical activity.",
       },
       {
         question: "Can teenagers with zero prior computer experience join?",
@@ -718,7 +718,7 @@ export const articles: Article[] = [
         to: "/for-parents",
         badge: "Parent Portal",
         description:
-          "Learn about our guardian policies, supervision standards, schedule confirmations, and fee transparency.",
+          "Learn about parent and guardian involvement, schedule confirmations, and fee transparency.",
       },
     ],
     cta: {
@@ -742,7 +742,7 @@ export const articles: Article[] = [
     excerpt:
       "A comprehensive, step-by-step guide to modern full-stack web development. Progress from HTML, CSS, and modern JavaScript to React frontends, Node.js backends, databases, and deployment.",
     category: "Web Development",
-    publishedAt: "2026-03-25",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "9 min read",
     author: {
@@ -812,7 +812,7 @@ export const articles: Article[] = [
         id: "stage-3-frontend",
         heading: "4. Stage 3: Component-Driven Frontend (React)",
         paragraphs: [
-          "Building complex single-page applications with vanilla JavaScript quickly becomes tangled. Modern teams use component-based frameworks, and React remains the global industry standard.",
+          "Building complex single-page applications with vanilla JavaScript can become difficult to maintain. Many modern teams use component-based frameworks, and React is one widely used option.",
           "Learn how to decompose interfaces into reusable functional components. Master core React hooks: `useState` for local state and `useEffect` for side effects. Understand component lifecycles, unidirectional data flow, props passing, and handling client-side form submissions.",
         ],
         keyTakeaways: [
@@ -864,7 +864,7 @@ export const articles: Article[] = [
       {
         question: "How long does it take to learn full-stack development?",
         answer:
-          "For complete beginners studying 10 to 15 hours per week, achieving solid full-stack competence typically takes 6 to 9 months of disciplined, hands-on project work.",
+          "There is no universal timeline. Complete beginners should plan for sustained, hands-on study across several months, with the pace depending on weekly practice, feedback, and project depth.",
       },
       {
         question: "Should I learn frontend or backend first?",
@@ -874,7 +874,7 @@ export const articles: Article[] = [
       {
         question: "Is PHP/Laravel still relevant compared to Node.js/React?",
         answer:
-          "Yes. PHP and Laravel power a massive portion of the web and offer excellent developer productivity. Many developers choose either the JavaScript/Node.js stack or the PHP/Laravel stack depending on their target job market.",
+          "Yes. PHP and Laravel remain actively maintained and widely used. Choose between a JavaScript/Node.js stack and PHP/Laravel based on the systems you want to build and the requirements of your target teams or clients.",
       },
     ],
     relatedPrograms: [
@@ -924,7 +924,7 @@ export const articles: Article[] = [
     excerpt:
       "Navigate the online education landscape with confidence. Learn how to distinguish genuine mentorship from marketing hype, evaluate curriculum depth, and make evidence-based learning investments.",
     category: "Education Guide",
-    publishedAt: "2026-03-28",
+    publishedAt: "2026-10-12",
     updatedAt: "2026-10-12",
     readTime: "8 min read",
     author: {
@@ -952,13 +952,13 @@ export const articles: Article[] = [
         id: "landscape",
         heading: "1. The Modern Online Learning Landscape",
         paragraphs: [
-          "Online education has removed geographic barriers, allowing learners in Pakistan and worldwide to study with specialized instructors from the comfort of their homes. However, the market has also become flooded with exaggerated claims, predatory bootcamps, and low-quality video bundles.",
+          "Online education lets learners compare instructors and programs beyond their immediate location. The tradeoff is that quality, support, and commercial terms vary significantly between providers.",
           "Choosing the wrong program wastes money and—more critically—demoralizes the learner by creating the false impression that they 'aren't smart enough' to understand technical subjects. Making an informed choice requires looking past glossy landing pages to inspect instructional quality.",
         ],
         keyTakeaways: [
-          "A great course clarifies complex ideas; a poor course makes you feel inadequate.",
-          "Price is not an indicator of quality: expensive bootcamps can be just as hollow as cheap video bundles.",
-          "Transparency in curriculum, scheduling, and trial policies is the best indicator of integrity.",
+          "Look for clear explanations, responsive feedback, and a learning pace that fits the student.",
+          "Price alone does not establish instructional quality or learner support.",
+          "Published curriculum, scheduling terms, and trial or refund policies make programs easier to compare.",
         ],
       },
       {
@@ -970,7 +970,7 @@ export const articles: Article[] = [
         listItems: [
           "'Guaranteed high-paying job in 30 days': No ethical educational institution can guarantee hiring outcomes, salaries, or external commercial decisions.",
           "Pre-recorded video libraries marketed as 'live bootcamps': Some providers charge premium live tuition while merely providing pre-recorded videos with automated multiple-choice quizzes.",
-          "Refusal to provide a trial session or demo: Legitimate providers are confident in their teaching and welcome an initial trial session.",
+          "No way to evaluate fit: If a provider has no trial, sample lesson, instructor conversation, or clear refund policy, ask for another way to assess the teaching format before paying.",
           "Hidden mandatory registration or examination fees: Pricing should be fully transparent before any payment is collected.",
           "Fake reviews and generic celebrity testimonials: Watch out for stock photos posing as students and unverified 5-star badges.",
         ],
@@ -979,8 +979,8 @@ export const articles: Article[] = [
         id: "live-vs-recorded",
         heading: "3. Live Interactive Instruction vs Pre-Recorded Dumps",
         paragraphs: [
-          "Self-paced video courses work well for disciplined, experienced engineers looking up a specific syntax update. However, for beginners and school students, completion rates for pre-recorded courses hover below 10%.",
-          "Live online classes provide three irreplaceable advantages: real-time error diagnosis, personalized pacing, and human accountability. When a student knows their instructor is waiting for them in class, attendance and follow-through increase dramatically.",
+          "Self-paced video courses can work well for independent learners reviewing a specific topic. Beginners and school students may instead benefit from real-time error diagnosis, personalized pacing, and scheduled accountability.",
+          "Live online classes can add real-time error diagnosis, pacing adjustments, and scheduled accountability. The best format still depends on the learner's independence, schedule, and need for feedback.",
         ],
       },
       {
@@ -1000,8 +1000,8 @@ export const articles: Article[] = [
         id: "trial-demo-value",
         heading: "5. The Critical Importance of a Trial Demo",
         paragraphs: [
-          "Teaching chemistry is deeply personal. An instructor might have impressive credentials but speak too quickly, use an incompatible teaching style, or struggle to connect with a younger student.",
-          "Always insist on an initial trial demo session. Use this session to evaluate whether the teacher listens patiently, encourages questions, and explains difficult concepts clearly without condescension.",
+          "Teaching compatibility is personal. An instructor may understand the subject well but speak too quickly, use an incompatible teaching style, or struggle to connect with a younger student.",
+          "When a trial or introductory meeting is available, use it to evaluate whether the teacher listens patiently, encourages questions, and explains difficult concepts clearly.",
         ],
       },
       {
@@ -1022,7 +1022,7 @@ export const articles: Article[] = [
         id: "tbos-admissions",
         heading: "7. The TechBuilt Open School Transparency Standard",
         paragraphs: [
-          "At TechBuilt Open School, we hold ourselves to strict standards of transparency. We publish our complete chapter curricula, clear monthly fees (PKR 20,000/month for premium specializations, PKR 15,000/month for standard tracks), and weekly schedules openly on our website.",
+          "At TechBuilt Open School, we publish chapter curricula, clear monthly specialization fees (PKR 20,000/month for four premium tracks and PKR 15,000/month for the other tracks), and the weekly class frequency. Exact timings are confirmed by admissions.",
           "We offer a single-session Free Demo to evaluate teaching fit, confirm all schedules through admissions before enrollment, and never make deceptive job or income guarantees.",
         ],
       },
@@ -1036,12 +1036,12 @@ export const articles: Article[] = [
       {
         question: "Can I switch tutors if the fit is not ideal?",
         answer:
-          "Yes. For tutoring arrangements, admissions will work with you to review schedule availability and match you with an alternate instructor where available.",
+          "Ask admissions to review the concern. Any tutor change depends on subject, schedule, and alternate-instructor availability and is not guaranteed.",
       },
       {
         question: "Are class timings flexible for international students?",
         answer:
-          "Yes. Because our students join from Pakistan, the Middle East, Europe, and North America, class times are coordinated based on time zones and confirmed during the admissions review.",
+          "Timing requests are reviewed against the learner's time zone and instructor availability, then confirmed by admissions before enrollment.",
       },
     ],
     relatedPrograms: [
