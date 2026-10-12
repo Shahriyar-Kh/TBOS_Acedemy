@@ -22,7 +22,7 @@ import { CtaSection } from "@/components/sections/CtaSection";
 import { getLiveOffer, activeLiveOffers } from "@/data/liveOffers";
 import { getLiveProgramVisual } from "@/data/liveProgramVisuals";
 import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
-import { buildMeta, courseJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
 import { trackMetaViewContent } from "@/lib/marketing";
 
@@ -63,7 +63,14 @@ export const Route = createFileRoute("/live-batches/$slug")({
         image: visual.image,
       }),
       links: [{ rel: "canonical", href: `${site.url}/live-batches/${offer.slug}` }],
-      scripts: [courseJsonLd(offer.title, offer.summary)],
+      scripts: [
+        courseJsonLd(offer.title, offer.summary),
+        breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Live Batches", path: "/live-batches" },
+          { name: offer.title, path: `/live-batches/${offer.slug}` },
+        ]),
+      ],
     };
   },
   notFoundComponent: () => (

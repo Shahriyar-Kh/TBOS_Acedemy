@@ -7,6 +7,7 @@ import {
   getCmsTutoring,
 } from "@/lib/cms.server";
 import { seoPages } from "../data/seoPages";
+import { articles } from "../data/articles";
 import { site } from "../data/site";
 
 const BASE_URL = site.url;
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           ...activeOffers.map((o) => `/live-batches/${o.slug}`),
           ...activeTutoring.map((t) => `/tutoring/${t.slug}`),
           ...seoPages.map((p) => `/${p.slug}`),
+          ...articles.map((a) => `/blog/${a.slug}`),
         ];
 
         const urls = paths

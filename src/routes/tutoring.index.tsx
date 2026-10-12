@@ -48,12 +48,25 @@ export const Route = createFileRoute("/tutoring/")({
 });
 
 const tutorModes = [
-  { icon: UserRound, title: "One-to-one tutoring", desc: "A focused format built around the learner's current level, syllabus and goals." },
-  { icon: Users, title: "Small group classes", desc: "Collaborative learning when a suitable small group and schedule are available." },
-  { icon: Globe2, title: "Online scheduling", desc: "Live online sessions with timing confirmed by admissions based on tutor and learner availability." },
+  {
+    icon: UserRound,
+    title: "One-to-one tutoring",
+    desc: "A focused format built around the learner's current level, syllabus and goals.",
+  },
+  {
+    icon: Users,
+    title: "Small group classes",
+    desc: "Collaborative learning when a suitable small group and schedule are available.",
+  },
+  {
+    icon: Globe2,
+    title: "Online scheduling",
+    desc: "Live online sessions with timing confirmed by admissions based on tutor and learner availability.",
+  },
 ];
 
 const popular = [
+  { label: "International Online Academy", to: "/international-online-academy" },
   { label: "Online Tutor Service in Pakistan", to: "/online-tutor-service-pakistan" },
   { label: "Computer Science Tutoring", to: "/computer-science-tutoring" },
   { label: "Maths Tutor Online", to: "/maths-tutor" },
@@ -64,7 +77,8 @@ const popular = [
 
 function TutoringPage() {
   const { tutoring: loadedTutoring } = Route.useLoaderData();
-  const allTutoring = loadedTutoring && loadedTutoring.length > 0 ? loadedTutoring : tutoringSubjects;
+  const allTutoring =
+    loadedTutoring && loadedTutoring.length > 0 ? loadedTutoring : tutoringSubjects;
   const academicList = allTutoring.filter((s) => s.category === "Academic");
   const quranList = allTutoring.filter((s) => s.category === "Quran & Islamic Studies");
 
@@ -87,7 +101,9 @@ function TutoringPage() {
               Find a tutoring option that fits your curriculum and goals
             </h2>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              Whether the goal is syllabus support, exam preparation, difficult concepts, or Quranic learning, admissions helps match the request to an available tutoring option and suitable schedule.
+              Whether the goal is syllabus support, exam preparation, difficult concepts, or Quranic
+              learning, admissions helps match the request to an available tutoring option and
+              suitable schedule.
             </p>
             <ul className="mt-6 space-y-3">
               {[

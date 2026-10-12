@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { getTutoringBySlug, tutoringSubjects } from "@/data/tutoring";
 import { site, whatsappLink } from "@/data/site";
 import { getCmsTutoringBySlugFn } from "@/lib/cmsFunctions";
-import { buildMeta } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMeta } from "@/lib/seo";
 
 export const Route = createFileRoute("/tutoring/$slug")({
   loader: async ({ params }) => {
@@ -55,6 +55,13 @@ export const Route = createFileRoute("/tutoring/$slug")({
         path: `/tutoring/${subject.slug}`,
       }),
       links: [{ rel: "canonical", href: `${site.url}/tutoring/${subject.slug}` }],
+      scripts: [
+        breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Tutoring", path: "/tutoring" },
+          { name: subject.title, path: `/tutoring/${subject.slug}` },
+        ]),
+      ],
     };
   },
   notFoundComponent: () => (
