@@ -15,7 +15,7 @@
     "seo:links": "bun scripts/seo-links.ts",
     "seo:metadata": "bun scripts/seo-metadata.ts",
     "seo:structured-data": "bun scripts/seo-structured-data.ts",
-    "seo:lighthouse": "bun scripts/seo-lighthouse.ts"
+    "seo:performance": "bun scripts/seo-performance.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
