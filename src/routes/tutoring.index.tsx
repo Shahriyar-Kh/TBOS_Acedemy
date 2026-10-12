@@ -103,14 +103,14 @@ function TutoringPage() {
               ))}
             </ul>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Button asChild variant="default" size="lg">
-                <Link to="/apply" search={{ type: "One-to-One Learning" }}>
-                  Request a Tutor <ArrowRight className="h-4 w-4" />
+              <Button asChild variant="hero" size="lg">
+                <Link to="/free-demo" search={{ type: "Academic Tutoring" }}>
+                  <Sparkles className="h-4 w-4" /> Book a Free Demo
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <Link to="/free-demo" search={{ type: "Academic Tutoring" }}>
-                  <Sparkles className="h-4 w-4 text-gold-foreground" /> Book a Free Demo
+                <Link to="/apply" search={{ type: "One-to-One Learning" }}>
+                  Request a Tutor <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>

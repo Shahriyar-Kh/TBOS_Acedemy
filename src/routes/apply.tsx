@@ -99,7 +99,7 @@ function ApplyPage() {
               </p>
               <Link
                 to="/free-demo"
-                search={selected ? { type: normalizedType, selected } : undefined}
+                search={selected || type ? { type: normalizedType, selected } : undefined}
                 className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
               >
                 Request Free Demo Session <ArrowRight className="h-3.5 w-3.5" />
