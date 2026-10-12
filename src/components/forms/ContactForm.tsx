@@ -283,7 +283,7 @@ export function ContactForm({
       <Button type="submit" variant="hero" size="xl" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Sendingâ¦
+            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Sending…
           </>
         ) : (
           "Send Message"
