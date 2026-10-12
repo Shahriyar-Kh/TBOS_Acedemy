@@ -318,6 +318,17 @@ test.describe("Phase 14C: Admissions Conversion Refinement & End-to-End Reliabil
     await expect(statusPanel).toContainText("Hamza Tariq");
   });
 
+  test("14a. Contact category is selected only when valid context is provided", async ({ page }) => {
+    await navigateAndWait(page, "/contact");
+    await expect(page.locator("#c-cat")).toHaveValue("");
+
+    await navigateAndWait(page, "/contact?category=Academic%20tutoring");
+    await expect(page.locator("#c-cat")).toHaveValue("Academic tutoring");
+
+    await navigateAndWait(page, "/contact?category=not-a-real-category");
+    await expect(page.locator("#c-cat")).toHaveValue("");
+  });
+
   // 15. Failed responses preserve entered values and show retry/WhatsApp recovery
   test("15. Failed responses preserve entered values and show retry/WhatsApp recovery", async ({
     page,
