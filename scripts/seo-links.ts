@@ -1,43 +1,10 @@
 import { chromium } from "@playwright/test";
-import { courses } from "../src/data/courses";
-import { specializations } from "../src/data/specializations";
-import { liveOffers } from "../src/data/liveOffers";
-import { tutoringSubjects } from "../src/data/tutoring";
-import { seoPages } from "../src/data/seoPages";
-import { articles } from "../src/data/articles";
 import { site } from "../src/data/site";
+import { indexableHtmlRoutes } from "./seo-route-inventory";
 
 const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
-const coreStaticRoutes = [
-  "/",
-  "/about",
-  "/how-it-works",
-  "/for-students",
-  "/for-parents",
-  "/courses",
-  "/live-batches",
-  "/specializations",
-  "/tutoring",
-  "/apply",
-  "/free-demo",
-  "/contact",
-  "/testimonials",
-  "/faq",
-  "/blog",
-  "/privacy",
-  "/terms",
-];
-
-const allIndexableRoutes = new Set([
-  ...coreStaticRoutes,
-  ...courses.map((c) => `/courses/${c.slug}`),
-  ...specializations.map((s) => `/specializations/${s.slug}`),
-  ...liveOffers.map((o) => `/live-batches/${o.slug}`),
-  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
-  ...seoPages.map((p) => `/${p.slug}`),
-  ...articles.map((a) => `/blog/${a.slug}`),
-]);
+const allIndexableRoutes = new Set(indexableHtmlRoutes);
 
 console.log("==================================================");
 console.log("TBOS ACADEMY — INTERNAL LINK & ORPHAN CRAWLER");
@@ -53,11 +20,19 @@ async function runLinkAudit() {
   const discoveredLinks = new Set<string>();
   const linkedFromMap = new Map<string, string[]>();
   const brokenLinks: { source: string; href: string; reason: string }[] = [];
+  const crawlErrors: string[] = [];
 
   // Crawl all indexable pages to extract internal links
   for (const route of allIndexableRoutes) {
     try {
-      await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded", timeout: 30000 });
+      const response = await page.goto(`${BASE_URL}${route}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+      if (!response || response.status() !== 200) {
+        crawlErrors.push(`${route} returned HTTP ${response?.status() ?? "no response"}`);
+        continue;
+      }
       const hrefs = await page.$$eval("a[href]", (anchors) =>
         anchors.map((a) => a.getAttribute("href") || "").filter(Boolean),
       );
@@ -82,12 +57,14 @@ async function runLinkAudit() {
           if (internalPath.length > 1 && internalPath.endsWith("/")) {
             internalPath = internalPath.slice(0, -1);
           }
-          discoveredLinks.add(internalPath);
+          if (internalPath !== route) {
+            discoveredLinks.add(internalPath);
 
-          if (!linkedFromMap.has(internalPath)) {
-            linkedFromMap.set(internalPath, []);
+            if (!linkedFromMap.has(internalPath)) {
+              linkedFromMap.set(internalPath, []);
+            }
+            linkedFromMap.get(internalPath)!.push(route);
           }
-          linkedFromMap.get(internalPath)!.push(route);
 
           // Verify if it is an invalid internal link
           if (
@@ -104,7 +81,7 @@ async function runLinkAudit() {
         }
       }
     } catch (err: any) {
-      console.error(`Error scraping links from ${route}: ${err.message}`);
+      crawlErrors.push(`${route}: ${err.message}`);
     }
   }
 
@@ -124,6 +101,12 @@ async function runLinkAudit() {
 
   let failed = false;
 
+  if (crawlErrors.length > 0) {
+    console.error(`\nFAIL: Could not crawl ${crawlErrors.length} indexable pages:`);
+    crawlErrors.forEach((error) => console.error(` - ${error}`));
+    failed = true;
+  }
+
   if (brokenLinks.length > 0) {
     console.error(`\nFAIL: Found ${brokenLinks.length} broken internal links:`);
     brokenLinks
@@ -141,7 +124,9 @@ async function runLinkAudit() {
     orphanPages.forEach((o) => console.error(` - ${o}`));
     failed = true;
   } else {
-    console.log("PASS: Zero orphaned indexable pages! All 90 pages are linked internally.");
+    console.log(
+      `PASS: Zero orphaned indexable pages! All ${allIndexableRoutes.size} HTML pages are linked internally.`,
+    );
   }
 
   console.log("==================================================");

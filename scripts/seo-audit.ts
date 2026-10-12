@@ -1,43 +1,10 @@
 import { chromium } from "@playwright/test";
-import { courses } from "../src/data/courses";
-import { specializations } from "../src/data/specializations";
-import { liveOffers } from "../src/data/liveOffers";
-import { tutoringSubjects } from "../src/data/tutoring";
-import { seoPages } from "../src/data/seoPages";
-import { articles } from "../src/data/articles";
 import { site } from "../src/data/site";
+import { indexableHtmlRoutes } from "./seo-route-inventory";
 
 const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
-const coreStaticRoutes = [
-  "/",
-  "/about",
-  "/how-it-works",
-  "/for-students",
-  "/for-parents",
-  "/courses",
-  "/live-batches",
-  "/specializations",
-  "/tutoring",
-  "/apply",
-  "/free-demo",
-  "/contact",
-  "/testimonials",
-  "/faq",
-  "/blog",
-  "/privacy",
-  "/terms",
-];
-
-const allIndexableRoutes = [
-  ...coreStaticRoutes,
-  ...courses.map((c) => `/courses/${c.slug}`),
-  ...specializations.map((s) => `/specializations/${s.slug}`),
-  ...liveOffers.map((o) => `/live-batches/${o.slug}`),
-  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
-  ...seoPages.map((p) => `/${p.slug}`),
-  ...articles.map((a) => `/blog/${a.slug}`),
-];
+const allIndexableRoutes = indexableHtmlRoutes;
 
 console.log("==================================================");
 console.log("TBOS ACADEMY — PRODUCTION SEO AUDIT GATE");
@@ -91,7 +58,7 @@ async function runSeoAudit() {
       sitemapUrls = locMatches.map((m) => m.replace(/<\/?loc>/g, ""));
       console.log(`Found ${sitemapUrls.length} URLs in sitemap.xml.`);
 
-      // Parity check
+      // Exact parity check
       const missingInSitemap = allIndexableRoutes.filter((r) => {
         const expectedLoc = r === "/" ? `${site.url}/` : `${site.url}${r}`;
         return !sitemapUrls.includes(expectedLoc);
@@ -105,6 +72,15 @@ async function runSeoAudit() {
         failures++;
       } else {
         console.log("PASS: All indexable routes exist in sitemap.xml with exact parity.");
+      }
+
+      const expectedSitemapUrls = new Set(
+        allIndexableRoutes.map((route) => (route === "/" ? `${site.url}/` : `${site.url}${route}`)),
+      );
+      const unexpectedInSitemap = sitemapUrls.filter((url) => !expectedSitemapUrls.has(url));
+      if (unexpectedInSitemap.length > 0 || sitemapUrls.length !== expectedSitemapUrls.size) {
+        console.error("FAIL: Sitemap contains unexpected or duplicate URLs:", unexpectedInSitemap);
+        failures++;
       }
 
       // Check no private/admin/api routes in sitemap
@@ -162,7 +138,7 @@ async function runSeoAudit() {
 
       // OG URL
       const ogUrl = await routePage.locator('meta[property="og:url"]').getAttribute("content");
-      if (ogUrl && ogUrl !== expectedCanonical) {
+      if (ogUrl !== expectedCanonical) {
         console.error(`FAIL: ${route} og:url is "${ogUrl}", expected "${expectedCanonical}"`);
         failures++;
       }

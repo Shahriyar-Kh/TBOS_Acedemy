@@ -1,50 +1,9 @@
 import { chromium } from "@playwright/test";
-import { courses } from "../src/data/courses";
-import { specializations } from "../src/data/specializations";
-import { liveOffers } from "../src/data/liveOffers";
-import { tutoringSubjects } from "../src/data/tutoring";
-import { articles } from "../src/data/articles";
+import { auditedPublicEndpoints } from "./seo-route-inventory";
 
 const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
-const staticRoutes = [
-  "/",
-  "/about",
-  "/courses",
-  "/specializations",
-  "/live-batches",
-  "/tutoring",
-  "/apply",
-  "/free-demo",
-  "/contact",
-  "/testimonials",
-  "/faq",
-  "/blog",
-  "/how-it-works",
-  "/for-students",
-  "/for-parents",
-  "/privacy",
-  "/terms",
-  "/computer-science-tutoring",
-  "/grade-5-to-ms-online-learning",
-  "/international-online-academy",
-  "/maths-tutor",
-  "/online-classes-for-students",
-  "/online-tutor-service-pakistan",
-  "/physics-tutor",
-  "/python-course-online",
-  "/web-development-course-online",
-  "/sitemap.xml",
-];
-
-const allRoutes = [
-  ...staticRoutes,
-  ...courses.map((c) => `/courses/${c.slug}`),
-  ...specializations.map((s) => `/specializations/${s.slug}`),
-  ...liveOffers.map((o) => `/live-batches/${o.slug}`),
-  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
-  ...articles.map((a) => `/blog/${a.slug}`),
-];
+const allRoutes = auditedPublicEndpoints;
 
 console.log(`Starting real-browser Chromium audit against ${BASE_URL}`);
 console.log(`Total routes to audit: ${allRoutes.length}`);

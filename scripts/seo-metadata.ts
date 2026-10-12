@@ -1,43 +1,10 @@
 import { chromium } from "@playwright/test";
-import { courses } from "../src/data/courses";
-import { specializations } from "../src/data/specializations";
-import { liveOffers } from "../src/data/liveOffers";
-import { tutoringSubjects } from "../src/data/tutoring";
-import { seoPages } from "../src/data/seoPages";
-import { articles } from "../src/data/articles";
 import { site } from "../src/data/site";
+import { indexableHtmlRoutes } from "./seo-route-inventory";
 
 const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
-const coreStaticRoutes = [
-  "/",
-  "/about",
-  "/how-it-works",
-  "/for-students",
-  "/for-parents",
-  "/courses",
-  "/live-batches",
-  "/specializations",
-  "/tutoring",
-  "/apply",
-  "/free-demo",
-  "/contact",
-  "/testimonials",
-  "/faq",
-  "/blog",
-  "/privacy",
-  "/terms",
-];
-
-const allIndexableRoutes = [
-  ...coreStaticRoutes,
-  ...courses.map((c) => `/courses/${c.slug}`),
-  ...specializations.map((s) => `/specializations/${s.slug}`),
-  ...liveOffers.map((o) => `/live-batches/${o.slug}`),
-  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
-  ...seoPages.map((p) => `/${p.slug}`),
-  ...articles.map((a) => `/blog/${a.slug}`),
-];
+const allIndexableRoutes = indexableHtmlRoutes;
 
 console.log("==================================================");
 console.log("TBOS ACADEMY — METADATA DUPLICATION & QUALITY AUDIT");
@@ -56,7 +23,15 @@ async function runMetadataAudit() {
 
   for (const route of allIndexableRoutes) {
     try {
-      await page.goto(`${BASE_URL}${route}`, { waitUntil: "domcontentloaded", timeout: 30000 });
+      const response = await page.goto(`${BASE_URL}${route}`, {
+        waitUntil: "domcontentloaded",
+        timeout: 30000,
+      });
+      if (!response || response.status() !== 200) {
+        console.error(`FAIL: ${route} returned HTTP ${response?.status() ?? "no response"}`);
+        errors++;
+        continue;
+      }
 
       const title = (await page.title()).trim();
       const desc = (
@@ -92,7 +67,7 @@ async function runMetadataAudit() {
       }
 
       // og:url match
-      if (ogUrl && ogUrl !== expectedCanonical) {
+      if (ogUrl !== expectedCanonical) {
         console.error(
           `FAIL: ${route} og:url mismatch: found "${ogUrl}", expected "${expectedCanonical}"`,
         );
