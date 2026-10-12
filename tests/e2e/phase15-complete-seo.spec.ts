@@ -1,11 +1,7 @@
 import { test, expect } from "@playwright/test";
-import { courses } from "../../src/data/courses";
-import { specializations } from "../../src/data/specializations";
-import { liveOffers } from "../../src/data/liveOffers";
-import { tutoringSubjects } from "../../src/data/tutoring";
-import { seoPages } from "../../src/data/seoPages";
 import { articles } from "../../src/data/articles";
 import { site } from "../../src/data/site";
+import { auditedPublicEndpoints, indexableHtmlRoutes } from "../../scripts/seo-route-inventory";
 
 declare global {
   interface Window {
@@ -23,42 +19,12 @@ async function installFbqSpy(page: import("@playwright/test").Page) {
   });
 }
 
-const staticRoutes = [
-  "/",
-  "/about",
-  "/how-it-works",
-  "/for-students",
-  "/for-parents",
-  "/courses",
-  "/live-batches",
-  "/specializations",
-  "/tutoring",
-  "/apply",
-  "/free-demo",
-  "/contact",
-  "/testimonials",
-  "/faq",
-  "/blog",
-  "/privacy",
-  "/terms",
-  "/sitemap.xml",
-];
-
-const allIndexableRoutes = [
-  ...staticRoutes,
-  ...courses.map((c) => `/courses/${c.slug}`),
-  ...specializations.map((s) => `/specializations/${s.slug}`),
-  ...liveOffers.map((o) => `/live-batches/${o.slug}`),
-  ...tutoringSubjects.map((t) => `/tutoring/${t.slug}`),
-  ...seoPages.map((p) => `/${p.slug}`),
-  ...articles.map((a) => `/blog/${a.slug}`),
-];
-
 test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vitals Foundation", () => {
-  // 1. Every indexable route returns HTTP 200
-  test("1. Every indexable route returns HTTP 200", async ({ request }) => {
-    expect(allIndexableRoutes.length).toBe(90);
-    for (const route of allIndexableRoutes) {
+  // 1. Every audited public endpoint returns HTTP 200
+  test("1. Every audited public endpoint returns HTTP 200", async ({ request }) => {
+    expect(indexableHtmlRoutes.length).toBe(89);
+    expect(auditedPublicEndpoints.length).toBe(90);
+    for (const route of auditedPublicEndpoints) {
       const response = await request.get(route);
       expect(response.status(), `Route ${route} should return 200`).toBe(200);
     }
@@ -70,11 +36,13 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     expect(response.status()).toBe(200);
     const xml = await response.text();
 
-    const sitemapPages = allIndexableRoutes.filter((r) => r !== "/sitemap.xml");
-    for (const route of sitemapPages) {
+    for (const route of indexableHtmlRoutes) {
       const expectedLoc = route === "/" ? `${site.url}/` : `${site.url}${route}`;
       expect(xml, `Sitemap must contain ${expectedLoc}`).toContain(`<loc>${expectedLoc}</loc>`);
     }
+    const sitemapUrls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+    expect(sitemapUrls).toHaveLength(indexableHtmlRoutes.length);
+    expect(new Set(sitemapUrls).size).toBe(indexableHtmlRoutes.length);
   });
 
   // 3. No excluded route appears in the sitemap
@@ -105,8 +73,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     expect(text).toContain(`Sitemap: ${site.url}/sitemap.xml`);
   });
 
-  // 5. Every indexable page has one canonical
-  test("5. Every indexable page has one canonical", async ({ page }) => {
+  // 5. Representative indexable pages have one canonical
+  test("5. Representative indexable pages have one canonical", async ({ page }) => {
     const sampleRoutes = [
       "/",
       "/courses",
@@ -167,8 +135,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     }
   });
 
-  // 9. Every indexable page has one H1
-  test("9. Every indexable page has one H1", async ({ page }) => {
+  // 9. Representative indexable pages have one H1
+  test("9. Representative indexable pages have one H1", async ({ page }) => {
     const sampleRoutes = [
       "/",
       "/about",
@@ -194,8 +162,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     }
   });
 
-  // 10. Every page has a valid title and description
-  test("10. Every page has a valid title and description", async ({ page }) => {
+  // 10. Representative pages have a valid title and description
+  test("10. Representative pages have a valid title and description", async ({ page }) => {
     const sampleRoutes = [
       "/",
       "/about",
@@ -332,8 +300,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     }
   });
 
-  // 18. All internal links are valid
-  test("18. All internal links are valid", async ({ page, request }) => {
+  // 18. Blog hub internal-link sample is valid (full crawl runs in seo:links)
+  test("18. Blog hub internal-link sample is valid", async ({ page, request }) => {
     await page.goto("/blog", { waitUntil: "domcontentloaded" });
     const links = await page.$$eval('a[href^="/"]', (anchors) =>
       anchors.map((a) => a.getAttribute("href")?.split("#")[0].split("?")[0] || "").filter(Boolean),
@@ -345,9 +313,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     }
   });
 
-  // 19. No indexable page is orphaned
-  test("19. No indexable page is orphaned", async ({ page }) => {
-    // Check that /courses lists courses, /specializations lists specs, /blog lists articles
+  // 19. Every new article has an incoming link from the blog hub
+  test("19. Every new article has an incoming link from the blog hub", async ({ page }) => {
     await page.goto("/blog", { waitUntil: "domcontentloaded" });
     for (const article of articles) {
       const link = page.locator(`a[href*="/blog/${article.slug}"]`).first();
@@ -375,18 +342,21 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     await expect(liveCohortLink).toBeAttached();
   });
 
-  // 22. Critical images have correct alt and dimensions
-  test("22. Critical images have correct alt and dimensions", async ({ page }) => {
+  // 22. Critical images have alt text and non-zero rendered dimensions
+  test("22. Critical images have alt text and non-zero rendered dimensions", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     const images = await page.$$eval("img", (imgs) =>
       imgs.map((img) => ({
         src: img.getAttribute("src"),
-        alt: img.getAttribute("alt"),
         hasAlt: img.hasAttribute("alt"),
+        width: img.getBoundingClientRect().width,
+        height: img.getBoundingClientRect().height,
       })),
     );
     for (const img of images) {
       expect(img.hasAlt, `Image ${img.src} must have alt attribute`).toBeTruthy();
+      expect(img.width, `Image ${img.src} must have rendered width`).toBeGreaterThan(0);
+      expect(img.height, `Image ${img.src} must have rendered height`).toBeGreaterThan(0);
     }
   });
 
@@ -456,7 +426,7 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
       await page.goto("/", { waitUntil: "domcontentloaded" });
       await page.waitForTimeout(600);
       const calls = await page.evaluate(() => window.__tbosFbqCalls || []);
-      expect(Array.isArray(calls)).toBe(true);
+      expect(calls).toEqual([]);
     }
   });
 
@@ -478,7 +448,7 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
       "/about",
       "/live-batches",
       "/tutoring",
-      "/blog/python-learning-roadmap-beginners",
+      ...articles.map((article) => `/blog/${article.slug}`),
     ];
     for (const route of sampleRoutes) {
       await page.goto(route, { waitUntil: "domcontentloaded" });
@@ -486,6 +456,8 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
       expect(text.toLowerCase()).not.toContain("no registration fee");
       expect(text.toLowerCase()).not.toContain("guaranteed job");
       expect(text.toLowerCase()).not.toContain("100% placement");
+      expect(text.toLowerCase()).not.toContain("completion rates for pre-recorded courses");
+      expect(text.toLowerCase()).not.toContain("students join from pakistan");
       expect(text.toLowerCase()).not.toContain("lorem ipsum");
     }
   });
