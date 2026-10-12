@@ -64,10 +64,12 @@ export function ContactForm({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isSubmittingLockRef = useRef(false);
 
-  const matchedCategory =
-    inquiryCategories.find((c) => c.toLowerCase() === defaultCategory.trim().toLowerCase()) ||
-    inquiryCategories.find((c) => c.toLowerCase().includes(defaultCategory.trim().toLowerCase())) ||
-    (inquiryCategories.includes(defaultCategory) ? defaultCategory : "");
+  const normalizedDefaultCategory = defaultCategory.trim().toLowerCase();
+  const matchedCategory = normalizedDefaultCategory
+    ? inquiryCategories.find((c) => c.toLowerCase() === normalizedDefaultCategory) ||
+      inquiryCategories.find((c) => c.toLowerCase().includes(normalizedDefaultCategory)) ||
+      ""
+    : "";
 
   const {
     register,
@@ -281,7 +283,7 @@ export function ContactForm({
       <Button type="submit" variant="hero" size="xl" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <>
-            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Sending…
+            <Loader2 className="h-5 w-5 animate-spin mr-2" /> Sendingâ¦
           </>
         ) : (
           "Send Message"
