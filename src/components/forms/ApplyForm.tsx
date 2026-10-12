@@ -288,12 +288,17 @@ export function ApplyForm({
 
       {/* Program Context Banner */}
       {(watchedProg || defaultSelected) && (
-        <div className="rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div
+          data-selected-program-banner
+          className="rounded-xl border border-primary/25 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
           <div>
             <span className="text-[10px] font-bold uppercase tracking-wider text-primary block">
               You're Applying For
             </span>
-            <p className="text-sm font-bold text-foreground">{watchedProg || defaultSelected}</p>
+            <p data-selected-program-name className="text-sm font-bold text-foreground">
+              {watchedProg || defaultSelected}
+            </p>
             <p className="text-xs text-muted-foreground">
               Category: {watchedAppType || initialType}
             </p>

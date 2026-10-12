@@ -7,7 +7,14 @@ import { ContactForm } from "@/components/forms/ContactForm";
 import { buildMeta } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
 
+type ContactSearch = {
+  category?: string;
+};
+
 export const Route = createFileRoute("/contact")({
+  validateSearch: (search: Record<string, unknown>): ContactSearch => ({
+    category: typeof search.category === "string" ? search.category : undefined,
+  }),
   head: () => ({
     meta: buildMeta({
       title: "Contact Us | TechBuilt Open School International Online Academy",
@@ -30,6 +37,8 @@ const details = [
 ];
 
 function ContactPage() {
+  const { category } = Route.useSearch();
+
   return (
     <>
       <PageHeader
@@ -83,7 +92,7 @@ function ContactPage() {
           </Reveal>
 
           <Reveal delay={100}>
-            <ContactForm sourcePage="Contact Page" />
+            <ContactForm sourcePage="Contact Page" defaultCategory={category} />
           </Reveal>
         </div>
       </section>

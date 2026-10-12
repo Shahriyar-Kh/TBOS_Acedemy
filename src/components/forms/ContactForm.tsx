@@ -48,7 +48,13 @@ function ErrorText({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs font-medium text-destructive">{msg}</p>;
 }
 
-export function ContactForm({ sourcePage = "Contact" }: { sourcePage?: string }) {
+export function ContactForm({
+  sourcePage = "Contact",
+  defaultCategory = "",
+}: {
+  sourcePage?: string;
+  defaultCategory?: string;
+}) {
   const [submittedData, setSubmittedData] = useState<{
     fullName: string;
     category: string;
@@ -57,6 +63,13 @@ export function ContactForm({ sourcePage = "Contact" }: { sourcePage?: string })
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const isSubmittingLockRef = useRef(false);
+
+  const normalizedDefaultCategory = defaultCategory.trim().toLowerCase();
+  const matchedCategory = normalizedDefaultCategory
+    ? inquiryCategories.find((c) => c.toLowerCase() === normalizedDefaultCategory) ||
+      inquiryCategories.find((c) => c.toLowerCase().includes(normalizedDefaultCategory)) ||
+      ""
+    : "";
 
   const {
     register,
@@ -70,7 +83,7 @@ export function ContactForm({ sourcePage = "Contact" }: { sourcePage?: string })
       fullName: "",
       email: "",
       whatsapp: "",
-      category: "",
+      category: matchedCategory,
       message: "",
     },
   });
