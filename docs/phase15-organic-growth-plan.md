@@ -5,7 +5,7 @@
 **Growth Philosophy**: 100% White-Hat, Sustainable, People-First Digital Reputation.
 
 > [!CAUTION]
-> TechBuilt Open School strictly prohibits black-hat link schemes, automated spam backlinks, private blog networks (PBNs), purchased Fiverr link packages, fake Google Business Profile locations, and fabricated student reviews. Sustainable domain authority is built through genuine educational value, verified alumni satisfaction, and legitimate institutional relationships.
+> TechBuilt Open School strictly prohibits black-hat link schemes, automated spam backlinks, private blog networks (PBNs), purchased link packages, fake Google Business Profile locations, and fabricated student reviews. Sustainable authority should be built through useful educational content, verifiable learner feedback, and legitimate institutional relationships.
 
 ---
 
@@ -57,7 +57,7 @@ Maximize the reach of each core educational article:
 
 ### Phase B: First 30 Days (Indexing Reinforcement & Distribution)
 
-1. **Review GSC Page Indexing**: Verify that all 90 public pages transition from "Discovered" to "Indexed".
+1. **Review GSC Page Indexing**: Track the 89 public HTML pages and investigate valid exclusions rather than assuming immediate indexing.
 2. **Distribute 6 Evergreen Guides**:
    - Share one resource per week across Facebook, Instagram, and LinkedIn.
    - Cross-post adapted summaries on developer communities (Dev.to, Reddit r/learnprogramming where self-promotion rules permit educational resource sharing).

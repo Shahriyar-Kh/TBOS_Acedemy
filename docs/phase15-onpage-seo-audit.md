@@ -11,12 +11,12 @@
 
 | Audit Criterion                 | Pre-Phase 15 State        | Post-Phase 15 State                       | Improvement Note                                           |
 | :------------------------------ | :------------------------ | :---------------------------------------- | :--------------------------------------------------------- |
-| **Total Indexable Pages**       | 84 Pages                  | **90 Pages**                              | Added 6 high-value evergreen educational resources         |
-| **Unique SEO `<title>` Tags**   | 84 / 84                   | **90 / 90 (100%)**                        | Zero duplicate titles across all indexable routes          |
-| **Unique Meta Descriptions**    | 84 / 84                   | **90 / 90 (100%)**                        | Unique, benefit-driven, no repetitive boilerplate          |
-| **Pages with Exactly One H1**   | 84 / 84                   | **90 / 90 (100%)**                        | Clear semantic hierarchy (`<h1>` -> `<h2>` -> `<h3>`)      |
-| **Absolute HTTPS Canonicals**   | 84 / 84                   | **90 / 90 (100%)**                        | Strict canonicals pointing to `https://techbuiltos.online` |
-| **Matching `og:url` Parity**    | 84 / 84                   | **90 / 90 (100%)**                        | Exact string match with canonical URL on every page        |
+| **Total Indexable HTML Pages**  | 83 Pages                  | **89 Pages**                              | Added 6 evergreen educational resources                    |
+| **Unique SEO `<title>` Tags**   | 83 / 83                   | **89 / 89 (100%)**                        | Zero duplicate titles across all indexable routes          |
+| **Unique Meta Descriptions**    | 83 / 83                   | **89 / 89 (100%)**                        | Unique, benefit-driven, no repetitive boilerplate          |
+| **Pages with Exactly One H1**   | 83 / 83                   | **89 / 89 (100%)**                        | Clear semantic hierarchy (`<h1>` -> `<h2>` -> `<h3>`)      |
+| **Absolute HTTPS Canonicals**   | 83 / 83                   | **89 / 89 (100%)**                        | Strict canonicals pointing to `https://techbuiltos.online` |
+| **Matching `og:url` Parity**    | 83 / 83                   | **89 / 89 (100%)**                        | Exact string match with canonical URL on every page        |
 | **`robots.txt` Disallow Rules** | 0 rules (Allow all)       | **Disallow: /admin, /api**                | Explicit crawl prevention for private endpoints            |
 | **Structured Data Coverage**    | Organization, Course, FAQ | **Org, Course, Article, FAQ, Breadcrumb** | Added Article and BreadcrumbList schemas                   |
 | **Broken Internal Links**       | 0                         | **0**                                     | Automated link crawler confirms zero broken links          |
@@ -35,7 +35,7 @@
 
 ### B. Meta Description Conventions
 
-- **Length**: Maintained within 130–160 characters.
+- **Length**: Reviewed for useful, concise search snippets; search engines may rewrite snippets.
 - **Content Authenticity**: Accurately summarizes visible page contents. Highlights live interactive classes, verified tuition fees, structured chapters, or curriculum roadmaps.
 - **Commercial Honesty**: Avoids unsupported promises (no "guaranteed high salaries", no "get hired in 30 days"). Emphasizes trial sessions and transparent admissions review.
 
@@ -44,7 +44,7 @@
 1. **Semantic H1**: Every page contains exactly one `<h1>`. It conveys the core topic clearly.
 2. **Structural H2**: Used for major content sections, curriculum chapters, core pillars, or FAQ headings.
 3. **Detail H3**: Used for individual topic modules, cards, or FAQ questions.
-4. **Zero Missing Headings**: No skipped heading levels (e.g., jumping from H1 to H4 is strictly prevented).
+4. **Heading Review**: The automated gate enforces one H1 per indexable page; section hierarchy is also reviewed during UI acceptance.
 
 ---
 
@@ -107,8 +107,8 @@
 
 ## 4. Crawl & Indexing Audit Conclusion
 
-- **Zero Duplicate Titles**: 0 collisions across 90 pages.
-- **Zero Duplicate Descriptions**: 0 collisions across 90 pages.
+- **Zero Duplicate Titles**: 0 collisions across 89 indexable HTML pages.
+- **Zero Duplicate Descriptions**: 0 collisions across 89 indexable HTML pages.
 - **Zero Multiple H1s**: 0 pages with more than 1 H1.
 - **Zero Missing Canonicals**: 0 pages without an absolute canonical tag.
 - **Zero Tracking URL Pollution**: Canonical tags strictly strip UTM parameters.

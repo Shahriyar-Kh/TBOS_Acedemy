@@ -3,24 +3,24 @@
 **Academy**: TechBuilt Open School International Online Academy  
 **Production Domain**: `https://techbuiltos.online`  
 **Date**: October 2026  
-**Audited Route Count**: 90 Indexable Public Routes + Excluded Private Routes
+**Audited Public Endpoints**: 89 indexable HTML routes + 1 XML sitemap endpoint
 
 ---
 
 ## 1. Summary of Crawl & Indexing Architecture
 
-| Metric                               | Count     | Status                    | Notes                                                                              |
-| :----------------------------------- | :-------- | :------------------------ | :--------------------------------------------------------------------------------- |
-| **Total Indexable Public Routes**    | **90**    | ✅ 100% Crawlable         | All return HTTP 200, valid canonical, unique metadata                              |
-| **Existing Pre-Phase 15 Routes**     | **84**    | ✅ Preserved              | Core static, catalogs, courses, specializations, live cohorts, tutoring, SEO pages |
-| **New Evergreen Resource Routes**    | **6**     | ✅ Added                  | In-depth educational guides under `/blog/$slug`                                    |
-| **Sitemap Entries (`/sitemap.xml`)** | **90**    | ✅ 1:1 Parity             | Exact match with indexable inventory, absolute URLs, no query params               |
-| **Private / Excluded Routes**        | **12+**   | 🔒 Disallowed / Noindex   | `/admin/*`, `/api/*`, preview bridges                                              |
-| **Robots.txt Rules**                 | **Valid** | ✅ Disallow: /admin, /api | Includes canonical `Sitemap: https://techbuiltos.online/sitemap.xml`               |
+| Metric                                | Count     | Status                    | Notes                                                                              |
+| :------------------------------------ | :-------- | :------------------------ | :--------------------------------------------------------------------------------- |
+| **Total Indexable HTML Routes**       | **89**    | ✅ Audited                | All return HTTP 200, valid canonical, unique metadata                              |
+| **Existing Pre-Phase 15 HTML Routes** | **83**    | ✅ Preserved              | Core static, catalogs, courses, specializations, live cohorts, tutoring, SEO pages |
+| **New Evergreen Resource Routes**     | **6**     | ✅ Added                  | In-depth educational guides under `/blog/$slug`                                    |
+| **Sitemap Entries (`/sitemap.xml`)**  | **89**    | ✅ 1:1 Parity             | Exact match with indexable HTML inventory, absolute URLs, no query params          |
+| **Private / Excluded Route Families** | **2**     | 🔒 Disallowed / Noindex   | `/admin/*` and `/api/*`                                                            |
+| **Robots.txt Rules**                  | **Valid** | ✅ Disallow: /admin, /api | Includes canonical `Sitemap: https://techbuiltos.online/sitemap.xml`               |
 
 ---
 
-## 2. Complete Inventory of 90 Indexable Public Routes
+## 2. Complete Inventory of 89 Indexable HTML Routes + Sitemap Endpoint
 
 ### A. Core Brand, Trust & Operational Pages (17 Routes)
 
@@ -31,7 +31,7 @@
 5. `/for-parents` — Parent & Guardian Trust Portal (Safety, Supervision, Support)
 6. `/courses` — Single Courses Catalog (32 foundational technical courses)
 7. `/specializations` — Technical Specializations Catalog (10 career roadmaps)
-8. `/live-batches` — Scheduled Live Cohorts Catalog (Interactive 4-month programs)
+8. `/live-batches` — Scheduled Live Cohorts Catalog (program-specific duration)
 9. `/tutoring` — Academic & Quran Tutoring Catalog (12 subject disciplines)
 10. `/apply` — Student Admissions Application
 11. `/free-demo` — Free 1-Session Demo Trial Request
@@ -131,7 +131,10 @@
 87. `/blog/programming-for-kids-parents-guide` — Programming for Kids and Teenagers: A Parent’s Guide
 88. `/blog/full-stack-developer-roadmap` — Full-Stack Developer Roadmap for Beginners
 89. `/blog/how-to-choose-online-tutor-course` — How to Choose the Right Online Tutor or Technical Course
-90. `/sitemap.xml` — Authoritative XML Sitemap Index (Returns 200, Content-Type: application/xml)
+
+### H. Discovery Endpoint (1 Endpoint)
+
+90. `/sitemap.xml` — audited XML discovery endpoint (not an indexable HTML page)
 
 ---
 
@@ -152,7 +155,7 @@ The following paths are intentionally excluded from indexing, disavowed in `robo
 
 ## 4. Verification Check
 
-- **HTTP Status Check**: 90/90 routes return HTTP 200.
-- **Sitemap XML Parity**: Exactly 90 `<loc>` tags in `sitemap.xml`.
+- **HTTP Status Check**: 90/90 audited public endpoints return HTTP 200.
+- **Sitemap XML Parity**: Exactly 89 `<loc>` tags, matching the 89 indexable HTML routes.
 - **Zero Orphan Pages**: Every single route is cross-linked in header navigation, footer directories, catalog listings, or contextual article sidebars.
 - **Single Canonical Check**: Every indexable page defines exactly one absolute HTTPS canonical URL pointing to `https://techbuiltos.online`.

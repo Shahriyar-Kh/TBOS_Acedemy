@@ -31,7 +31,7 @@
    - **Name / Host**: `@` (or `techbuiltos.online`)
    - **Value / Content**: Paste the exact verification token copied from Search Console.
    - **TTL**: `Auto` or `3600` (1 hour).
-4. Save the DNS record. Allow 2–15 minutes for worldwide DNS propagation.
+4. Save the DNS record. DNS propagation can be quick but may take longer depending on the provider and cached TTL.
 5. In Search Console, click **Verify**.
 6. When verified, Search Console will confirm **"Ownership verified"**.
 
@@ -44,7 +44,7 @@ For granular URL inspection and specific HTTPS tracking:
 1. Click **Add Property** again.
 2. Choose **URL Prefix**.
 3. Enter `https://techbuiltos.online/`.
-4. Click **Continue**. Because the Domain property is already verified via DNS, Google will automatically verify the URL-prefix property immediately.
+4. Click **Continue** and complete any verification method Search Console offers for that property.
 
 ---
 
@@ -58,13 +58,13 @@ For granular URL inspection and specific HTTPS tracking:
 3. Click **Submit**.
 4. Verify the status:
    - Google will show status: **Success**.
-   - Discovered pages count will report **90** (matching all 90 public indexable routes).
+   - The submitted sitemap contains **89 URLs**, matching the 89 public indexable HTML routes.
 
 ---
 
 ## Step 5: Test and Validate `robots.txt`
 
-1. Open the [Google robots.txt Tester Tool](https://www.google.com/webmasters/tools/robots-testing-tool).
+1. Open the **robots.txt report** for the verified property in Search Console and confirm that Google fetched the file without parsing errors.
 2. Confirm the active rules loaded from `https://techbuiltos.online/robots.txt`:
 
    ```
@@ -76,14 +76,12 @@ For granular URL inspection and specific HTTPS tracking:
    Sitemap: https://techbuiltos.online/sitemap.xml
    ```
 
-3. Test crawling for priority public URLs:
+3. Use **URL Inspection → Test Live URL** for priority public URLs and confirm they are not blocked:
    - `/` -> **Allowed**
    - `/courses/python` -> **Allowed**
    - `/specializations/full-stack-developer` -> **Allowed**
    - `/blog/python-learning-roadmap-beginners` -> **Allowed**
-4. Test crawling for private paths:
-   - `/admin/login` -> **Blocked (Disallow: /admin)**
-   - `/api/admissions` -> **Blocked (Disallow: /api)**
+4. Remember that `robots.txt` controls crawling, not guaranteed de-indexing. Admin HTML routes also use `noindex`; API routes return non-HTML responses.
 
 ---
 
@@ -119,21 +117,21 @@ Use the **URL Inspection Tool** (search bar at the top of GSC) to inspect and re
 
 Monitor these standard Search Console reports weekly:
 
-| Report Category                               | Expected Healthy Status                 | Remediation if Flagged                                                    |
-| :-------------------------------------------- | :-------------------------------------- | :------------------------------------------------------------------------ |
-| **Indexed**                                   | Growing toward all 90 public pages      | Healthy state. No action needed.                                          |
-| **Crawled — currently not indexed**           | 0 or temporary during initial discovery | Normal for brand new URLs; typically indexes within 7–14 days.            |
-| **Discovered — currently not indexed**        | 0 or temporary                          | Indicates Google has queued the URL. Ensure internal links point to it.   |
-| **Duplicate without user-selected canonical** | **0 (Zero)**                            | Our canonical tags strictly prevent this.                                 |
-| **Alternate page with proper canonical**      | 0                                       | Our canonical tags strictly resolve to clean paths.                       |
-| **Soft 404**                                  | **0 (Zero)**                            | Any non-existent route returns a real 404 component.                      |
-| **Redirect errors**                           | **0 (Zero)**                            | All sitemap links point to final 200 destinations.                        |
-| **Server errors (5xx)**                       | **0 (Zero)**                            | Monitored through cloud runtime logs.                                     |
-| **HTTPS Report**                              | 100% HTTPS valid                        | Zero mixed content or unencrypted assets.                                 |
-| **Core Web Vitals**                           | 100% "Good" URLs                        | LCP < 2.5s, CLS < 0.10.                                                   |
-| **Enhancements (Structured Data)**            | Valid Course, Article, FAQ schemas      | Inspect warnings; resolve any missing recommended schema fields.          |
-| **Manual Actions**                            | **No issues detected**                  | Strict adherence to helpful content guidelines guarantees clean standing. |
-| **Security Issues**                           | **No issues detected**                  | Zero malware, zero deceptive scripts.                                     |
+| Report Category                               | Expected Healthy Status            | Remediation if Flagged                                                   |
+| :-------------------------------------------- | :--------------------------------- | :----------------------------------------------------------------------- |
+| **Indexed**                                   | Growing toward all 89 public pages | Review exclusions and crawl status before requesting re-indexing.        |
+| **Crawled — currently not indexed**           | Review if persistent               | Improve usefulness and internal links; indexing is never guaranteed.     |
+| **Discovered — currently not indexed**        | Review if persistent               | Confirm sitemap discovery, internal links, and crawl accessibility.      |
+| **Duplicate without user-selected canonical** | Investigate occurrences            | Canonicals are hints; review duplication and internal URL consistency.   |
+| **Alternate page with proper canonical**      | Review for intentional duplicates  | Confirm Google selected the intended canonical.                          |
+| **Soft 404**                                  | Investigate occurrences            | Confirm missing routes return a real 404 response, not only a component. |
+| **Redirect errors**                           | Investigate occurrences            | Keep sitemap URLs on final 200 destinations.                             |
+| **Server errors (5xx)**                       | Investigate immediately            | Review Cloudflare deployment and runtime logs.                           |
+| **HTTPS Report**                              | Monitor reported issues            | Fix mixed content or certificate problems if reported.                   |
+| **Core Web Vitals**                           | Monitor available field data       | CrUX data may take time and requires sufficient real traffic.            |
+| **Enhancements (Structured Data)**            | Valid Course, Article, FAQ schemas | Inspect warnings; resolve any missing recommended schema fields.         |
+| **Manual Actions**                            | **No issues detected**             | Investigate immediately if Search Console reports an issue.              |
+| **Security Issues**                           | **No issues detected**             | Investigate immediately if Search Console reports an issue.              |
 
 ---
 
@@ -142,7 +140,7 @@ Monitor these standard Search Console reports weekly:
 - [ ] **Day 1**: Verify DNS TXT record and confirm Search Console ownership.
 - [ ] **Day 1**: Submit `https://techbuiltos.online/sitemap.xml` in Search Console.
 - [ ] **Day 2**: Inspect top 12 priority URLs and submit "Request Indexing".
-- [ ] **Day 7**: Review "Sitemaps" report; check discovered count (target: 90 URLs).
+- [ ] **Day 7**: Review "Sitemaps" report; check discovered count (target: 89 URLs).
 - [ ] **Day 14**: Check "Page Indexing" report. Confirm initial pages transitioning from "Discovered" to "Indexed".
 - [ ] **Day 21**: Inspect structured data enhancements (Articles, Courses, FAQs, Breadcrumbs) for zero parsing errors.
 - [ ] **Day 30**: Review "Performance" report for initial organic search impressions, queries, and click-through rates.

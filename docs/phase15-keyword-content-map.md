@@ -10,7 +10,7 @@
 
 1. **One Primary Intent per Page**: Prevents keyword cannibalization where multiple pages compete against each other for the same query.
 2. **Honest Delivery Context**: Online classes delivered live via Zoom/Google Meet. No false claims of physical campuses or offline centers.
-3. **Geographic Honesty**: Explicitly targeting learners across Pakistan (Karachi, Lahore, Islamabad, etc.) and international expat communities worldwide (Middle East, UK, Europe, USA), emphasizing that all instruction is live online.
+3. **Geographic Honesty**: Target learners in Pakistan and abroad without claiming unverified enrollment locations; emphasize that instruction is delivered online.
 4. **Commercial Transparency**: Honest mentions of actual tuition (PKR 20k/15k monthly for specializations), 1-session Free Demo, and admissions schedule review.
 
 ---
@@ -102,7 +102,7 @@
 - **Primary Search Intent**: "Live online coding batches"
 - **Supporting Search Intent**: "scheduled online programming cohorts", "interactive live coding classes"
 - **Title**: `Live Online Batches & Cohorts | TechBuilt Open School`
-- **Description**: `Join scheduled live cohorts with 4 interactive classes per week, hands-on capstone projects, and real-time mentor code reviews.`
+- **Description**: `Explore scheduled live cohorts with program-specific weekly class frequency, hands-on projects, and instructor guidance.`
 - **Internal-Link Sources**: Header navigation, homepage live banner, footer.
 - **Conversion Destination**: `/live-batches/$slug`, `/free-demo`.
 
@@ -111,11 +111,11 @@
 ### Page 8: 100 Days Complete Python Cohort (`/live-batches/100-days-complete-python`)
 
 - **Page Type**: Live Cohort Detail Page
-- **Target Audience**: Learners committing to an intensive 4-month structured programming routine.
+- **Target Audience**: Learners committing to a structured 100-day programming routine.
 - **Primary Search Intent**: "100 days of code python cohort"
 - **Supporting Search Intent**: "100 days complete python live classes", "python cohort mentorship"
 - **Title**: `100 Days of Complete Python Live Cohort | TechBuilt Open School`
-- **Description**: `An intensive 4-month live cohort covering Python syntax, data structures, OOP, web APIs, and portfolio projects with 4 classes per week.`
+- **Description**: `A structured 100-day live cohort covering Python syntax, data structures, OOP, web APIs, and portfolio projects with 3–4 classes per week.`
 - **Internal-Link Sources**: `/live-batches`, `/blog/how-to-learn-python-100-days`, `/courses/python`.
 - **Conversion Destination**: `/apply?type=Live+Batch&selected=100-days-complete-python`, `/free-demo`.
 
