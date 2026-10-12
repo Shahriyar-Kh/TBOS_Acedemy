@@ -1,87 +1,117 @@
-name: TBOS Production SEO Health & Indexing Audit
+name: TBOS Production SEO Health & Lighthouse Audit
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
   schedule:
-    # Run weekly on Mondays at 06:00 UTC
+    # Weekly on Mondays at 06:00 UTC.
     - cron: "0 6 * * 1"
 
 jobs:
   seo-health-audit:
-    name: SEO Health & Structured Data Audit
+    name: SEO, structured data, links, and performance
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
 
       - name: Setup Bun runtime
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
+      - name: Install dependencies from lockfile
+        run: bun install --frozen-lockfile
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run TypeScript validation
-        run: npm run typecheck
+      - name: Validate TypeScript
+        run: bun run typecheck
 
       - name: Build production application
-        run: npm run build
+        run: bun run build
 
-      - name: Prepare preview server
-        run: node scripts/prepare-preview.cjs
-
-      - name: Start production preview in background
+      - name: Start local production preview
         run: |
-          npx vite preview --host 127.0.0.1 --port 4173 &
-          sleep 5
+          node scripts/prepare-preview.cjs
+          bunx vite preview --host 127.0.0.1 --port 4173 > /tmp/tbos-preview.log 2>&1 &
+          echo $! > /tmp/tbos-preview.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/tbos-preview.log
+          exit 1
 
-      - name: Run Deterministic SEO Audit Gate
+      - name: Run local deterministic SEO gates
         env:
-          TEST_URL: "http://127.0.0.1:4173"
-        run: bun scripts/seo-audit.ts
+          TEST_URL: http://127.0.0.1:4173
+        run: |
+          bun run seo:audit
+          bun run seo:links
+          bun run seo:metadata
+          bun run seo:structured-data
+          bun run seo:performance
 
-      - name: Run Internal Link & Orphan Page Audit
+      - name: Run Phase 15 acceptance suite
         env:
-          TEST_URL: "http://127.0.0.1:4173"
-        run: bun scripts/seo-links.ts
+          TEST_URL: http://127.0.0.1:4173
+        run: bunx playwright test tests/e2e/phase15-complete-seo.spec.ts --reporter=list
 
-      - name: Run Metadata Duplication & Quality Audit
+      - name: Audit live production SEO
+        if: github.event_name != 'pull_request'
         env:
-          TEST_URL: "http://127.0.0.1:4173"
-        run: bun scripts/seo-metadata.ts
+          TEST_URL: https://techbuiltos.online
+        run: |
+          bun run seo:audit
+          bun run seo:links
+          bun run seo:metadata
+          bun run seo:structured-data
+          bun run seo:performance
 
-      - name: Run Structured Data & Schema.org Audit
-        env:
-          TEST_URL: "http://127.0.0.1:4173"
-        run: bun scripts/seo-structured-data.ts
+      - name: Run real Lighthouse CI against production
+        if: github.event_name != 'pull_request'
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            https://techbuiltos.online/
+            https://techbuiltos.online/courses
+            https://techbuiltos.online/courses/python
+            https://techbuiltos.online/specializations/full-stack-developer
+            https://techbuiltos.online/blog/python-learning-roadmap-beginners
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: false
 
-      - name: Generate SEO Health Report
+      - name: Write audit summary
         if: always()
         run: |
           mkdir -p audit-reports
-          echo "# TBOS Academy Production SEO Health Report" > audit-reports/seo-health-summary.md
-          echo "Date: $(date -u)" >> audit-reports/seo-health-summary.md
-          echo "Status: Complete" >> audit-reports/seo-health-summary.md
-          echo "- Indexable routes audited: 90" >> audit-reports/seo-health-summary.md
-          echo "- Robots.txt and sitemap parity: Verified" >> audit-reports/seo-health-summary.md
-          echo "- Canonicals and og:url: Verified" >> audit-reports/seo-health-summary.md
-          echo "- Structured Data (Organization, Course, Article, FAQ): Verified" >> audit-reports/seo-health-summary.md
+          {
+            echo "# TBOS Production SEO Health Report"
+            echo
+            echo "- Date: $(date -u --iso-8601=seconds)"
+            echo "- Job status at report time: ${{ job.status }}"
+            echo "- Indexable HTML routes expected: 89"
+            echo "- Additional audited public endpoint: /sitemap.xml"
+            echo "- Detailed results: inspect the workflow log and Lighthouse artifacts"
+          } > audit-reports/seo-health-summary.md
 
-      - name: Upload SEO Audit Artifact
+      - name: Upload SEO audit summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: tbos-seo-health-report
+          name: tbos-seo-health-summary
           path: audit-reports/
-          retention-days: 14
+          retention-days: 30
