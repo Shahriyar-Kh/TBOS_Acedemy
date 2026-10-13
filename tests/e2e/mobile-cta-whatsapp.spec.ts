@@ -128,8 +128,16 @@ test.describe("Mobile CTA & Program-Specific WhatsApp Context", () => {
     await page.goto("/live-batches/100-days-complete-python", { waitUntil: "domcontentloaded" });
     await page.waitForTimeout(400);
 
+    // Dismiss cookie consent banner if present so mobile sticky CTA interaction is unobstructed
+    const noThanksBtn = page.getByRole("button", { name: /no thanks/i });
+    if (await noThanksBtn.isVisible()) {
+      await noThanksBtn.click();
+      await page.waitForTimeout(200);
+    }
+
     const stickyCta = page.locator('[data-testid="live-program-mobile-cta"]');
     const applyBtn = stickyCta.getByRole("link", { name: /apply now/i });
+    await expect(applyBtn).toBeVisible();
     await applyBtn.click();
 
     await expect(page).toHaveURL(/\/apply\?/);
