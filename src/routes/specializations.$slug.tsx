@@ -27,6 +27,7 @@ import { getSpecializationCatalogVisual, deriveSpecializationTags } from "@/data
 import { getCmsSpecializationBySlugFn } from "@/lib/cmsFunctions";
 import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
+import { getSpecializationWhatsAppMessage } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/specializations/$slug")({
@@ -441,9 +442,7 @@ function SpecializationDetail() {
                     className="w-full text-xs text-muted-foreground hover:text-foreground"
                   >
                     <a
-                      href={whatsappLink(
-                        `Hello TechBuilt Open School, I would like to inquire about the ${spec.title} specialization track.`,
-                      )}
+                      href={whatsappLink(getSpecializationWhatsAppMessage(spec))}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

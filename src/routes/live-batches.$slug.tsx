@@ -25,6 +25,7 @@ import { getCmsLiveOfferBySlugFn } from "@/lib/cmsFunctions";
 import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
 import { trackMetaViewContent } from "@/lib/marketing";
+import { getLiveBatchWhatsAppMessage } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/live-batches/$slug")({
   loader: async ({ params }) => {
@@ -108,7 +109,7 @@ function LiveOfferDetail() {
   const offerFeeStr =
     typeof offer.offerFee === "number" ? offer.offerFee.toLocaleString() : (offer.offerFee ?? "0");
 
-  const whatsappInquiryText = visual.whatsappMessage;
+  const whatsappInquiryText = getLiveBatchWhatsAppMessage(offer);
 
   return (
     <>
@@ -383,6 +384,9 @@ function LiveOfferDetail() {
 
       {/* 10. Global CTA Section */}
       <CtaSection />
+
+      {/* Mobile bottom clearance for sticky conversion bar */}
+      <div className="h-20 lg:hidden" aria-hidden="true" />
 
       {/* 11. Mobile Sticky Conversion Bar */}
       <LiveProgramMobileCTA offer={offer} />

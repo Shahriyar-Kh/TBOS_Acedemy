@@ -2,6 +2,14 @@
 // Business data (fees, roadmaps, descriptions, schedule notes) remains in src/data/liveOffers.ts or CMS.
 // This module provides display-only visuals, tailored hero metrics, capstone guidance, and accents.
 
+import { liveOffers } from "@/data/liveOffers";
+import { getLiveBatchWhatsAppMessage } from "@/lib/whatsapp";
+
+function getVisualWhatsAppMessage(slug: string, fallback: string): string {
+  const offer = liveOffers.find((o) => o.slug === slug);
+  return offer ? getLiveBatchWhatsAppMessage(offer) : fallback;
+}
+
 export type LiveProgramVisual = {
   slug: string;
   image: string;
@@ -54,8 +62,10 @@ export const liveProgramVisuals: Record<string, LiveProgramVisual> = {
       milestone: "Complete GUI desktop project built independently by the student.",
     },
     highlightsTitle: "Why Young Learners & Parents Choose This Cohort",
-    whatsappMessage:
-      "Hello TechBuilt Open School, I would like information about the Python Young Developers live program and Free Demo.",
+    whatsappMessage: getVisualWhatsAppMessage(
+      "python-young-developers",
+      "Hello TechBuilt Open School, I’m interested in the Python Young Developers Live Batch (PKR 5,000/month). Please share the class schedule, admission process, and Free Demo details.\n\nProgram: Python Young Developers\nPage: https://techbuiltos.online/live-batches/python-young-developers",
+    ),
     accentClasses: {
       badgeBg: "bg-cyan/15",
       badgeText: "text-cyan",
@@ -89,8 +99,10 @@ export const liveProgramVisuals: Record<string, LiveProgramVisual> = {
       milestone: "Production-ready, decomposed Core Python application architecture.",
     },
     highlightsTitle: "Why This Structured 100-Day Series Works",
-    whatsappMessage:
-      "Hello TechBuilt Open School, I would like information about the 100 Days Complete Python program and Free Demo.",
+    whatsappMessage: getVisualWhatsAppMessage(
+      "100-days-complete-python",
+      "Hello TechBuilt Open School, I’m interested in the 100 Days Complete Python Live Batch (PKR 5,000/month). Please share the class schedule, admission process, and Free Demo details.\n\nProgram: 100 Days Complete Python\nPage: https://techbuiltos.online/live-batches/100-days-complete-python",
+    ),
     accentClasses: {
       badgeBg: "bg-gold/15",
       badgeText: "text-gold-foreground",
@@ -124,8 +136,10 @@ export const liveProgramVisuals: Record<string, LiveProgramVisual> = {
       milestone: "Documented analysis, validated dashboard, and executive presentation.",
     },
     highlightsTitle: "Built for Practical, Business-Ready Data Analysis",
-    whatsappMessage:
-      "Hello TechBuilt Open School, I would like information about the Data Analyst Professional Program and Free Demo.",
+    whatsappMessage: getVisualWhatsAppMessage(
+      "python-data-analysis-research-ai",
+      "Hello TechBuilt Open School, I’m interested in the Data Analyst Professional Program (PKR 10,000/month). Please share the class schedule, admission process, and Free Demo details.\n\nProgram: Data Analyst Professional Program\nPage: https://techbuiltos.online/live-batches/python-data-analysis-research-ai",
+    ),
     accentClasses: {
       badgeBg: "bg-teal-500/15",
       badgeText: "text-teal-400",

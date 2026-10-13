@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getTutoringBySlug, tutoringSubjects } from "@/data/tutoring";
 import { site, whatsappLink } from "@/data/site";
+import { getTutoringWhatsAppMessage } from "@/lib/whatsapp";
 import { getCmsTutoringBySlugFn } from "@/lib/cmsFunctions";
 import { breadcrumbJsonLd, buildMeta } from "@/lib/seo";
 
@@ -403,9 +404,7 @@ function TutoringDetailPage() {
 
                 <Button asChild variant="ghost" size="sm" className="mt-4 w-full text-xs">
                   <a
-                    href={whatsappLink(
-                      `Hello TechBuilt Open School, I would like information about ${subject.title} tutoring.`,
-                    )}
+                    href={whatsappLink(getTutoringWhatsAppMessage(subject))}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

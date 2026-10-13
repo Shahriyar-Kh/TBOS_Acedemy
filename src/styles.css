@@ -428,3 +428,11 @@
     transition-delay: 0ms !important;
   }
 }
+
+/* Ensure floating WhatsApp widget is hidden on mobile below 768px whenever a sticky CTA exists */
+@media (max-width: 767.98px) {
+  body:has([data-sticky-cta="true"]) [data-testid="floating-whatsapp-btn"],
+  body:has([data-mobile-sticky-cta="true"]) [data-testid="floating-whatsapp-btn"] {
+    display: none !important;
+  }
+}

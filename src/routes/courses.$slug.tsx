@@ -28,6 +28,7 @@ import { getCourseCatalogVisual } from "@/data/catalogVisuals";
 import { getCmsCourseBySlugFn } from "@/lib/cmsFunctions";
 import { breadcrumbJsonLd, buildMeta, courseJsonLd } from "@/lib/seo";
 import { site, whatsappLink } from "@/data/site";
+import { getCourseWhatsAppMessage } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/courses/$slug")({
   loader: async ({ params }) => {
@@ -451,9 +452,7 @@ function CourseDetail() {
                     className="w-full text-xs text-muted-foreground hover:text-foreground"
                   >
                     <a
-                      href={whatsappLink(
-                        `Hello TechBuilt Open School, I have a question about the ${course.title} course.`,
-                      )}
+                      href={whatsappLink(getCourseWhatsAppMessage(course))}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
