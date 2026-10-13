@@ -11,6 +11,28 @@ export default defineConfig({
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+    // Public catalogue and SEO pages are deterministic. Generate them at build time so
+    // Cloudflare serves HTML as static assets instead of spending Worker CPU on every
+    // crawler/user request. Keep authenticated, API, and query-driven form routes on SSR.
+    prerender: {
+      enabled: true,
+      autoStaticPathsDiscovery: true,
+      crawlLinks: true,
+      concurrency: 4,
+      retryCount: 2,
+      retryDelay: 1_000,
+      failOnError: true,
+      filter: ({ path }: { path: string }) => {
+        const pathname = path.split(/[?#]/, 1)[0];
+        return (
+          !pathname.startsWith("/admin") &&
+          !pathname.startsWith("/api") &&
+          pathname !== "/apply" &&
+          pathname !== "/contact" &&
+          pathname !== "/free-demo"
+        );
+      },
+    },
   },
   nitro: {
     preset: "cloudflare-module",
