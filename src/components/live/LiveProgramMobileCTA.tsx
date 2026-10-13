@@ -10,7 +10,10 @@ export function LiveProgramMobileCTA({ offer }: { offer: LiveOffer }) {
   return (
     <div
       aria-label="Quick enrollment actions"
-      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden border-t border-border bg-card/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-card backdrop-blur-md"
+      data-sticky-cta="true"
+      data-mobile-sticky-cta="true"
+      data-testid="live-program-mobile-cta"
+      className="fixed bottom-0 left-0 right-0 z-30 lg:hidden border-t border-border bg-card/95 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] shadow-card backdrop-blur-md"
     >
       <div className="mx-auto flex max-w-md items-center justify-between gap-3">
         <div className="min-w-0">
@@ -44,7 +47,7 @@ export function LiveProgramMobileCTA({ offer }: { offer: LiveOffer }) {
                 selected: offer.title,
               }}
             >
-              Apply <ArrowRight className="h-3 w-3 ml-1" />
+              Apply Now <ArrowRight className="h-3 w-3 ml-1" />
             </Link>
           </Button>
         </div>
