@@ -16,6 +16,9 @@ export default defineConfig({
     // crawler/user request. Keep authenticated, API, and query-driven form routes on SSR.
     prerender: {
       enabled: true,
+      // Canonical URLs do not use trailing slashes. Emit /route.html so Cloudflare
+      // serves /route directly instead of redirecting through /route/index.html.
+      autoSubfolderIndex: false,
       autoStaticPathsDiscovery: true,
       crawlLinks: true,
       concurrency: 4,
