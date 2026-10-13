@@ -13,6 +13,7 @@ declare global {
   interface Window {
     fbq?: MetaFbq;
     _fbq?: MetaFbq;
+    __tbosMarketingConsent?: MarketingConsent;
     __tbosMetaPixelInitialized?: string;
     __tbosLastPageView?: { key: string; at: number };
     __tbosLastViewContent?: { key: string; at: number };
@@ -20,12 +21,46 @@ declare global {
 }
 
 const ATTRIBUTION_KEY = "tbos_marketing_attribution_v1";
+const MARKETING_CONSENT_KEY = "tbos_marketing_consent_v1";
 const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
 
 type MarketingAttribution = Partial<Record<(typeof UTM_KEYS)[number], string>>;
+export type MarketingConsent = "granted" | "denied";
+
+export function getMarketingConsent(): MarketingConsent | null {
+  if (typeof window === "undefined") return null;
+  if (window.__tbosMarketingConsent) return window.__tbosMarketingConsent;
+
+  try {
+    const stored = window.localStorage.getItem(MARKETING_CONSENT_KEY);
+    if (stored === "granted" || stored === "denied") {
+      window.__tbosMarketingConsent = stored;
+      return stored;
+    }
+  } catch {
+    // Storage can be unavailable in hardened browser modes. Consent remains unset.
+  }
+
+  return null;
+}
+
+export function setMarketingConsent(consent: MarketingConsent) {
+  if (typeof window === "undefined") return;
+  window.__tbosMarketingConsent = consent;
+
+  try {
+    window.localStorage.setItem(MARKETING_CONSENT_KEY, consent);
+  } catch {
+    // The in-memory choice still applies for the current page session.
+  }
+}
 
 function getPixelId() {
   return (import.meta.env.VITE_META_PIXEL_ID || "").trim();
+}
+
+export function isMetaPixelConfigured() {
+  return Boolean(getPixelId());
 }
 
 export function captureMarketingAttribution() {
@@ -77,6 +112,7 @@ export function withMarketingAttribution(sourcePage: string) {
 
 export function initMetaPixel() {
   if (typeof window === "undefined" || typeof document === "undefined") return false;
+  if (getMarketingConsent() !== "granted") return false;
 
   const pixelId = getPixelId();
   if (!pixelId) return false;
@@ -115,12 +151,13 @@ export function initMetaPixel() {
 }
 
 function trackMeta(eventName: "PageView" | "ViewContent" | "Lead", data?: MetaEventData) {
-  if (!initMetaPixel() || !window.fbq) return;
+  if (!initMetaPixel() || !window.fbq) return false;
   if (data && Object.keys(data).length > 0) {
     window.fbq("track", eventName, data);
   } else {
     window.fbq("track", eventName);
   }
+  return true;
 }
 
 export function trackMetaPageView() {
@@ -129,8 +166,9 @@ export function trackMetaPageView() {
   const key = `${window.location.pathname}${window.location.search}`;
   const previous = window.__tbosLastPageView;
   if (previous?.key === key && now - previous.at < 1000) return;
-  window.__tbosLastPageView = { key, at: now };
-  trackMeta("PageView");
+  if (trackMeta("PageView")) {
+    window.__tbosLastPageView = { key, at: now };
+  }
 }
 
 export function trackMetaViewContent({
@@ -149,14 +187,16 @@ export function trackMetaViewContent({
   const key = `${window.location.pathname}:${contentName}`;
   const previous = window.__tbosLastViewContent;
   if (previous?.key === key && now - previous.at < 1000) return;
-  window.__tbosLastViewContent = { key, at: now };
 
-  trackMeta("ViewContent", {
+  const tracked = trackMeta("ViewContent", {
     content_name: contentName,
     content_category: contentCategory,
     ...(typeof value === "number" ? { value } : {}),
     currency,
   });
+  if (tracked) {
+    window.__tbosLastViewContent = { key, at: now };
+  }
 }
 
 export function trackMetaLead({

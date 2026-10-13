@@ -412,19 +412,28 @@ test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vital
     expect(href).toContain("selected=Python");
   });
 
-  // 27. Meta Pixel behaviour remains unchanged
-  test("27. Meta Pixel behaviour remains unchanged", async ({ page }) => {
+  // 27. Meta Pixel remains disabled until explicit marketing consent
+  test("27. Meta Pixel requires explicit marketing consent", async ({ page }) => {
     const configuredPixelId = (process.env.VITE_META_PIXEL_ID || "").trim();
+    await installFbqSpy(page);
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(600);
+
     if (configuredPixelId) {
-      await installFbqSpy(page);
-      await page.goto("/", { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(600);
-      const calls = await page.evaluate(() => window.__tbosFbqCalls || []);
-      expect(calls.some((c) => c[0] === "track" && c[1] === "PageView")).toBeTruthy();
+      const callsBeforeConsent = await page.evaluate(() => window.__tbosFbqCalls || []);
+      expect(callsBeforeConsent).toEqual([]);
+
+      await page.getByRole("button", { name: "Allow marketing" }).click();
+      await expect
+        .poll(() =>
+          page.evaluate(() =>
+            (window.__tbosFbqCalls || []).some(
+              (call) => call[0] === "track" && call[1] === "PageView",
+            ),
+          ),
+        )
+        .toBe(true);
     } else {
-      await installFbqSpy(page);
-      await page.goto("/", { waitUntil: "domcontentloaded" });
-      await page.waitForTimeout(600);
       const calls = await page.evaluate(() => window.__tbosFbqCalls || []);
       expect(calls).toEqual([]);
     }
