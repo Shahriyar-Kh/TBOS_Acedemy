@@ -177,6 +177,7 @@ test.describe("Phase 12E: Forms, Conversion UX & Lead Delivery Reliability", () 
   // Test 7: Meta Lead fires only after successful response
   test("7. Meta Lead fires only after successful response", async ({ page }) => {
     await installFbqSpy(page);
+    const configuredPixelId = (process.env.VITE_META_PIXEL_ID || "").trim();
 
     let allowSuccess = false;
     await page.route("**/api/admissions", async (route) => {
@@ -196,6 +197,9 @@ test.describe("Phase 12E: Forms, Conversion UX & Lead Delivery Reliability", () 
     });
 
     await navigateAndWait(page, "/apply");
+    if (configuredPixelId) {
+      await page.getByRole("button", { name: "Allow marketing" }).click();
+    }
 
     await page.locator("#studentName").fill("Meta Lead Test");
     await page.locator("#email").fill("metalead@example.com");
@@ -209,8 +213,6 @@ test.describe("Phase 12E: Forms, Conversion UX & Lead Delivery Reliability", () 
     // Submit failure
     await page.getByRole("button", { name: /submit application/i }).click();
     await expect(page.locator('[role="alert"]')).toBeVisible();
-
-    const configuredPixelId = (process.env.VITE_META_PIXEL_ID || "").trim();
 
     // Verify NO Lead event fired on failure
     if (configuredPixelId) {
