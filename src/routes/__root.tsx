@@ -15,13 +15,11 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Header } from "../components/Header";
 import { Footer } from "../components/Footer";
 import { WhatsAppButton } from "../components/WhatsAppButton";
+import { MarketingConsentBanner } from "../components/MarketingConsentBanner";
 import { Toaster } from "../components/ui/sonner";
 import { site } from "../data/site";
 import { AdminAuthProvider } from "../lib/adminAuthContext";
-import {
-  captureMarketingAttribution,
-  trackMetaPageView,
-} from "../lib/marketing";
+import { captureMarketingAttribution, trackMetaPageView } from "../lib/marketing";
 
 function NotFoundComponent() {
   return (
@@ -181,6 +179,7 @@ function RootComponent() {
           {!isAdminRoute && <Footer />}
         </div>
         {!isAdminRoute && <WhatsAppButton />}
+        {!isAdminRoute && <MarketingConsentBanner />}
         <Toaster position="top-center" richColors />
       </AdminAuthProvider>
     </QueryClientProvider>

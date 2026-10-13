@@ -70,6 +70,10 @@ test.describe("Phase 11 Meta Ads launch readiness", () => {
     );
     await page.waitForTimeout(1000);
 
+    if (pixelId) {
+      await page.getByRole("button", { name: "Allow marketing" }).click();
+    }
+
     await page.locator("#c-name").fill("TBOS Attribution Check");
     await page.locator("#c-email").fill("tbos-attribution@example.com");
     await page.locator("#c-wa").fill("+92 300 0000000");
@@ -106,6 +110,7 @@ test.describe("Phase 11 Meta Ads launch readiness", () => {
 
     await installFbqSpy(page);
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.getByRole("button", { name: "Allow marketing" }).click();
 
     await expect
       .poll(

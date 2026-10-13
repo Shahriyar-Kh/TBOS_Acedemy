@@ -37,7 +37,7 @@ async function runLinkAudit() {
         anchors.map((a) => a.getAttribute("href") || "").filter(Boolean),
       );
 
-      for (let rawHref of hrefs) {
+      for (const rawHref of hrefs) {
         // Strip hash
         const cleanHref = rawHref.split("#")[0].split("?")[0];
         if (!cleanHref) continue;

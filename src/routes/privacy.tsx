@@ -43,7 +43,7 @@ const sections = [
   },
   {
     h: "7. Cookies, analytics & advertising measurement",
-    p: "Our website may use essential browser storage and, when enabled, advertising or measurement technologies such as Meta Pixel to understand campaign performance and actions such as viewing a program or submitting an enquiry. Campaign parameters such as UTM source, medium, campaign and content may be retained with an admissions submission for attribution. These measurement tools are secondary to the admissions record itself.",
+    p: "Our website may use essential browser storage. Optional advertising or measurement technologies such as Meta Pixel stay disabled unless you select Allow marketing. If enabled, they help us understand campaign performance and actions such as viewing a program or submitting an enquiry. Campaign parameters such as UTM source, medium, campaign and content may be retained with an admissions submission for attribution. These measurement tools are secondary to the admissions record itself.",
   },
   {
     h: "8. Contact us",
