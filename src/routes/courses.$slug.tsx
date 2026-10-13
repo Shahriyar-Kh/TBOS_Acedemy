@@ -45,12 +45,12 @@ export const Route = createFileRoute("/courses/$slug")({
     if (!course) return { meta: buildMeta({ title: "Course", description: "Course details." }) };
     const approvedCourse = getCourse(course.slug);
     const title =
-      course.seoTitle ||
       approvedCourse?.seoTitle ||
+      course.seoTitle ||
       `${course.title} Course Online | TechBuilt Open School`;
     const description =
-      course.seoDescription ||
       approvedCourse?.seoDescription ||
+      course.seoDescription ||
       `${course.summary} ${course.priceNote}.`;
     return {
       meta: buildMeta({
