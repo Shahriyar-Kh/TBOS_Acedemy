@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { adminNoIndexMeta } from "@/lib/seo";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAdminAuth } from "@/lib/adminAuthContext";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { generateIcsCalendar, downloadIcsFile } from "@/lib/icalendar";
+import { liveOffers } from "@/data/liveOffers";
+import { specializations } from "@/data/specializations";
+import { courses } from "@/data/courses";
+import { tutoringSubjects } from "@/data/tutoring";
 import {
   Users,
   Search,
@@ -101,6 +105,7 @@ export function AdminStudentsPage() {
     mode: "group" as "group" | "one_on_one",
     batchId: "",
     instructorId: "",
+    instructorName: "",
     startDate: new Date().toISOString().split("T")[0],
     expectedEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
 
@@ -122,6 +127,62 @@ export function AdminStudentsPage() {
 
   const [wizardData, setWizardData] = useState(initialWizardData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCustomProgram, setIsCustomProgram] = useState(false);
+
+  // Dynamic Canonical Program Catalog derived from website sources
+  const programCatalog = useMemo(() => {
+    if (wizardData.programType === "live_batch") {
+      return liveOffers.map((o) => ({
+        slug: o.slug,
+        title: o.title,
+        fee: o.offerFee || o.regularFee || 5000,
+      }));
+    }
+    if (wizardData.programType === "specialization") {
+      return specializations.map((s) => ({
+        slug: s.slug,
+        title: s.title,
+        fee: 20000,
+      }));
+    }
+    if (wizardData.programType === "course") {
+      return courses.map((c) => ({
+        slug: c.slug,
+        title: `${c.title} (${c.category})`,
+        fee: 10000,
+      }));
+    }
+    if (wizardData.programType === "tutoring") {
+      return tutoringSubjects.map((t) => ({
+        slug: t.slug,
+        title: `${t.title} (${t.category})`,
+        fee: 15000,
+      }));
+    }
+    return [];
+  }, [wizardData.programType]);
+
+  const handleBatchSelect = (batchId: string) => {
+    if (!batchId) {
+      setWizardData((prev) => ({ ...prev, batchId: "", mode: "one_on_one" }));
+      return;
+    }
+    const b = batches.find((item) => item.id === batchId);
+    if (b) {
+      setWizardData((prev) => ({
+        ...prev,
+        batchId: b.id,
+        programSlug: b.program_slug || prev.programSlug,
+        programTitle: b.program_title || b.name,
+        programType: (b.program_type as any) || "live_batch",
+        mode: (b.mode as any) || "group",
+        instructorId: b.instructor_id || prev.instructorId,
+        instructorName: b.instructor_name || prev.instructorName,
+        startDate: b.start_date ? b.start_date.split("T")[0] : prev.startDate,
+        expectedEndDate: b.expected_end_date ? b.expected_end_date.split("T")[0] : prev.expectedEndDate,
+      }));
+    }
+  };
 
   // Inline Quick Task inside Drawer
   const [quickTaskTitle, setQuickTaskTitle] = useState("");
@@ -791,32 +852,63 @@ export function AdminStudentsPage() {
                     </div>
 
                     <div className="sm:col-span-2">
-                      <Label className="text-xs font-semibold text-slate-700">Program / Course Title *</Label>
+                      <Label className="text-xs font-semibold text-slate-700">Program / Course Offering *</Label>
                       <select
-                        value={wizardData.programTitle}
+                        value={isCustomProgram ? "custom" : wizardData.programTitle}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setWizardData({
-                            ...wizardData,
-                            programTitle: val,
-                            programSlug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-                          });
+                          if (val === "custom") {
+                            setIsCustomProgram(true);
+                            setWizardData({
+                              ...wizardData,
+                              programTitle: "Custom Training Program",
+                              programSlug: "custom-training-program",
+                            });
+                          } else {
+                            setIsCustomProgram(false);
+                            const found = programCatalog.find((p) => p.title === val);
+                            setWizardData({
+                              ...wizardData,
+                              programTitle: val,
+                              programSlug: found ? found.slug : val.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                              baseFee: found?.fee || wizardData.baseFee,
+                            });
+                          }
                         }}
                         className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 font-medium"
                       >
-                        <option value="Complete Python Developer">100 Days Complete Python Developer</option>
-                        <option value="Full-Stack Web Development">Full-Stack Modern Web Development</option>
-                        <option value="Data Science & Machine Learning">Data Science & Applied AI</option>
-                        <option value="1-on-1 Python Tutoring">1-on-1 Python Tutoring Track</option>
-                        <option value="Custom Training Program">Custom Specialized Training</option>
+                        {programCatalog.map((p) => (
+                          <option key={p.slug} value={p.title}>
+                            {p.title} (PKR {p.fee.toLocaleString()})
+                          </option>
+                        ))}
+                        <option value="custom">-- Custom Training Program (Manual) --</option>
                       </select>
+                      {isCustomProgram && (
+                        <div className="mt-2">
+                          <Label className="text-xs font-semibold text-slate-700">Custom Program Title</Label>
+                          <Input
+                            type="text"
+                            placeholder="Enter custom training program title..."
+                            value={wizardData.programTitle}
+                            onChange={(e) =>
+                              setWizardData({
+                                ...wizardData,
+                                programTitle: e.target.value,
+                                programSlug: e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                              })
+                            }
+                            className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="sm:col-span-2">
                       <Label className="text-xs font-semibold text-slate-700">Assign to Cohort / Batch (Optional)</Label>
                       <select
                         value={wizardData.batchId}
-                        onChange={(e) => setWizardData({ ...wizardData, batchId: e.target.value })}
+                        onChange={(e) => handleBatchSelect(e.target.value)}
                         className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
                       >
                         <option value="">None / Standalone 1-on-1 Student</option>

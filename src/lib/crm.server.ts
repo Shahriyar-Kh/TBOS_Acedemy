@@ -1134,3 +1134,40 @@ export async function generateMonthlyDuesBatch(
   return Number(data) || 0;
 }
 
+export async function createClassSessionsTx(params: {
+  batchId?: string | null;
+  enrollmentId?: string | null;
+  studentId?: string | null;
+  instructorId?: string | null;
+  instructorName?: string | null;
+  title: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  timezone?: string;
+  meetingLink?: string | null;
+  status?: string;
+  topicCovered?: string | null;
+  homework?: string | null;
+  instructorNotes?: string | null;
+  repeatWeeks?: number;
+  override?: boolean;
+  overrideReason?: string | null;
+  adminUserId?: string | null;
+  adminEmail?: string | null;
+}): Promise<any> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("create_class_sessions_tx", {
+    p_params: params,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+

@@ -181,70 +181,258 @@ test.describe("Phase 17 — Academy Operations & Scheduling Real Database Integr
   });
 
   // ============================================================================
-  // 4. Batch Monthly Dues Generation (generate_monthly_dues_batch)
+  // 4. Batch Monthly Dues Generation with Individual Billing Days & Deduplication
   // ============================================================================
-  test("4. generate_monthly_dues_batch creates next month invoices without duplicates", async () => {
-    const targetMonth = "2026-12";
-    const duesRes1 = await client.query("select public.generate_monthly_dues_batch($1, 10) as count", [targetMonth]);
-    expect(duesRes1.rows.length).toBe(1);
-    const count1 = Number(duesRes1.rows[0].count);
-    expect(count1).toBeGreaterThanOrEqual(1);
+  test("4. generate_monthly_dues_batch creates invoices using each plan's own billing_day without duplicates", async () => {
+    // A. Create Student A with billing_day = 5
+    const studentARes = await client.query(
+      "select public.create_student_full_tx($1::jsonb) as result",
+      [
+        JSON.stringify({
+          fullName: `E2E-BillingDay5-${uniqueSuffix}`,
+          email: `e2e-bday5-${uniqueSuffix}@test.local`,
+          phone: "+923001115555",
+          programSlug: "python-young-developers",
+          programTitle: "Python Young Developers",
+          planType: "monthly",
+          agreedFee: 5000,
+          discount: 0,
+          billingDay: 5,
+          createInitialInvoice: false,
+          schedules: [],
+        }),
+      ]
+    );
+    const studentAUuid = studentARes.rows[0].result.student.id;
+    const studentAEnrollmentId = studentARes.rows[0].result.enrollment_id;
 
-    // Re-run for same month should generate 0 duplicates (idempotency check)
-    const duesRes2 = await client.query("select public.generate_monthly_dues_batch($1, 10) as count", [targetMonth]);
-    const count2 = Number(duesRes2.rows[0].count);
-    expect(count2).toBe(0);
+    // B. Create Student B with billing_day = 20
+    const studentBRes = await client.query(
+      "select public.create_student_full_tx($1::jsonb) as result",
+      [
+        JSON.stringify({
+          fullName: `E2E-BillingDay20-${uniqueSuffix}`,
+          email: `e2e-bday20-${uniqueSuffix}@test.local`,
+          phone: "+923002220000",
+          programSlug: "100-days-complete-python",
+          programTitle: "Complete Python Developer",
+          planType: "monthly",
+          agreedFee: 7000,
+          discount: 1000,
+          billingDay: 20,
+          createInitialInvoice: false,
+          schedules: [],
+        }),
+      ]
+    );
+    const studentBUuid = studentBRes.rows[0].result.student.id;
+    const studentBEnrollmentId = studentBRes.rows[0].result.enrollment_id;
+
+    // Run batch generator for November 2026
+    const targetMonth = "2026-11";
+    const duesRes1 = await client.query(
+      "select public.generate_monthly_dues_batch($1, 10) as count",
+      [targetMonth]
+    );
+    expect(duesRes1.rows.length).toBe(1);
+    expect(Number(duesRes1.rows[0].count)).toBeGreaterThanOrEqual(2);
+
+    // Verify Student A's invoice has due_date = 2026-11-05 (billing_day 5)
+    const invACheck = await client.query(
+      `select *, to_char(due_date, 'YYYY-MM-DD') as due_date_str from public.fee_invoices 
+       where student_id = $1 and billing_month = $2`,
+      [studentAUuid, targetMonth]
+    );
+    expect(invACheck.rows.length).toBe(1);
+    expect(invACheck.rows[0].due_date_str).toBe("2026-11-05");
+    expect(Number(invACheck.rows[0].amount_due)).toBe(5000);
+
+    // Verify Student B's invoice has due_date = 2026-11-20 (billing_day 20)
+    const invBCheck = await client.query(
+      `select *, to_char(due_date, 'YYYY-MM-DD') as due_date_str from public.fee_invoices 
+       where student_id = $1 and billing_month = $2`,
+      [studentBUuid, targetMonth]
+    );
+    expect(invBCheck.rows.length).toBe(1);
+    expect(invBCheck.rows[0].due_date_str).toBe("2026-11-20");
+    expect(Number(invBCheck.rows[0].amount_due)).toBe(6000);
+
+    // Safe handling for February clamping (e.g. billing_day 28 or clamped)
+    const febMonth = "2026-02";
+    await client.query(
+      "select public.generate_monthly_dues_batch($1, 10) as count",
+      [febMonth]
+    );
+    const invAFeb = await client.query(
+      `select *, to_char(due_date, 'YYYY-MM-DD') as due_date_str from public.fee_invoices 
+       where student_id = $1 and billing_month = $2`,
+      [studentAUuid, febMonth]
+    );
+    expect(invAFeb.rows.length).toBe(1);
+    expect(invAFeb.rows[0].due_date_str).toBe("2026-02-05");
+
+    // Idempotency check: Rerunning generator for 2026-11 must produce 0 new duplicates
+    const duesRes2 = await client.query(
+      "select public.generate_monthly_dues_batch($1, 10) as count",
+      [targetMonth]
+    );
+    expect(Number(duesRes2.rows[0].count)).toBe(0);
+
+    // Cleanup extra student records safely
+    for (const uid of [studentAUuid, studentBUuid]) {
+      await client.query("delete from public.fee_invoices where student_id = $1", [uid]);
+      await client.query("delete from public.billing_plans where student_id = $1", [uid]);
+      await client.query("delete from public.enrollments where student_id = $1", [uid]);
+      await client.query("delete from public.students where id = $1", [uid]);
+    }
   });
 
   // ============================================================================
-  // 5. Timetable Clash Detection and Override Recording
+  // 5. Transactional Class Session Scheduling, Rollback & Override Auditing
   // ============================================================================
-  test("5. Timetable session conflict detection and override resolution", async () => {
-    const conflictDate = "2026-11-20";
-    const startTime = "19:00";
-    const endTime = "20:30";
+  test("5. Transactional timetable session creation, clash detection, rollback and override resolution", async () => {
+    const sessionDate = "2026-11-22";
+    const startTime = "17:00";
+    const endTime = "18:30";
 
-    // Insert session A for student
-    const sessA = await client.query(
-      `insert into public.class_sessions (student_id, title, session_date, start_time, end_time, status)
-       values ($1, 'Session A', $2, $3, $4, 'scheduled') returning id`,
-      [createdStudentUuid, conflictDate, startTime, endTime]
-    );
-    expect(sessA.rows.length).toBe(1);
-
-    // Query overlapping session for same student
-    const overlapCheck = await client.query(
-      `select id, title from public.class_sessions
-       where student_id = $1
-         and session_date = $2
-         and not (end_time <= $3 or start_time >= $4)`,
-      [createdStudentUuid, conflictDate, startTime, endTime]
-    );
-    expect(overlapCheck.rows.length).toBe(1);
-    expect(overlapCheck.rows[0].title).toBe("Session A");
-
-    // Look up an admin user if available
-    const adminUser = await client.query("select id from public.admin_users limit 1");
+    // Look up an admin user
+    const adminUser = await client.query("select id, email from public.admin_users limit 1");
     const adminId = adminUser.rows[0]?.id || null;
+    const adminEmail = adminUser.rows[0]?.email || "admin@tbos.local";
 
-    // Insert session B with explicit override
-    const sessB = await client.query(
-      `insert into public.class_sessions (
-         student_id, title, session_date, start_time, end_time, status,
-         is_override, override_reason, override_by
-       ) values (
-         $1, 'Session B (Overridden)', $2, $3, $4, 'scheduled',
-         true, 'Special dual-topic makeup session authorized by admin', $5
-       ) returning id, is_override, override_reason, override_by`,
-      [createdStudentUuid, conflictDate, startTime, endTime, adminId]
+    // 1. Create base session via create_class_sessions_tx
+    const baseTx = await client.query(
+      "select public.create_class_sessions_tx($1::jsonb) as result",
+      [
+        JSON.stringify({
+          studentId: createdStudentUuid,
+          title: "Base Mathematics Session",
+          sessionDate,
+          startTime,
+          endTime,
+          repeatWeeks: 1,
+          override: false,
+          adminUserId: adminId,
+          adminEmail,
+        }),
+      ]
+    );
+    expect(baseTx.rows[0].result.ok).toBe(true);
+    expect(baseTx.rows[0].result.created_count).toBe(1);
+    const baseSessionId = baseTx.rows[0].result.session_ids[0];
+
+    // 2. Attempt overlapping session without override: MUST FAIL and roll back
+    await expect(
+      client.query("select public.create_class_sessions_tx($1::jsonb)", [
+        JSON.stringify({
+          studentId: createdStudentUuid,
+          title: "Conflicting Physics Session",
+          sessionDate,
+          startTime: "17:30",
+          endTime: "19:00",
+          repeatWeeks: 1,
+          override: false,
+          adminUserId: adminId,
+          adminEmail,
+        }),
+      ])
+    ).rejects.toThrow(/SCHEDULE_CLASH_DETECTED/);
+
+    // Verify conflicting session was NOT inserted
+    const clashCheck = await client.query(
+      "select * from public.class_sessions where title = 'Conflicting Physics Session'"
+    );
+    expect(clashCheck.rows.length).toBe(0);
+
+    // 3. Attempt override without mandatory reason: MUST FAIL
+    await expect(
+      client.query("select public.create_class_sessions_tx($1::jsonb)", [
+        JSON.stringify({
+          studentId: createdStudentUuid,
+          title: "Unjustified Override Session",
+          sessionDate,
+          startTime: "17:30",
+          endTime: "19:00",
+          repeatWeeks: 1,
+          override: true,
+          overrideReason: "   ", // empty / whitespace only
+          adminUserId: adminId,
+          adminEmail,
+        }),
+      ])
+    ).rejects.toThrow(/MANDATORY_OVERRIDE_REASON_REQUIRED/);
+
+    // 4. Approved override with valid reason: MUST SUCCEED and record audit trail
+    const approvedTx = await client.query(
+      "select public.create_class_sessions_tx($1::jsonb) as result",
+      [
+        JSON.stringify({
+          studentId: createdStudentUuid,
+          title: "Approved Dual-Topic Lab",
+          sessionDate,
+          startTime: "17:30",
+          endTime: "19:00",
+          repeatWeeks: 1,
+          override: true,
+          overrideReason: "Emergency makeup class authorized by academic director",
+          adminUserId: adminId,
+          adminEmail,
+        }),
+      ]
+    );
+    expect(approvedTx.rows[0].result.ok).toBe(true);
+    expect(approvedTx.rows[0].result.is_override).toBe(true);
+    const approvedSessionId = approvedTx.rows[0].result.session_ids[0];
+
+    // Verify row in database has is_override and override_reason
+    const sessDbCheck = await client.query(
+      "select * from public.class_sessions where id = $1",
+      [approvedSessionId]
+    );
+    expect(sessDbCheck.rows.length).toBe(1);
+    expect(sessDbCheck.rows[0].is_override).toBe(true);
+    expect(sessDbCheck.rows[0].override_reason).toBe(
+      "Emergency makeup class authorized by academic director"
     );
 
-    expect(sessB.rows.length).toBe(1);
-    expect(sessB.rows[0].is_override).toBe(true);
-    expect(sessB.rows[0].override_reason).toBe("Special dual-topic makeup session authorized by admin");
+    // Verify audit log row was written
+    const auditCheck = await client.query(
+      `select * from public.crm_audit_logs 
+       where entity = 'class_sessions' and action = 'class_sessions_override_scheduled'
+       order by created_at desc limit 1`
+    );
+    expect(auditCheck.rows.length).toBe(1);
 
-    // Cleanup conflict sessions
-    await client.query("delete from public.class_sessions where id in ($1, $2)", [sessA.rows[0].id, sessB.rows[0].id]);
+    // 5. Multi-week series atomic rollback: if week 2 clashes without override, NO sessions remain
+    const futureDate = "2026-11-29"; // 1 week after base session (which is on 2026-11-22)
+    // Starting on 2026-11-15, week 2 will hit 2026-11-22 (conflict with base session)
+    await expect(
+      client.query("select public.create_class_sessions_tx($1::jsonb)", [
+        JSON.stringify({
+          studentId: createdStudentUuid,
+          title: "Failed Series",
+          sessionDate: "2026-11-15",
+          startTime: "17:00",
+          endTime: "18:30",
+          repeatWeeks: 3, // Week 0: Nov 15, Week 1: Nov 22 (clash!), Week 2: Nov 29
+          override: false,
+          adminUserId: adminId,
+          adminEmail,
+        }),
+      ])
+    ).rejects.toThrow(/SCHEDULE_CLASH_DETECTED/);
+
+    // Verify 0 occurrences from Failed Series were inserted
+    const seriesCheck = await client.query(
+      "select * from public.class_sessions where title like 'Failed Series%'"
+    );
+    expect(seriesCheck.rows.length).toBe(0);
+
+    // Cleanup created test sessions
+    await client.query("delete from public.class_sessions where id in ($1, $2)", [
+      baseSessionId,
+      approvedSessionId,
+    ]);
   });
 
   // ============================================================================

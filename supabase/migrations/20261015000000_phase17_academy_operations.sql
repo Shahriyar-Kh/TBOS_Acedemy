@@ -6,6 +6,7 @@
 -- 1. Enhance Enrollments Table
 alter table public.enrollments add column if not exists start_date date;
 alter table public.enrollments add column if not exists expected_end_date date;
+alter table public.enrollments add column if not exists delivery_mode text check (delivery_mode in ('group', 'one_on_one')) default 'group';
 
 -- 2. Billing Plans Table
 create table if not exists public.billing_plans (
@@ -152,6 +153,7 @@ declare
   v_program_slug text;
   v_program_title text;
   v_program_type text;
+  v_mode text;
   v_batch_id uuid;
   v_instructor_id uuid;
   v_instructor_name text;
@@ -288,6 +290,10 @@ begin
   v_program_slug := nullif(trim(p_params->>'programSlug'), '');
   v_program_title := nullif(trim(p_params->>'programTitle'), '');
   v_program_type := coalesce(nullif(trim(p_params->>'programType'), ''), 'live_batch');
+  v_mode := coalesce(nullif(trim(p_params->>'mode'), ''), nullif(trim(p_params->>'deliveryMode'), ''), 'group');
+  if v_mode not in ('group', 'one_on_one') then
+    v_mode := 'group';
+  end if;
   if nullif(p_params->>'batchId', '') is not null then
     v_batch_id := (p_params->>'batchId')::uuid;
   end if;
@@ -318,6 +324,7 @@ begin
       program_slug,
       program_title,
       program_type,
+      delivery_mode,
       instructor_id,
       instructor_name,
       agreed_fee,
@@ -334,6 +341,7 @@ begin
       v_program_slug,
       v_program_title,
       v_program_type,
+      v_mode,
       v_instructor_id,
       v_instructor_name,
       v_agreed_fee,
@@ -541,7 +549,7 @@ begin
     'student_id', v_student_id_str,
     'enrollment_id', v_enrollment_id,
     'billing_plan_id', v_billing_plan_id,
-    'invoice', case when v_invoice_row.id is not null then row_to_json(v_invoice_row) else null end,
+    'invoice', case when v_invoice_id is not null then row_to_json(v_invoice_row) else null end,
     'sessions_count', v_sessions_count
   );
 end;
@@ -663,7 +671,20 @@ declare
   v_inv_num text;
   v_count int := 0;
   v_now timestamptz := now();
+  v_first_of_month date;
+  v_last_of_month date;
+  v_days_in_month int;
+  v_target_day int;
 begin
+  -- Validate billing month format (YYYY-MM)
+  begin
+    v_first_of_month := (p_billing_month || '-01')::date;
+  exception when others then
+    v_first_of_month := date_trunc('month', current_date)::date;
+  end;
+  v_last_of_month := (v_first_of_month + interval '1 month - 1 day')::date;
+  v_days_in_month := extract(day from v_last_of_month)::int;
+
   for v_plan in
     select bp.*, e.program_title
     from public.billing_plans bp
@@ -681,11 +702,13 @@ begin
         and fi.billing_month = p_billing_month
     ) then
       v_inv_num := public.get_next_invoice_number(v_now);
-      begin
-        v_due_date := (p_billing_month || '-' || lpad(least(28, greatest(1, p_due_day))::text, 2, '0'))::date;
-      exception when others then
-        v_due_date := current_date + interval '10 days';
-      end;
+      
+      -- Calculate due date based on each student's billing_day (safe for Feb & variable month lengths)
+      v_target_day := coalesce(v_plan.billing_day, p_due_day, 10);
+      if v_target_day < 1 then v_target_day := 1; end if;
+      if v_target_day > v_days_in_month then v_target_day := v_days_in_month; end if;
+      
+      v_due_date := (to_char(v_first_of_month, 'YYYY-MM') || '-' || lpad(v_target_day::text, 2, '0'))::date;
       
       insert into public.fee_invoices (
         invoice_number,
@@ -720,4 +743,207 @@ $$;
 
 revoke all on function public.generate_monthly_dues_batch(text, int) from public, anon, authenticated;
 grant execute on function public.generate_monthly_dues_batch(text, int) to service_role;
+
+
+-- 10. RPC: Transactional Class Sessions Creation with Clash & Override Handling (create_class_sessions_tx)
+create or replace function public.create_class_sessions_tx(
+  p_params jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_batch_id uuid;
+  v_enrollment_id uuid;
+  v_student_id uuid;
+  v_instructor_id uuid;
+  v_instructor_name text;
+  v_title text;
+  v_session_date date;
+  v_start_time time;
+  v_end_time time;
+  v_start_time_str text;
+  v_end_time_str text;
+  v_timezone text;
+  v_meeting_link text;
+  v_status text;
+  v_topic_covered text;
+  v_homework text;
+  v_instructor_notes text;
+  v_repeat_weeks int;
+  v_override boolean;
+  v_override_reason text;
+  v_admin_user_id uuid;
+  v_admin_email text;
+  
+  w int;
+  v_curr_date date;
+  v_conflict_count int;
+  v_conflict_msg text;
+  v_created_ids jsonb := '[]'::jsonb;
+  v_new_id uuid;
+  v_is_conflict boolean := false;
+  v_now timestamptz := now();
+begin
+  -- 1. Extract & validate parameters
+  v_title := nullif(trim(p_params->>'title'), '');
+  if v_title is null then
+    raise exception 'SESSION_TITLE_REQUIRED: Class session title is required.' using errcode = '22023';
+  end if;
+  
+  begin
+    v_session_date := (p_params->>'sessionDate')::date;
+  exception when others then
+    raise exception 'INVALID_SESSION_DATE: Valid session date (YYYY-MM-DD) is required.' using errcode = '22007';
+  end;
+  
+  begin
+    v_start_time := (p_params->>'startTime')::time;
+    v_end_time := (p_params->>'endTime')::time;
+  exception when others then
+    raise exception 'INVALID_SESSION_TIME: Valid start time and end time (HH:mm) are required.' using errcode = '22007';
+  end;
+  
+  if v_end_time <= v_start_time then
+    raise exception 'INVALID_TIME_RANGE: End time must be after start time.' using errcode = '22023';
+  end if;
+
+  v_start_time_str := to_char(v_start_time, 'HH24:MI');
+  v_end_time_str := to_char(v_end_time, 'HH24:MI');
+  
+  v_batch_id := nullif(trim(p_params->>'batchId'), '')::uuid;
+  v_enrollment_id := nullif(trim(p_params->>'enrollmentId'), '')::uuid;
+  v_student_id := nullif(trim(p_params->>'studentId'), '')::uuid;
+  v_instructor_id := nullif(trim(p_params->>'instructorId'), '')::uuid;
+  v_instructor_name := nullif(trim(p_params->>'instructorName'), '');
+  v_timezone := coalesce(nullif(trim(p_params->>'timezone'), ''), 'Asia/Karachi');
+  v_meeting_link := coalesce(nullif(trim(p_params->>'meetingLink'), ''), nullif(trim(p_params->>'meetingUrl'), ''));
+  v_status := coalesce(nullif(trim(p_params->>'status'), ''), 'scheduled');
+  v_topic_covered := nullif(trim(p_params->>'topicCovered'), '');
+  v_homework := nullif(trim(p_params->>'homework'), '');
+  v_instructor_notes := nullif(trim(p_params->>'instructorNotes'), '');
+  
+  v_repeat_weeks := coalesce((p_params->>'repeatWeeks')::int, 1);
+  if v_repeat_weeks < 1 then v_repeat_weeks := 1; end if;
+  if v_repeat_weeks > 12 then v_repeat_weeks := 12; end if;
+  
+  v_override := coalesce((p_params->>'override')::boolean, (p_params->>'ignoreWarnings')::boolean, false);
+  v_override_reason := nullif(trim(p_params->>'overrideReason'), '');
+  v_admin_user_id := nullif(trim(p_params->>'adminUserId'), '')::uuid;
+  v_admin_email := nullif(trim(p_params->>'adminEmail'), '');
+  
+  -- 2. Pre-flight Conflict Detection Across All Occurrence Weeks
+  for w in 0..(v_repeat_weeks - 1) loop
+    v_curr_date := (v_session_date + (w * 7 || ' days')::interval)::date;
+    
+    select count(*), max(title || ' (' || cs.start_time || '-' || cs.end_time || ')')
+    into v_conflict_count, v_conflict_msg
+    from public.class_sessions cs
+    where cs.session_date = v_curr_date
+      and cs.status != 'cancelled'
+      and not (cs.end_time::time <= v_start_time or cs.start_time::time >= v_end_time)
+      and (
+        (v_instructor_id is not null and cs.instructor_id = v_instructor_id) or
+        (v_batch_id is not null and cs.batch_id = v_batch_id) or
+        (v_student_id is not null and cs.student_id = v_student_id)
+      );
+      
+    if v_conflict_count > 0 then
+      v_is_conflict := true;
+      if not v_override then
+        raise exception 'SCHEDULE_CLASH_DETECTED: Schedule clash detected on % with session: %', v_curr_date, v_conflict_msg using errcode = '23505';
+      end if;
+      
+      -- If overridden, ensure mandatory reason is provided
+      if v_override_reason is null then
+        raise exception 'MANDATORY_OVERRIDE_REASON_REQUIRED: An administrative override reason is mandatory when resolving schedule clashes.' using errcode = '22023';
+      end if;
+    end if;
+  end loop;
+  
+  -- 3. Atomic Insertion of All Occurrences
+  for w in 0..(v_repeat_weeks - 1) loop
+    v_curr_date := (v_session_date + (w * 7 || ' days')::interval)::date;
+    
+    insert into public.class_sessions (
+      batch_id,
+      enrollment_id,
+      student_id,
+      instructor_id,
+      instructor_name,
+      title,
+      session_date,
+      start_time,
+      end_time,
+      timezone,
+      meeting_link,
+      status,
+      topic_covered,
+      homework,
+      instructor_notes,
+      is_override,
+      override_reason,
+      override_by
+    ) values (
+      v_batch_id,
+      v_enrollment_id,
+      v_student_id,
+      v_instructor_id,
+      v_instructor_name,
+      case when v_repeat_weeks > 1 then v_title || ' (Week ' || (w + 1) || ')' else v_title end,
+      v_curr_date,
+      v_start_time_str,
+      v_end_time_str,
+      v_timezone,
+      v_meeting_link,
+      v_status,
+      v_topic_covered,
+      v_homework,
+      v_instructor_notes,
+      v_is_conflict and v_override,
+      case when v_is_conflict and v_override then v_override_reason else null end,
+      case when v_is_conflict and v_override then v_admin_user_id else null end
+    ) returning id into v_new_id;
+    
+    v_created_ids := v_created_ids || to_jsonb(v_new_id::text);
+  end loop;
+  
+  -- 4. Audit Log
+  insert into public.crm_audit_logs (
+    admin_user_id,
+    actor_email,
+    action,
+    entity,
+    entity_id,
+    details
+  ) values (
+    v_admin_user_id,
+    v_admin_email,
+    case when v_is_conflict and v_override then 'class_sessions_override_scheduled' else 'class_sessions_scheduled' end,
+    'class_sessions',
+    v_created_ids->>0,
+    jsonb_build_object(
+      'title', v_title,
+      'weeks', v_repeat_weeks,
+      'session_ids', v_created_ids,
+      'override', v_is_conflict and v_override,
+      'override_reason', v_override_reason
+    )
+  );
+  
+  return jsonb_build_object(
+    'ok', true,
+    'success', true,
+    'created_count', v_repeat_weeks,
+    'session_ids', v_created_ids,
+    'is_override', v_is_conflict and v_override
+  );
+end;
+$$;
+
+revoke all on function public.create_class_sessions_tx(jsonb) from public, anon, authenticated;
+grant execute on function public.create_class_sessions_tx(jsonb) to service_role;
+
 

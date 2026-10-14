@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { createClassSessionSchema } from "@/lib/crmSchemas";
-import { checkClassScheduleConflicts, logCrmAction } from "@/lib/crm.server";
+import { checkClassScheduleConflicts, logCrmAction, createClassSessionsTx } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/timetable")({
   server: {
@@ -159,91 +159,70 @@ export const Route = createFileRoute("/api/admin/timetable")({
           );
         }
 
-        // Support recurring class generation (e.g., repeat weekly for N weeks)
+        // Atomic transactional creation of single or recurring sessions
         const repeatWeeks = Math.min(12, Math.max(1, Number(body.repeatWeeks) || 1));
-        const createdSessions: any[] = [];
+        const overrideReason = d.overrideReason || body.overrideReason || null;
 
-        for (let week = 0; week < repeatWeeks; week++) {
-          const sessionDateObj = new Date(d.sessionDate);
-          sessionDateObj.setDate(sessionDateObj.getDate() + week * 7);
-          const computedDate = sessionDateObj.toISOString().split("T")[0];
-
-          if (week > 0 && !isOverrideAllowed) {
-            const weekConflict = await checkClassScheduleConflicts({
-              sessionDate: computedDate,
-              startTime: d.startTime,
-              endTime: d.endTime,
-              instructorId: d.instructorId || null,
-              batchId: d.batchId || null,
-              studentId: d.studentId || null,
-            });
-            if (weekConflict.hasConflict) {
-              return new Response(
-                JSON.stringify({
-                  ok: false,
-                  hasConflict: true,
-                  error: `Schedule clash in recurring week ${week + 1}: ${weekConflict.conflicts[0]?.message}`,
-                  conflicts: weekConflict.conflicts,
-                }),
-                { status: 409, headers: { "Content-Type": "application/json" } },
-              );
-            }
-          }
-
-          const { data: newSession, error: insErr } = await client
-            .from("class_sessions")
-            .insert({
-              batch_id: d.batchId || null,
-              enrollment_id: d.enrollmentId || null,
-              student_id: d.studentId || null,
-              instructor_id: d.instructorId || null,
-              instructor_name: d.instructorName || null,
-              title: repeatWeeks > 1 ? `${d.title} (Week ${week + 1})` : d.title,
-              session_date: computedDate,
-              start_time: d.startTime,
-              end_time: d.endTime,
-              timezone: d.timezone || "Asia/Karachi",
-              meeting_link: d.meetingLink || null,
-              status: d.status || "scheduled",
-              topic_covered: d.topicCovered || null,
-              homework: d.homework || null,
-              instructor_notes: d.instructorNotes || null,
-              is_override: Boolean(conflictCheck.hasConflict && isOverrideAllowed),
-              override_reason: conflictCheck.hasConflict && isOverrideAllowed ? (d.overrideReason || "Override confirmed by administrator") : null,
-              override_by: conflictCheck.hasConflict && isOverrideAllowed ? auth.admin.user.id : null,
-            })
-            .select()
-            .single();
-
-          if (!insErr && newSession) {
-            createdSessions.push(newSession);
-          }
-        }
-
-        await logCrmAction({
-          adminUserId: auth.admin.user.id,
-          actorEmail: auth.admin.user.email,
-          action: conflictCheck.hasConflict && isOverrideAllowed ? "schedule_clash_override" : "create_class_session",
-          entity: "class_sessions",
-          details: {
+        try {
+          const txResult = await createClassSessionsTx({
+            batchId: d.batchId || null,
+            enrollmentId: d.enrollmentId || null,
+            studentId: d.studentId || null,
+            instructorId: d.instructorId || null,
+            instructorName: d.instructorName || null,
             title: d.title,
             sessionDate: d.sessionDate,
-            count: createdSessions.length,
-            isOverride: Boolean(conflictCheck.hasConflict && isOverrideAllowed),
-            overrideReason: d.overrideReason || null,
-          },
-        });
+            startTime: d.startTime,
+            endTime: d.endTime,
+            timezone: d.timezone || "Asia/Karachi",
+            meetingLink: d.meetingLink || null,
+            status: d.status || "scheduled",
+            topicCovered: d.topicCovered || null,
+            homework: d.homework || null,
+            instructorNotes: d.instructorNotes || null,
+            repeatWeeks,
+            override: isOverrideAllowed,
+            overrideReason,
+            adminUserId: auth.admin.user.id,
+            adminEmail: auth.admin.user.email,
+          });
 
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            success: true,
-            createdSessions,
-            count: createdSessions.length,
-            recurringCount: createdSessions.length,
-          }),
-          { status: 201, headers: { "Content-Type": "application/json" } },
-        );
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              success: true,
+              count: txResult.created_count,
+              sessionIds: txResult.session_ids,
+              isOverride: txResult.is_override,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        } catch (err: any) {
+          const errMsg = err?.message || String(err);
+          if (errMsg.includes("SCHEDULE_CLASH_DETECTED")) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                hasConflict: true,
+                error: errMsg.replace(/^.*SCHEDULE_CLASH_DETECTED:\s*/, ""),
+              }),
+              { status: 409, headers: { "Content-Type": "application/json" } },
+            );
+          }
+          if (errMsg.includes("MANDATORY_OVERRIDE_REASON_REQUIRED")) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "An administrative override reason is mandatory when resolving schedule clashes.",
+              }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+          return new Response(
+            JSON.stringify({ ok: false, error: errMsg || "Failed to schedule class session" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
       },
     },
   },

@@ -155,7 +155,7 @@ export const createStudentFullSchema = z.object({
   // Enrollment (Optional)
   programSlug: z.string().optional().nullable(),
   programTitle: z.string().optional().nullable(),
-  programType: z.enum(["live_batch", "specialization", "course", "tutoring"]).default("live_batch"),
+  programType: z.enum(["live_batch", "specialization", "course", "tutoring", "custom"]).default("live_batch"),
   mode: z.enum(["group", "one_on_one"]).default("group"),
   batchId: optionalUuid,
   instructorId: optionalUuid,
