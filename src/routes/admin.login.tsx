@@ -136,6 +136,15 @@ function AdminLoginPage() {
             </div>
           </div>
 
+          <div className="flex justify-end pt-1">
+            <a
+              href="/admin/forgot-password"
+              className="text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+            >
+              Forgot password?
+            </a>
+          </div>
+
           <Button
             type="submit"
             disabled={isSubmitting || !isConfigured}

@@ -49,7 +49,7 @@ export interface AdmissionsRequestRecord {
 export interface AdminUserRecord {
   id: string;
   email: string;
-  role: "owner" | "admin" | "admissions";
+  role: "owner" | "admin" | "admissions" | "instructor" | "accountant";
   is_active: boolean;
   created_at: string;
   updated_at: string;

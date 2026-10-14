@@ -36,8 +36,10 @@ import {
   History,
   Info,
   Trash2,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export const Route = createFileRoute("/admin/admissions")({
   head: () => ({ meta: adminNoIndexMeta("TBOS Admissions Admin") }),
@@ -102,6 +104,60 @@ function AdminAdmissionsPage() {
   const [editDemoScheduled, setEditDemoScheduled] = useState("");
   const [editDemoLink, setEditDemoLink] = useState("");
   const [editClosedReason, setEditClosedReason] = useState("");
+
+  // Convert Lead to Student Modal State
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [availableBatches, setAvailableBatches] = useState<any[]>([]);
+  const [convertBatchId, setConvertBatchId] = useState("");
+  const [convertMonthlyFee, setConvertMonthlyFee] = useState(20000);
+  const [convertBillingDay, setConvertBillingDay] = useState(1);
+  const [isConverting, setIsConverting] = useState(false);
+
+  const fetchBatchesForConvert = async () => {
+    try {
+      const res = await fetch("/api/admin/batches?limit=100", { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableBatches(data.batches || []);
+        if (data.batches?.length > 0 && !convertBatchId) {
+          setConvertBatchId(data.batches[0].id);
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleConvertToStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedId) return;
+    setIsConverting(true);
+    try {
+      const res = await fetch(`/api/admin/admissions/${selectedId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({
+          action: "convert-to-student",
+          batchId: convertBatchId || undefined,
+          monthlyFee: Number(convertMonthlyFee),
+          billingDay: Number(convertBillingDay),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        toast.success(`Converted to student ${data.student?.student_id || ""}! Initial invoice generated.`);
+        setShowConvertModal(false);
+        setSelectedId(null);
+        fetchAdmissions();
+      } else {
+        toast.error(data.error || "Failed to convert lead to student");
+      }
+    } catch {
+      toast.error("Network error during student conversion");
+    } finally {
+      setIsConverting(false);
+    }
+  };
 
   const fetchAdmissions = useCallback(async () => {
     setIsLoading(true);
@@ -357,82 +413,29 @@ function AdminAdmissionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col font-sans">
-      {/* Top Admin Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-[#0B192C] text-white shadow-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-[#008DDA] to-[#41B3A2] text-white shadow-sm">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="font-bold tracking-tight text-base text-white">TBOS Academy</span>
-                <span className="ml-2 text-xs font-semibold text-[#41B3A2] uppercase tracking-wider">
-                  Admissions CRM
-                </span>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1">
-              <Link
-                to="/admin/admissions"
-                className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-              >
-                All Admissions
-              </Link>
-              <Link
-                to="/admin/demos"
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                Demo Pipeline
-              </Link>
-              <Link
-                to="/admin/content"
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                Content CMS
-              </Link>
-            </nav>
+    <AdminLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6 text-cyan-400" />
+              Admissions CRM & Inbound Pipeline
+            </h1>
+            <p className="text-sm text-slate-400 mt-1">
+              Review admissions inquiries, trial requests, lead progression, and convert leads to enrolled students.
+            </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex flex-col text-right">
-              <span className="text-xs font-medium text-white">{admin?.email}</span>
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-mono">
-                Role: {admin?.role}
-              </span>
-            </div>
-
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fetchAdmissions()}
-              disabled={isLoading}
-              className="text-slate-300 hover:text-white hover:bg-white/10 h-8 px-2.5"
-              title="Refresh Records"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await logout();
-                navigate({ to: "/admin/login" });
-              }}
-              className="border-white/10 bg-white/5 text-slate-200 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/30 h-8 text-xs font-medium gap-1.5"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchAdmissions()}
+            disabled={isLoading}
+            className="border-slate-800 text-slate-300 hover:bg-slate-800"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh Leads
+          </Button>
         </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
         {/* Real Stats Ribbon */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <div className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm hover:shadow transition-shadow">
@@ -793,7 +796,7 @@ function AdminAdmissionsPage() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
       {/* Slide-over Detail Drawer / Modal */}
       {selectedId && (
@@ -864,6 +867,21 @@ function AdminAdmissionsPage() {
                   >
                     <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
                     Mark Contacted
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      fetchBatchesForConvert();
+                      const prog = detailData.selected_program_title?.toLowerCase() || "";
+                      const fee = prog.includes("full-stack") || prog.includes("data") || prog.includes("ai") ? 20000 : 15000;
+                      setConvertMonthlyFee(fee);
+                      setShowConvertModal(true);
+                    }}
+                    className="h-8 text-xs gap-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium"
+                  >
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Convert to Student
                   </Button>
 
                   {(admin?.role === "owner" || admin?.role === "admin") && (
@@ -1372,6 +1390,103 @@ function AdminAdmissionsPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Convert to Student Modal */}
+      {showConvertModal && detailData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-emerald-400" />
+                Convert Lead to Enrolled Student
+              </h3>
+              <button onClick={() => setShowConvertModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConvertToStudent} className="space-y-4 mt-4 text-xs">
+              <div className="p-3 bg-slate-950/60 rounded-lg border border-slate-800 space-y-1">
+                <div className="text-slate-400">
+                  Candidate: <strong className="text-white">{detailData.student_name}</strong>
+                </div>
+                <div className="text-slate-400">
+                  Email: <span className="text-white">{detailData.email}</span> &bull; Phone:{" "}
+                  <span className="text-white">{detailData.phone}</span>
+                </div>
+                <div className="text-slate-400">
+                  Target Program: <span className="text-cyan-400">{detailData.selected_program_title}</span>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-300">Assign Live Batch / Cohort *</Label>
+                <select
+                  required
+                  value={convertBatchId}
+                  onChange={(e) => setConvertBatchId(e.target.value)}
+                  className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  <option value="">Select a batch...</option>
+                  {availableBatches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.batch_code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-300">Agreed Monthly Fee (PKR) *</Label>
+                <Input
+                  type="number"
+                  required
+                  min="0"
+                  value={convertMonthlyFee}
+                  onChange={(e) => setConvertMonthlyFee(Number(e.target.value))}
+                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-300">Monthly Billing Day (1-28)</Label>
+                <Input
+                  type="number"
+                  required
+                  min="1"
+                  max="28"
+                  value={convertBillingDay}
+                  onChange={(e) => setConvertBillingDay(Number(e.target.value))}
+                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                />
+              </div>
+
+              <div className="p-2.5 bg-emerald-950/30 border border-emerald-900/40 rounded-lg text-emerald-300 text-[11px]">
+                Upon conversion, this creates an active student record with sequential ID (TBOS-YYYY-XXXX), enrolls them in the selected batch, generates the initial tuition fee invoice, and updates this lead status to "enrolled".
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowConvertModal(false)}
+                  className="border-slate-800 text-slate-300"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isConverting}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold"
+                >
+                  {isConverting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  Confirm & Enroll Student
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
   );
 }

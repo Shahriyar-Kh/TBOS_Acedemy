@@ -1,0 +1,300 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { verifyAdminRequest } from "@/lib/adminAuth.server";
+import { getSupabaseServerClient } from "@/lib/supabase.server";
+import { createStudentSchema } from "@/lib/crmSchemas";
+import { generateStudentId, logCrmAction } from "@/lib/crm.server";
+
+export const Route = createFileRoute("/api/admin/students")({
+  server: {
+    handlers: {
+      GET: async ({ request }: { request: Request }) => {
+        const auth = await verifyAdminRequest(request);
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+            status: auth.status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const { client } = getSupabaseServerClient();
+        if (!client) {
+          return new Response(JSON.stringify({ ok: false, error: "Database unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const url = new URL(request.url);
+        const search = url.searchParams.get("q")?.trim() || "";
+        const statusFilter = url.searchParams.get("status")?.trim() || "";
+        const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+        const limit = Math.min(100, Math.max(5, parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+        const offset = (page - 1) * limit;
+
+        let query = client
+          .from("students")
+          .select("*, enrollments(*), fee_invoices(*)", { count: "exact" })
+          .order("created_at", { ascending: false });
+
+        if (statusFilter && statusFilter !== "all") {
+          query = query.eq("status", statusFilter);
+        }
+
+        if (search) {
+          const sanitized = search.replace(/[%_,()]/g, " ").trim();
+          if (sanitized) {
+            query = query.or(
+              `full_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,phone.ilike.%${sanitized}%,student_id.ilike.%${sanitized}%`,
+            );
+          }
+        }
+
+        query = query.range(offset, offset + limit - 1);
+        const { data: students, count: totalCount, error } = await query;
+
+        if (error) {
+          console.error("Students query error:", error);
+          return new Response(JSON.stringify({ ok: false, error: "Failed to fetch students" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Stats
+        const [
+          { count: activeCount },
+          { count: pausedCount },
+          { count: completedCount },
+        ] = await Promise.all([
+          client.from("students").select("*", { count: "exact", head: true }).eq("status", "active"),
+          client.from("students").select("*", { count: "exact", head: true }).eq("status", "paused"),
+          client.from("students").select("*", { count: "exact", head: true }).eq("status", "completed"),
+        ]);
+
+        return new Response(
+          JSON.stringify({
+            ok: true,
+            students: students || [],
+            totalCount: totalCount || 0,
+            page,
+            limit,
+            stats: {
+              total: totalCount || 0,
+              active: activeCount || 0,
+              paused: pausedCount || 0,
+              completed: completedCount || 0,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        );
+      },
+
+      POST: async ({ request }: { request: Request }) => {
+        const auth = await verifyAdminRequest(request, ["owner", "admin", "admissions"]);
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+            status: auth.status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        const { client } = getSupabaseServerClient();
+        if (!client) {
+          return new Response(JSON.stringify({ ok: false, error: "Database unavailable" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        let body: any;
+        try {
+          body = await request.json();
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: "Malformed JSON" }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Check if this is a bulk CSV import
+        if (body.action === "import-csv" && Array.isArray(body.rows)) {
+          const rows = body.rows;
+          const inserted: any[] = [];
+          const failed: any[] = [];
+
+          for (let i = 0; i < rows.length; i++) {
+            const rawRow = rows[i];
+            const parsed = createStudentSchema.safeParse({
+              fullName: rawRow.fullName || rawRow.name,
+              email: rawRow.email,
+              phone: rawRow.phone,
+              whatsapp: rawRow.whatsapp || rawRow.phone,
+              guardianName: rawRow.guardianName,
+              guardianPhone: rawRow.guardianPhone,
+              guardianEmail: rawRow.guardianEmail,
+              country: rawRow.country || "Pakistan",
+              city: rawRow.city,
+              status: rawRow.status || "active",
+              billingDay: Number(rawRow.billingDay) || 1,
+              notes: rawRow.notes,
+            });
+
+            if (!parsed.success) {
+              failed.push({
+                row: i + 1,
+                data: rawRow,
+                errors: parsed.error.errors.map((e) => e.message),
+              });
+              continue;
+            }
+
+            // Check duplicate by email
+            const { data: existing } = await client
+              .from("students")
+              .select("id, student_id")
+              .eq("email", parsed.data.email.toLowerCase().trim())
+              .maybeSingle();
+
+            if (existing) {
+              failed.push({
+                row: i + 1,
+                data: rawRow,
+                errors: [`Student with email ${parsed.data.email} already exists (${existing.student_id})`],
+              });
+              continue;
+            }
+
+            const studentId = await generateStudentId();
+            const { data: newStudent, error: insertErr } = await client
+              .from("students")
+              .insert({
+                student_id: studentId,
+                full_name: parsed.data.fullName,
+                email: parsed.data.email.toLowerCase().trim(),
+                phone: parsed.data.phone,
+                whatsapp: parsed.data.whatsapp || parsed.data.phone,
+                guardian_name: parsed.data.guardianName || null,
+                guardian_phone: parsed.data.guardianPhone || null,
+                guardian_email: parsed.data.guardianEmail || null,
+                country: parsed.data.country || "Pakistan",
+                city: parsed.data.city || null,
+                timezone: parsed.data.timezone || "Asia/Karachi",
+                status: parsed.data.status || "active",
+                billing_day: parsed.data.billingDay || 1,
+                notes: parsed.data.notes || null,
+              })
+              .select()
+              .single();
+
+            if (insertErr || !newStudent) {
+              failed.push({
+                row: i + 1,
+                data: rawRow,
+                errors: [insertErr?.message || "Database insert failed"],
+              });
+            } else {
+              inserted.push(newStudent);
+            }
+          }
+
+          await logCrmAction({
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email,
+            action: "import_students_csv",
+            entity: "students",
+            details: { importedCount: inserted.length, failedCount: failed.length },
+          });
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              importedCount: inserted.length,
+              failedCount: failed.length,
+              inserted,
+              failed,
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Single student creation
+        const parsed = createStudentSchema.safeParse(body);
+        if (!parsed.success) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: parsed.error.errors[0]?.message || "Validation failed",
+            }),
+            { status: 422, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Check for duplicate by email
+        const { data: existing } = await client
+          .from("students")
+          .select("id, student_id")
+          .eq("email", parsed.data.email.toLowerCase().trim())
+          .maybeSingle();
+
+        if (existing) {
+          return new Response(
+            JSON.stringify({
+              ok: false,
+              error: `Student with email ${parsed.data.email} already exists (${existing.student_id}).`,
+            }),
+            { status: 409, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        const studentId = await generateStudentId();
+        const { data: newStudent, error: insertError } = await client
+          .from("students")
+          .insert({
+            student_id: studentId,
+            full_name: parsed.data.fullName,
+            email: parsed.data.email.toLowerCase().trim(),
+            phone: parsed.data.phone,
+            whatsapp: parsed.data.whatsapp || parsed.data.phone,
+            guardian_name: parsed.data.guardianName || null,
+            guardian_phone: parsed.data.guardianPhone || null,
+            guardian_email: parsed.data.guardianEmail || null,
+            date_of_birth: parsed.data.dateOfBirth || null,
+            age: parsed.data.age || null,
+            country: parsed.data.country || "Pakistan",
+            city: parsed.data.city || null,
+            timezone: parsed.data.timezone || "Asia/Karachi",
+            status: parsed.data.status || "active",
+            enrollment_date: parsed.data.enrollmentDate,
+            billing_day: parsed.data.billingDay || 1,
+            notes: parsed.data.notes || null,
+            lead_id: parsed.data.leadId || null,
+          })
+          .select()
+          .single();
+
+        if (insertError || !newStudent) {
+          console.error("Student insert error:", insertError);
+          return new Response(
+            JSON.stringify({ ok: false, error: "Failed to create student record" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        await logCrmAction({
+          adminUserId: auth.admin.user.id,
+          actorEmail: auth.admin.user.email,
+          action: "create_student",
+          entity: "students",
+          entityId: newStudent.id,
+          details: { studentId: newStudent.student_id, name: newStudent.full_name },
+        });
+
+        return new Response(
+          JSON.stringify({ ok: true, student: newStudent }),
+          { status: 201, headers: { "Content-Type": "application/json" } },
+        );
+      },
+    },
+  },
+});
+
