@@ -943,13 +943,21 @@ export async function recordPaymentTx(params: RecordPaymentParams) {
       if (rpcErr.message.includes("STUDENT_INVOICE_MISMATCH")) throw new Error("STUDENT_INVOICE_MISMATCH");
       if (rpcErr.message.includes("OVERPAYMENT_EXCEEDS_BALANCE")) throw new Error("OVERPAYMENT_EXCEEDS_BALANCE");
       if (rpcErr.message.includes("INVOICE_NOT_FOUND")) throw new Error("INVOICE_NOT_FOUND");
+      if (rpcErr.message.includes("INVOICE_NOT_PAYABLE")) throw new Error("INVOICE_NOT_PAYABLE");
+      if (rpcErr.message.includes("INVOICE_ALREADY_SETTLED")) throw new Error("INVOICE_ALREADY_SETTLED");
+      if (rpcErr.message.includes("IDEMPOTENCY_KEY_COLLISION_MISMATCHED_PAYLOAD")) throw new Error("IDEMPOTENCY_KEY_COLLISION_MISMATCHED_PAYLOAD");
+      if (rpcErr.message.includes("INVALID_PAYMENT_METHOD")) throw new Error("INVALID_PAYMENT_METHOD");
     }
   } catch (err: any) {
     if (
       err.message === "STUDENT_INVOICE_MISMATCH" ||
       err.message === "OVERPAYMENT_EXCEEDS_BALANCE" ||
       err.message === "INVOICE_NOT_FOUND" ||
-      err.message === "INVALID_AMOUNT"
+      err.message === "INVALID_AMOUNT" ||
+      err.message === "INVOICE_NOT_PAYABLE" ||
+      err.message === "INVOICE_ALREADY_SETTLED" ||
+      err.message === "IDEMPOTENCY_KEY_COLLISION_MISMATCHED_PAYLOAD" ||
+      err.message === "INVALID_PAYMENT_METHOD"
     ) {
       throw err;
     }
@@ -964,6 +972,13 @@ export async function recordPaymentTx(params: RecordPaymentParams) {
       .maybeSingle();
 
     if (existingPayment) {
+      if (
+        existingPayment.invoice_id !== params.invoiceId ||
+        existingPayment.student_id !== params.studentId ||
+        Number(existingPayment.amount) !== Number(params.amount)
+      ) {
+        throw new Error("IDEMPOTENCY_KEY_COLLISION_MISMATCHED_PAYLOAD");
+      }
       const { data: inv } = await client.from("fee_invoices").select("*").eq("id", existingPayment.invoice_id).single();
       return { payment: existingPayment, invoice: inv, is_duplicate: true };
     }
@@ -979,11 +994,18 @@ export async function recordPaymentTx(params: RecordPaymentParams) {
     throw new Error("INVOICE_NOT_FOUND");
   }
 
+  if (["paid", "waived", "refunded", "cancelled"].includes(invoice.status)) {
+    throw new Error("INVOICE_NOT_PAYABLE");
+  }
+
   if (invoice.student_id !== params.studentId) {
     throw new Error("STUDENT_INVOICE_MISMATCH");
   }
 
   const currentBalance = Number(invoice.balance) || 0;
+  if (currentBalance <= 0) {
+    throw new Error("INVOICE_ALREADY_SETTLED");
+  }
   if (params.amount > currentBalance) {
     throw new Error("OVERPAYMENT_EXCEEDS_BALANCE");
   }

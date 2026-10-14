@@ -219,6 +219,18 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
             .eq("email", targetEmail)
             .neq("id", tokenRecord.id);
 
+          // Atomically activate admin user account upon password setup
+          await client
+            .from("admin_users")
+            .update({ is_active: true, updated_at: nowIso })
+            .eq("id", adminUser.id);
+
+          // Mark invitation as accepted if this was an invitation activation
+          await client
+            .from("admin_invitations")
+            .update({ accepted: true, updated_at: nowIso })
+            .eq("email", targetEmail);
+
           try {
             await client.auth.admin.signOut(adminUser.id);
           } catch {

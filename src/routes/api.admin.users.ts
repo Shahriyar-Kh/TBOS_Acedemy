@@ -140,12 +140,12 @@ export const Route = createFileRoute("/api/admin/users")({
               userId = authUser.user.id;
             }
 
-            // Insert into admin_users table
+            // Insert into admin_users table with is_active = false (pending activation)
             const { error: insErr } = await client.from("admin_users").insert({
               id: userId,
               email: targetEmail,
               role: targetRole,
-              is_active: true,
+              is_active: false,
               full_name: fullName || null,
               phone: phone || null,
             });
@@ -157,6 +157,19 @@ export const Route = createFileRoute("/api/admin/users")({
               );
             }
           }
+
+          // Invalidate previous pending invitations when reissued
+          await client
+            .from("admin_invitations")
+            .update({ accepted: true, updated_at: new Date().toISOString() })
+            .eq("email", targetEmail)
+            .eq("accepted", false);
+
+          await client
+            .from("password_reset_tokens")
+            .update({ used: true })
+            .eq("email", targetEmail)
+            .eq("used", false);
 
           // Generate cryptographic single-use invitation token (valid 48 hours)
           const { rawToken, tokenHash } = generatePasswordResetToken();
@@ -181,11 +194,17 @@ export const Route = createFileRoute("/api/admin/users")({
             used: false,
           });
 
-          // Send notification/invitation email if SMTP configured
+          // Send notification/invitation email if SMTP configured (suppress during tests or for test accounts)
           const config = getServerConfig();
           const inviteUrl = `https://techbuiltos.online/admin/reset-password?token=${rawToken}&invitation=true`;
 
-          if (config.smtpUser && config.smtpAppPassword) {
+          const isTestEmail =
+            targetEmail === "techbuiltopenschool@gmail.com" ||
+            targetEmail.includes("@test.") ||
+            targetEmail.includes(".local") ||
+            process.env.NODE_ENV === "test";
+
+          if (config.smtpUser && config.smtpAppPassword && !isTestEmail) {
             try {
               const transporter = nodemailer.createTransport({
                 host: config.smtpHost,

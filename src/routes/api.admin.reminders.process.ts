@@ -1,9 +1,10 @@
+import crypto from "node:crypto";
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { getServerConfig } from "@/lib/config.server";
 import nodemailer from "nodemailer";
-import { escapeHtml, logCrmAction } from "@/lib/crm.server";
+import { escapeHtml, logCrmAction, checkRateLimit } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/reminders/process")({
   server: {
@@ -17,18 +18,35 @@ export const Route = createFileRoute("/api/admin/reminders/process")({
           });
         }
 
-        // Authentication: Allow via CRON_SECRET or Admin Session
-        const cronSecretHeader = request.headers.get("x-cron-secret");
-        const authHeader = request.headers.get("authorization") || "";
+        // 1. Prohibit secret transmission in URL query parameters
+        const url = new URL(request.url);
+        if (url.searchParams.has("secret") || url.searchParams.has("cron_secret") || url.searchParams.has("key")) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "Query parameter authentication forbidden. Use Authorization header." }),
+            { status: 400, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // 2. Authentication: Require dedicated CRON_SECRET or Admin Session
+        const authHeader = request.headers.get("authorization") || request.headers.get("Authorization") || "";
         const expectedSecret = process.env.CRON_SECRET || "tbos-crm-cron-secret-2026";
 
         let isAuthorized = false;
         let actorEmail = "system_cron";
         let adminUserId: string | null = null;
 
-        if (cronSecretHeader === expectedSecret || authHeader === `Bearer ${expectedSecret}`) {
-          isAuthorized = true;
-        } else {
+        if (authHeader.startsWith("Bearer ")) {
+          const providedToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+          if (providedToken) {
+            const bufA = Buffer.from(providedToken);
+            const bufB = Buffer.from(expectedSecret);
+            if (bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)) {
+              isAuthorized = true;
+            }
+          }
+        }
+
+        if (!isAuthorized) {
           const auth = await verifyAdminRequest(request, ["owner", "admin"]);
           if (auth.ok) {
             isAuthorized = true;
@@ -39,8 +57,17 @@ export const Route = createFileRoute("/api/admin/reminders/process")({
 
         if (!isAuthorized) {
           return new Response(
-            JSON.stringify({ ok: false, error: "Unauthorized: Valid admin credentials or CRON_SECRET required." }),
+            JSON.stringify({ ok: false, error: "Unauthorized: Valid admin credentials or CRON_SECRET Bearer token required." }),
             { status: 401, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // 3. Rate-limit execution to protect against replay / denial-of-service
+        const rateLimit = await checkRateLimit("reminders_process_cron", 15, 60);
+        if (!rateLimit.allowed) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "Too many processing requests. Please retry in a few moments." }),
+            { status: 429, headers: { "Content-Type": "application/json" } },
           );
         }
 
@@ -226,11 +253,19 @@ export const Route = createFileRoute("/api/admin/reminders/process")({
         }
 
         for (const rem of dueReminders) {
-          // Lock reminder into processing state
-          await client
+          // Atomically claim reminder into processing state
+          const { data: claimed } = await client
             .from("crm_reminders")
             .update({ status: "processing", updated_at: new Date().toISOString() })
-            .eq("id", rem.id);
+            .eq("id", rem.id)
+            .eq("status", "scheduled")
+            .select("id")
+            .maybeSingle();
+
+          if (!claimed) {
+            // Already claimed by a concurrent process
+            continue;
+          }
 
           try {
             const safeName = escapeHtml(rem.recipient_name || "Student");

@@ -168,7 +168,7 @@ create table if not exists public.fee_payments (
   amount numeric(12, 2) not null check (amount > 0),
   payment_date date not null default current_date,
   payment_method text not null check (
-    payment_method in ('bank_transfer', 'jazzcash', 'easypaisa', 'cash', 'other')
+    payment_method in ('bank_transfer', 'jazzcash', 'easypaisa', 'cash', 'card', 'other')
   ),
   reference_number text,
   receipt_number text unique,
@@ -482,6 +482,7 @@ create or replace function public.get_next_crm_sequence(p_sequence_key text)
 returns bigint
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_next_val bigint;
@@ -503,6 +504,7 @@ create or replace function public.get_next_student_id(p_year int default extract
 returns text
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_seq bigint;
@@ -517,6 +519,7 @@ create or replace function public.get_next_invoice_number(p_now timestamptz defa
 returns text
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_ym text;
@@ -533,6 +536,7 @@ create or replace function public.get_next_receipt_number(p_now timestamptz defa
 returns text
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_ym text;
@@ -567,6 +571,7 @@ create or replace function public.convert_lead_to_student_tx(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_lead record;
@@ -625,10 +630,10 @@ begin
     updated_at
   ) values (
     v_student_id_str,
-    coalesce(v_lead.student_name, v_lead.contact_name, 'Unknown Student'),
+    coalesce(v_lead.student_name, 'Unknown Student'),
     lower(trim(v_lead.email)),
     v_lead.phone,
-    coalesce(v_lead.whatsapp, v_lead.phone),
+    v_lead.phone,
     v_lead.guardian_name,
     v_lead.guardian_phone,
     v_lead.guardian_email,
@@ -796,6 +801,7 @@ create or replace function public.record_payment_tx(
 returns jsonb
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_invoice record;
@@ -814,6 +820,13 @@ begin
     where idempotency_key = p_idempotency_key;
 
     if found then
+      -- Verify payload matches existing payment
+      if v_existing_payment.invoice_id <> p_invoice_id 
+         or v_existing_payment.student_id <> p_student_id 
+         or v_existing_payment.amount <> p_amount then
+        raise exception 'IDEMPOTENCY_KEY_COLLISION_MISMATCHED_PAYLOAD: Idempotency key already used with different parameters' using errcode = '23505';
+      end if;
+
       select * into v_invoice from public.fee_invoices where id = v_existing_payment.invoice_id;
       return jsonb_build_object(
         'payment', row_to_json(v_existing_payment),
@@ -825,10 +838,15 @@ begin
 
   -- 2. Validate amount > 0
   if p_amount is null or p_amount <= 0 then
-    raise exception 'INVALID_AMOUNT' using errcode = '22003';
+    raise exception 'INVALID_AMOUNT: Amount must be greater than zero' using errcode = '22003';
   end if;
 
-  -- 3. Lock target invoice FOR UPDATE
+  -- 3. Validate payment method
+  if p_payment_method not in ('bank_transfer', 'jazzcash', 'easypaisa', 'cash', 'card', 'other') then
+    raise exception 'INVALID_PAYMENT_METHOD: Unsupported payment method %', p_payment_method using errcode = '22023';
+  end if;
+
+  -- 4. Lock target invoice FOR UPDATE
   select * into v_invoice
   from public.fee_invoices
   where id = p_invoice_id
@@ -838,14 +856,24 @@ begin
     raise exception 'INVOICE_NOT_FOUND' using errcode = 'P0002';
   end if;
 
-  -- 4. Validate student matches invoice.student_id
-  if v_invoice.student_id <> p_student_id then
-    raise exception 'STUDENT_INVOICE_MISMATCH' using errcode = '22023';
+  -- 5. Reject invoices that are already settled, waived, refunded or cancelled
+  if v_invoice.status in ('paid', 'waived', 'refunded', 'cancelled') then
+    raise exception 'INVOICE_NOT_PAYABLE: Cannot record payment for invoice with status %', v_invoice.status using errcode = '22023';
   end if;
 
-  -- 5. Validate no overpayment (amount <= remaining balance)
+  -- 6. Reject zero or negative balance
+  if v_invoice.balance <= 0 then
+    raise exception 'INVOICE_ALREADY_SETTLED: Remaining balance is %', v_invoice.balance using errcode = '22023';
+  end if;
+
+  -- 7. Validate student matches invoice.student_id
+  if v_invoice.student_id <> p_student_id then
+    raise exception 'STUDENT_INVOICE_MISMATCH: Student % does not own invoice %', p_student_id, p_invoice_id using errcode = '22023';
+  end if;
+
+  -- 8. Validate no overpayment (amount <= remaining balance)
   if p_amount > v_invoice.balance then
-    raise exception 'OVERPAYMENT_EXCEEDS_BALANCE' using errcode = '22023';
+    raise exception 'OVERPAYMENT_EXCEEDS_BALANCE: Amount % exceeds remaining balance %', p_amount, v_invoice.balance using errcode = '22023';
   end if;
 
   -- 6. Generate atomic receipt number
@@ -932,6 +960,7 @@ create or replace function public.protect_final_active_owner()
 returns trigger
 language plpgsql
 security definer
+set search_path = public, pg_temp
 as $$
 declare
   v_other_owners_count int;
@@ -974,3 +1003,30 @@ create trigger trg_protect_final_active_owner
 before update or delete on public.admin_users
 for each row
 execute function public.protect_final_active_owner();
+
+
+-- ==============================================================================
+-- 24. FUNCTION EXECUTION PRIVILEGES (LEAST PRIVILEGE)
+-- ==============================================================================
+-- Default revoke from PUBLIC, anon, and authenticated for all privileged RPCs
+revoke all on function public.get_next_crm_sequence(text) from public, anon, authenticated;
+grant execute on function public.get_next_crm_sequence(text) to service_role;
+
+revoke all on function public.get_next_student_id(int) from public, anon, authenticated;
+grant execute on function public.get_next_student_id(int) to service_role;
+
+revoke all on function public.get_next_invoice_number(timestamptz) from public, anon, authenticated;
+grant execute on function public.get_next_invoice_number(timestamptz) to service_role;
+
+revoke all on function public.get_next_receipt_number(timestamptz) from public, anon, authenticated;
+grant execute on function public.get_next_receipt_number(timestamptz) to service_role;
+
+revoke all on function public.convert_lead_to_student_tx(uuid, text, text, text, numeric, uuid, uuid, text, numeric, int, date, text, text, boolean, uuid, text) from public, anon, authenticated;
+grant execute on function public.convert_lead_to_student_tx(uuid, text, text, text, numeric, uuid, uuid, text, numeric, int, date, text, text, boolean, uuid, text) to service_role;
+
+revoke all on function public.record_payment_tx(uuid, uuid, numeric, text, date, text, text, uuid, text, text) from public, anon, authenticated;
+grant execute on function public.record_payment_tx(uuid, uuid, numeric, text, date, text, text, uuid, text, text) to service_role;
+
+revoke all on function public.protect_final_active_owner() from public, anon, authenticated;
+grant execute on function public.protect_final_active_owner() to service_role;
+
