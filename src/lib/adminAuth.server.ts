@@ -12,13 +12,23 @@ export type VerifyAdminResult =
   | { ok: true; admin: AuthenticatedAdmin }
   | { ok: false; status: 401 | 403 | 500; error: string };
 
+export type AdminRole = "owner" | "admin" | "admissions" | "instructor" | "accountant";
+
+export const ALL_ADMIN_ROLES: AdminRole[] = [
+  "owner",
+  "admin",
+  "admissions",
+  "instructor",
+  "accountant",
+];
+
 /**
  * Validates the caller's Bearer token with Supabase Auth,
  * then checks public.admin_users for active status and allowed role.
  */
 export async function verifyAdminRequest(
   request: Request,
-  allowedRoles: Array<"owner" | "admin" | "admissions"> = ["owner", "admin", "admissions"],
+  allowedRoles: AdminRole[] = ALL_ADMIN_ROLES,
 ): Promise<VerifyAdminResult> {
   const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -66,7 +76,7 @@ export async function verifyAdminRequest(
     };
   }
 
-  if (!allowedRoles.includes(adminRecord.role as "owner" | "admin" | "admissions")) {
+  if (!allowedRoles.includes(adminRecord.role as AdminRole)) {
     return {
       ok: false,
       status: 403,

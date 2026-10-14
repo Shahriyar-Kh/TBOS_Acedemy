@@ -16,7 +16,7 @@ function AdminIndexPage() {
   useEffect(() => {
     if (!isLoading) {
       if (admin) {
-        navigate({ to: "/admin/admissions" });
+        navigate({ to: "/admin/dashboard" });
       } else {
         navigate({ to: "/admin/login" });
       }

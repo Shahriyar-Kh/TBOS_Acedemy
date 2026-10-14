@@ -130,8 +130,8 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
       },
 
       PATCH: async ({ request, params }: { request: Request; params: { id: string } }) => {
-        // 1. Authorize admin
-        const auth = await verifyAdminRequest(request);
+        // 1. Authorize admin (only owner, admin, and admissions may mutate admissions leads)
+        const auth = await verifyAdminRequest(request, ["owner", "admin", "admissions"]);
         if (!auth.ok) {
           return new Response(JSON.stringify({ ok: false, error: auth.error }), {
             status: auth.status,
@@ -345,12 +345,92 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
 
         const admissionId = params.id;
 
-        let body: { action?: string; channels?: IntegrationChannel[] } = {};
+        let body: any = {};
         try {
           body = await request.json();
         } catch {
           // Defaults to retry-delivery
         }
+
+        // Handle Convert to Enrolled Student
+        if (body.action === "convert-to-student") {
+          const { convertLeadToStudentSchema } = await import("@/lib/crmSchemas");
+          const { convertLeadToStudentTx } = await import("@/lib/crm.server");
+
+          const parsed = convertLeadToStudentSchema.safeParse({
+            leadId: admissionId,
+            ...body,
+          });
+
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message || "Validation failed" }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          const conv = parsed.data;
+
+          try {
+            const txResult = await convertLeadToStudentTx({
+              leadId: admissionId,
+              fullName: conv.fullName,
+              email: conv.email,
+              phone: conv.phone,
+              whatsapp: conv.whatsapp,
+              guardianName: conv.guardianName,
+              guardianPhone: conv.guardianPhone,
+              guardianEmail: conv.guardianEmail,
+              age: conv.age,
+              country: conv.country,
+              city: conv.city,
+              programSlug: conv.programSlug,
+              programTitle: conv.programTitle,
+              programType: conv.programType,
+              batchId: conv.batchId,
+              instructorId: conv.instructorId,
+              instructorName: conv.instructorName,
+              agreedFee: conv.agreedFee,
+              discount: conv.discount,
+              billingDay: conv.billingDay,
+              enrollmentDate: conv.enrollmentDate,
+              schedule: conv.schedule,
+              notes: conv.notes,
+              createInitialInvoice: conv.createInitialInvoice,
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email,
+            });
+
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                student: txResult.student,
+                enrollment: txResult.enrollment,
+                invoice: txResult.invoice,
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            if (err.message === "LEAD_ALREADY_CONVERTED") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "This lead has already been converted to a student." }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            if (err.message === "LEAD_NOT_FOUND") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Admissions lead record not found." }),
+                { status: 404, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            console.error("Conversion transaction error:", err);
+            return new Response(
+              JSON.stringify({ ok: false, error: err.message || "Failed to convert lead to student" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
 
         if (body.action && body.action !== "retry-delivery") {
           return new Response(JSON.stringify({ ok: false, error: "Unsupported action" }), {

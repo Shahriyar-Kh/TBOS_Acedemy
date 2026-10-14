@@ -25,6 +25,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export const Route = createFileRoute("/admin/demos")({
   head: () => ({ meta: adminNoIndexMeta("TBOS Demo Requests Admin") }),
@@ -199,71 +200,8 @@ function AdminDemosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col font-sans">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-[#0B192C] text-white shadow-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-[#008DDA] to-[#41B3A2] text-white shadow-sm">
-                <Video className="h-5 w-5" />
-              </div>
-              <div>
-                <span className="font-bold tracking-tight text-base text-white">TBOS Academy</span>
-                <span className="ml-2 text-xs font-semibold text-purple-300 uppercase tracking-wider">Demo Pipeline</span>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-1">
-              <Link
-                to="/admin/admissions"
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                All Admissions
-              </Link>
-              <Link
-                to="/admin/demos"
-                className="rounded-md bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-              >
-                Demo Pipeline
-              </Link>
-              <Link
-                to="/admin/content"
-                className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
-              >
-                Content CMS
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => fetchDemos()}
-              disabled={isLoading}
-              className="text-slate-300 hover:text-white hover:bg-white/10 h-8 px-2.5"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={async () => {
-                await logout();
-                navigate({ to: "/admin/login" });
-              }}
-              className="border-white/10 bg-white/5 text-slate-200 hover:bg-red-500/20 hover:text-red-300 h-8 text-xs font-medium gap-1.5"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-slate-900">Free Trial Demo Requests</h1>
@@ -418,7 +356,6 @@ function AdminDemosPage() {
             })
           )}
         </div>
-      </main>
 
       {/* Schedule Modal */}
       {selectedDemo && (
@@ -489,6 +426,7 @@ function AdminDemosPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

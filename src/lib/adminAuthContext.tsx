@@ -4,7 +4,7 @@ import { getSupabaseBrowserClient, isBrowserSupabaseConfigured } from "./supabas
 export interface AdminUser {
   id: string;
   email: string;
-  role: "owner" | "admin" | "admissions";
+  role: "owner" | "admin" | "admissions" | "instructor" | "accountant";
 }
 
 interface AdminAuthContextType {

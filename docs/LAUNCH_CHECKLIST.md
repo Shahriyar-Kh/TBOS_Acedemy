@@ -11,6 +11,7 @@
 | **Cloudflare Authentication** | PASS | Wrangler OAuth authenticated under account `663a3a9235c68ebb150f268ba6389b7f` |
 | **Cloudflare Deployment** | PASS | Worker `techbuilt-os` deployed to Cloudflare Workers with Edge Assets binding |
 | **Environment Variables** | PASS | `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` securely bound |
+| **CRM Reminder Secret** | PENDING RELEASE | `CRON_SECRET` (>= 32 chars) to be bound via Cloudflare encrypted secrets prior to scheduled cron activation |
 | **Temporary Preview URL** | PASS | `https://techbuilt-os.feelwise.workers.dev` live with full SSR and 200 HTTP responses |
 | **Custom Domain Binding** | PASS | `https://techbuiltos.online` active and resolving via Cloudflare edge |
 | **HTTPS / TLS** | PASS | SSL certificate active on custom domain with HTTP/3 (QUIC) support |

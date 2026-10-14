@@ -2,12 +2,18 @@ import { z } from "zod";
 
 export const CRM_STATUS_OPTIONS = [
   { value: "new", label: "New", color: "bg-blue-500/10 text-blue-600 border-blue-200" },
+  { value: "reviewed", label: "Reviewed", color: "bg-sky-500/10 text-sky-600 border-sky-200" },
   { value: "contacted", label: "Contacted", color: "bg-amber-500/10 text-amber-600 border-amber-200" },
-  { value: "qualified", label: "Qualified", color: "bg-indigo-500/10 text-indigo-600 border-indigo-200" },
   { value: "demo_requested", label: "Demo Requested", color: "bg-purple-500/10 text-purple-600 border-purple-200" },
   { value: "demo_scheduled", label: "Demo Scheduled", color: "bg-cyan-500/10 text-cyan-600 border-cyan-200" },
   { value: "demo_completed", label: "Demo Completed", color: "bg-teal-500/10 text-teal-600 border-teal-200" },
+  { value: "follow_up_due", label: "Follow-up Due", color: "bg-orange-500/10 text-orange-600 border-orange-200" },
+  { value: "qualified", label: "Qualified", color: "bg-indigo-500/10 text-indigo-600 border-indigo-200" },
   { value: "enrolled", label: "Enrolled", color: "bg-emerald-500/10 text-emerald-600 border-emerald-200" },
+  { value: "not_interested", label: "Not Interested", color: "bg-neutral-500/10 text-neutral-600 border-neutral-200" },
+  { value: "unresponsive", label: "Unresponsive", color: "bg-stone-500/10 text-stone-600 border-stone-200" },
+  { value: "rejected", label: "Rejected", color: "bg-rose-500/10 text-rose-600 border-rose-200" },
+  { value: "archived", label: "Archived", color: "bg-gray-500/10 text-gray-600 border-gray-200" },
   { value: "closed", label: "Closed", color: "bg-slate-500/10 text-slate-600 border-slate-200" },
 ] as const;
 
@@ -18,12 +24,18 @@ export const adminAdmissionsPatchSchema = z
     status: z
       .enum([
         "new",
+        "reviewed",
         "contacted",
-        "qualified",
         "demo_requested",
         "demo_scheduled",
         "demo_completed",
+        "follow_up_due",
+        "qualified",
         "enrolled",
+        "not_interested",
+        "unresponsive",
+        "rejected",
+        "archived",
         "closed",
       ])
       .optional(),

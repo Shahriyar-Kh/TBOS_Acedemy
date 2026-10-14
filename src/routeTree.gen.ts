@@ -43,14 +43,45 @@ import { Route as LiveBatchesSlugRouteImport } from './routes/live-batches.$slug
 import { Route as CoursesSlugRouteImport } from './routes/courses.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiAdmissionsRouteImport } from './routes/api.admissions'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTimetableRouteImport } from './routes/admin.timetable'
+import { Route as AdminTasksRouteImport } from './routes/admin.tasks'
+import { Route as AdminStudentsRouteImport } from './routes/admin.students'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminResetPasswordRouteImport } from './routes/admin.reset-password'
+import { Route as AdminReportsRouteImport } from './routes/admin.reports'
+import { Route as AdminProgramsRouteImport } from './routes/admin.programs'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminForgotPasswordRouteImport } from './routes/admin.forgot-password'
+import { Route as AdminFeesRouteImport } from './routes/admin.fees'
 import { Route as AdminDemosRouteImport } from './routes/admin.demos'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminContentRouteImport } from './routes/admin.content'
+import { Route as AdminCommunicationsRouteImport } from './routes/admin.communications'
+import { Route as AdminBatchesRouteImport } from './routes/admin.batches'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminAdmissionsRouteImport } from './routes/admin.admissions'
 import { Route as ApiContentKindRouteImport } from './routes/api.content.$kind'
+import { Route as ApiAdminUsersRouteImport } from './routes/api.admin.users'
+import { Route as ApiAdminTimetableRouteImport } from './routes/api.admin.timetable'
+import { Route as ApiAdminTasksRouteImport } from './routes/api.admin.tasks'
+import { Route as ApiAdminStudentsRouteImport } from './routes/api.admin.students'
+import { Route as ApiAdminReportsRouteImport } from './routes/api.admin.reports'
+import { Route as ApiAdminRemindersRouteImport } from './routes/api.admin.reminders'
+import { Route as ApiAdminNotificationsRouteImport } from './routes/api.admin.notifications'
 import { Route as ApiAdminMeRouteImport } from './routes/api.admin.me'
+import { Route as ApiAdminFeesRouteImport } from './routes/api.admin.fees'
+import { Route as ApiAdminCommunicationsRouteImport } from './routes/api.admin.communications'
+import { Route as ApiAdminBatchesRouteImport } from './routes/api.admin.batches'
+import { Route as ApiAdminAuditRouteImport } from './routes/api.admin.audit'
 import { Route as ApiAdminAdmissionsRouteImport } from './routes/api.admin.admissions'
+import { Route as ApiAdminTimetableIdRouteImport } from './routes/api.admin.timetable.$id'
+import { Route as ApiAdminTasksIdRouteImport } from './routes/api.admin.tasks.$id'
+import { Route as ApiAdminStudentsIdRouteImport } from './routes/api.admin.students.$id'
+import { Route as ApiAdminRemindersProcessRouteImport } from './routes/api.admin.reminders.process'
 import { Route as ApiAdminContentKindRouteImport } from './routes/api.admin.content.$kind'
+import { Route as ApiAdminBatchesIdRouteImport } from './routes/api.admin.batches.$id'
+import { Route as ApiAdminAuthPasswordResetRouteImport } from './routes/api.admin.auth.password-reset'
 import { Route as ApiAdminAdmissionsIdRouteImport } from './routes/api.admin.admissions.$id'
 import { Route as ApiAdminContentKindIdRouteImport } from './routes/api.admin.content.$kind.$id'
 
@@ -229,9 +260,59 @@ const ApiAdmissionsRoute = ApiAdmissionsRouteImport.update({
   path: '/api/admissions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTimetableRoute = AdminTimetableRouteImport.update({
+  id: '/admin/timetable',
+  path: '/admin/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTasksRoute = AdminTasksRouteImport.update({
+  id: '/admin/tasks',
+  path: '/admin/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminStudentsRoute = AdminStudentsRouteImport.update({
+  id: '/admin/students',
+  path: '/admin/students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminResetPasswordRoute = AdminResetPasswordRouteImport.update({
+  id: '/admin/reset-password',
+  path: '/admin/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminProgramsRoute = AdminProgramsRouteImport.update({
+  id: '/admin/programs',
+  path: '/admin/programs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/admin/login',
   path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminForgotPasswordRoute = AdminForgotPasswordRouteImport.update({
+  id: '/admin/forgot-password',
+  path: '/admin/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFeesRoute = AdminFeesRouteImport.update({
+  id: '/admin/fees',
+  path: '/admin/fees',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminDemosRoute = AdminDemosRouteImport.update({
@@ -239,9 +320,29 @@ const AdminDemosRoute = AdminDemosRouteImport.update({
   path: '/admin/demos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminContentRoute = AdminContentRouteImport.update({
   id: '/admin/content',
   path: '/admin/content',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCommunicationsRoute = AdminCommunicationsRouteImport.update({
+  id: '/admin/communications',
+  path: '/admin/communications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminBatchesRoute = AdminBatchesRouteImport.update({
+  id: '/admin/batches',
+  path: '/admin/batches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/admin/audit',
+  path: '/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAdmissionsRoute = AdminAdmissionsRouteImport.update({
@@ -254,9 +355,64 @@ const ApiContentKindRoute = ApiContentKindRouteImport.update({
   path: '/api/content/$kind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
+  id: '/api/admin/users',
+  path: '/api/admin/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminTimetableRoute = ApiAdminTimetableRouteImport.update({
+  id: '/api/admin/timetable',
+  path: '/api/admin/timetable',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminTasksRoute = ApiAdminTasksRouteImport.update({
+  id: '/api/admin/tasks',
+  path: '/api/admin/tasks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminStudentsRoute = ApiAdminStudentsRouteImport.update({
+  id: '/api/admin/students',
+  path: '/api/admin/students',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
+  id: '/api/admin/reports',
+  path: '/api/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminRemindersRoute = ApiAdminRemindersRouteImport.update({
+  id: '/api/admin/reminders',
+  path: '/api/admin/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminNotificationsRoute = ApiAdminNotificationsRouteImport.update({
+  id: '/api/admin/notifications',
+  path: '/api/admin/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminMeRoute = ApiAdminMeRouteImport.update({
   id: '/api/admin/me',
   path: '/api/admin/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFeesRoute = ApiAdminFeesRouteImport.update({
+  id: '/api/admin/fees',
+  path: '/api/admin/fees',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminCommunicationsRoute = ApiAdminCommunicationsRouteImport.update({
+  id: '/api/admin/communications',
+  path: '/api/admin/communications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminBatchesRoute = ApiAdminBatchesRouteImport.update({
+  id: '/api/admin/batches',
+  path: '/api/admin/batches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAuditRoute = ApiAdminAuditRouteImport.update({
+  id: '/api/admin/audit',
+  path: '/api/admin/audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminAdmissionsRoute = ApiAdminAdmissionsRouteImport.update({
@@ -264,11 +420,43 @@ const ApiAdminAdmissionsRoute = ApiAdminAdmissionsRouteImport.update({
   path: '/api/admin/admissions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminTimetableIdRoute = ApiAdminTimetableIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminTimetableRoute,
+} as any)
+const ApiAdminTasksIdRoute = ApiAdminTasksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminTasksRoute,
+} as any)
+const ApiAdminStudentsIdRoute = ApiAdminStudentsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminStudentsRoute,
+} as any)
+const ApiAdminRemindersProcessRoute =
+  ApiAdminRemindersProcessRouteImport.update({
+    id: '/process',
+    path: '/process',
+    getParentRoute: () => ApiAdminRemindersRoute,
+  } as any)
 const ApiAdminContentKindRoute = ApiAdminContentKindRouteImport.update({
   id: '/api/admin/content/$kind',
   path: '/api/admin/content/$kind',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminBatchesIdRoute = ApiAdminBatchesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAdminBatchesRoute,
+} as any)
+const ApiAdminAuthPasswordResetRoute =
+  ApiAdminAuthPasswordResetRouteImport.update({
+    id: '/api/admin/auth/password-reset',
+    path: '/api/admin/auth/password-reset',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminAdmissionsIdRoute = ApiAdminAdmissionsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -304,9 +492,23 @@ export interface FileRoutesByFullPath {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/batches': typeof AdminBatchesRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/content': typeof AdminContentRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/programs': typeof AdminProgramsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/timetable': typeof AdminTimetableRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -320,10 +522,27 @@ export interface FileRoutesByFullPath {
   '/specializations/': typeof SpecializationsIndexRoute
   '/tutoring/': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/audit': typeof ApiAdminAuditRoute
+  '/api/admin/batches': typeof ApiAdminBatchesRouteWithChildren
+  '/api/admin/communications': typeof ApiAdminCommunicationsRoute
+  '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
+  '/api/admin/reports': typeof ApiAdminReportsRoute
+  '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
+  '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
+  '/api/admin/timetable': typeof ApiAdminTimetableRouteWithChildren
+  '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
+  '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
+  '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
+  '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
   '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRoutesByTo {
@@ -350,9 +569,23 @@ export interface FileRoutesByTo {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/batches': typeof AdminBatchesRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/content': typeof AdminContentRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/programs': typeof AdminProgramsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/timetable': typeof AdminTimetableRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -366,10 +599,27 @@ export interface FileRoutesByTo {
   '/specializations': typeof SpecializationsIndexRoute
   '/tutoring': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/audit': typeof ApiAdminAuditRoute
+  '/api/admin/batches': typeof ApiAdminBatchesRouteWithChildren
+  '/api/admin/communications': typeof ApiAdminCommunicationsRoute
+  '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
+  '/api/admin/reports': typeof ApiAdminReportsRoute
+  '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
+  '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
+  '/api/admin/timetable': typeof ApiAdminTimetableRouteWithChildren
+  '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
+  '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
+  '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
+  '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
   '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRoutesById {
@@ -397,9 +647,23 @@ export interface FileRoutesById {
   '/testimonials': typeof TestimonialsRoute
   '/web-development-course-online': typeof WebDevelopmentCourseOnlineRoute
   '/admin/admissions': typeof AdminAdmissionsRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/batches': typeof AdminBatchesRoute
+  '/admin/communications': typeof AdminCommunicationsRoute
   '/admin/content': typeof AdminContentRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/demos': typeof AdminDemosRoute
+  '/admin/fees': typeof AdminFeesRoute
+  '/admin/forgot-password': typeof AdminForgotPasswordRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/programs': typeof AdminProgramsRoute
+  '/admin/reports': typeof AdminReportsRoute
+  '/admin/reset-password': typeof AdminResetPasswordRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/students': typeof AdminStudentsRoute
+  '/admin/tasks': typeof AdminTasksRoute
+  '/admin/timetable': typeof AdminTimetableRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/admissions': typeof ApiAdmissionsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/courses/$slug': typeof CoursesSlugRoute
@@ -413,10 +677,27 @@ export interface FileRoutesById {
   '/specializations/': typeof SpecializationsIndexRoute
   '/tutoring/': typeof TutoringIndexRoute
   '/api/admin/admissions': typeof ApiAdminAdmissionsRouteWithChildren
+  '/api/admin/audit': typeof ApiAdminAuditRoute
+  '/api/admin/batches': typeof ApiAdminBatchesRouteWithChildren
+  '/api/admin/communications': typeof ApiAdminCommunicationsRoute
+  '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
+  '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
+  '/api/admin/reports': typeof ApiAdminReportsRoute
+  '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
+  '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
+  '/api/admin/timetable': typeof ApiAdminTimetableRouteWithChildren
+  '/api/admin/users': typeof ApiAdminUsersRoute
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
+  '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
+  '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
+  '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
+  '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
   '/api/admin/content/$kind/$id': typeof ApiAdminContentKindIdRoute
 }
 export interface FileRouteTypes {
@@ -445,9 +726,23 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/audit'
+    | '/admin/batches'
+    | '/admin/communications'
     | '/admin/content'
+    | '/admin/dashboard'
     | '/admin/demos'
+    | '/admin/fees'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/programs'
+    | '/admin/reports'
+    | '/admin/reset-password'
+    | '/admin/settings'
+    | '/admin/students'
+    | '/admin/tasks'
+    | '/admin/timetable'
+    | '/admin/users'
     | '/api/admissions'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -461,10 +756,27 @@ export interface FileRouteTypes {
     | '/specializations/'
     | '/tutoring/'
     | '/api/admin/admissions'
+    | '/api/admin/audit'
+    | '/api/admin/batches'
+    | '/api/admin/communications'
+    | '/api/admin/fees'
     | '/api/admin/me'
+    | '/api/admin/notifications'
+    | '/api/admin/reminders'
+    | '/api/admin/reports'
+    | '/api/admin/students'
+    | '/api/admin/tasks'
+    | '/api/admin/timetable'
+    | '/api/admin/users'
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/auth/password-reset'
+    | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
+    | '/api/admin/students/$id'
+    | '/api/admin/tasks/$id'
+    | '/api/admin/timetable/$id'
     | '/api/admin/content/$kind/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -491,9 +803,23 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/audit'
+    | '/admin/batches'
+    | '/admin/communications'
     | '/admin/content'
+    | '/admin/dashboard'
     | '/admin/demos'
+    | '/admin/fees'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/programs'
+    | '/admin/reports'
+    | '/admin/reset-password'
+    | '/admin/settings'
+    | '/admin/students'
+    | '/admin/tasks'
+    | '/admin/timetable'
+    | '/admin/users'
     | '/api/admissions'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -507,10 +833,27 @@ export interface FileRouteTypes {
     | '/specializations'
     | '/tutoring'
     | '/api/admin/admissions'
+    | '/api/admin/audit'
+    | '/api/admin/batches'
+    | '/api/admin/communications'
+    | '/api/admin/fees'
     | '/api/admin/me'
+    | '/api/admin/notifications'
+    | '/api/admin/reminders'
+    | '/api/admin/reports'
+    | '/api/admin/students'
+    | '/api/admin/tasks'
+    | '/api/admin/timetable'
+    | '/api/admin/users'
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/auth/password-reset'
+    | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
+    | '/api/admin/students/$id'
+    | '/api/admin/tasks/$id'
+    | '/api/admin/timetable/$id'
     | '/api/admin/content/$kind/$id'
   id:
     | '__root__'
@@ -537,9 +880,23 @@ export interface FileRouteTypes {
     | '/testimonials'
     | '/web-development-course-online'
     | '/admin/admissions'
+    | '/admin/audit'
+    | '/admin/batches'
+    | '/admin/communications'
     | '/admin/content'
+    | '/admin/dashboard'
     | '/admin/demos'
+    | '/admin/fees'
+    | '/admin/forgot-password'
     | '/admin/login'
+    | '/admin/programs'
+    | '/admin/reports'
+    | '/admin/reset-password'
+    | '/admin/settings'
+    | '/admin/students'
+    | '/admin/tasks'
+    | '/admin/timetable'
+    | '/admin/users'
     | '/api/admissions'
     | '/blog/$slug'
     | '/courses/$slug'
@@ -553,10 +910,27 @@ export interface FileRouteTypes {
     | '/specializations/'
     | '/tutoring/'
     | '/api/admin/admissions'
+    | '/api/admin/audit'
+    | '/api/admin/batches'
+    | '/api/admin/communications'
+    | '/api/admin/fees'
     | '/api/admin/me'
+    | '/api/admin/notifications'
+    | '/api/admin/reminders'
+    | '/api/admin/reports'
+    | '/api/admin/students'
+    | '/api/admin/tasks'
+    | '/api/admin/timetable'
+    | '/api/admin/users'
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
+    | '/api/admin/auth/password-reset'
+    | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
+    | '/api/admin/students/$id'
+    | '/api/admin/tasks/$id'
+    | '/api/admin/timetable/$id'
     | '/api/admin/content/$kind/$id'
   fileRoutesById: FileRoutesById
 }
@@ -584,9 +958,23 @@ export interface RootRouteChildren {
   TestimonialsRoute: typeof TestimonialsRoute
   WebDevelopmentCourseOnlineRoute: typeof WebDevelopmentCourseOnlineRoute
   AdminAdmissionsRoute: typeof AdminAdmissionsRoute
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminBatchesRoute: typeof AdminBatchesRoute
+  AdminCommunicationsRoute: typeof AdminCommunicationsRoute
   AdminContentRoute: typeof AdminContentRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDemosRoute: typeof AdminDemosRoute
+  AdminFeesRoute: typeof AdminFeesRoute
+  AdminForgotPasswordRoute: typeof AdminForgotPasswordRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminProgramsRoute: typeof AdminProgramsRoute
+  AdminReportsRoute: typeof AdminReportsRoute
+  AdminResetPasswordRoute: typeof AdminResetPasswordRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminStudentsRoute: typeof AdminStudentsRoute
+  AdminTasksRoute: typeof AdminTasksRoute
+  AdminTimetableRoute: typeof AdminTimetableRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   ApiAdmissionsRoute: typeof ApiAdmissionsRoute
   BlogSlugRoute: typeof BlogSlugRoute
   CoursesSlugRoute: typeof CoursesSlugRoute
@@ -600,8 +988,20 @@ export interface RootRouteChildren {
   SpecializationsIndexRoute: typeof SpecializationsIndexRoute
   TutoringIndexRoute: typeof TutoringIndexRoute
   ApiAdminAdmissionsRoute: typeof ApiAdminAdmissionsRouteWithChildren
+  ApiAdminAuditRoute: typeof ApiAdminAuditRoute
+  ApiAdminBatchesRoute: typeof ApiAdminBatchesRouteWithChildren
+  ApiAdminCommunicationsRoute: typeof ApiAdminCommunicationsRoute
+  ApiAdminFeesRoute: typeof ApiAdminFeesRoute
   ApiAdminMeRoute: typeof ApiAdminMeRoute
+  ApiAdminNotificationsRoute: typeof ApiAdminNotificationsRoute
+  ApiAdminRemindersRoute: typeof ApiAdminRemindersRouteWithChildren
+  ApiAdminReportsRoute: typeof ApiAdminReportsRoute
+  ApiAdminStudentsRoute: typeof ApiAdminStudentsRouteWithChildren
+  ApiAdminTasksRoute: typeof ApiAdminTasksRouteWithChildren
+  ApiAdminTimetableRoute: typeof ApiAdminTimetableRouteWithChildren
+  ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiContentKindRoute: typeof ApiContentKindRoute
+  ApiAdminAuthPasswordResetRoute: typeof ApiAdminAuthPasswordResetRoute
   ApiAdminContentKindRoute: typeof ApiAdminContentKindRouteWithChildren
 }
 
@@ -845,11 +1245,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/timetable': {
+      id: '/admin/timetable'
+      path: '/admin/timetable'
+      fullPath: '/admin/timetable'
+      preLoaderRoute: typeof AdminTimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/tasks': {
+      id: '/admin/tasks'
+      path: '/admin/tasks'
+      fullPath: '/admin/tasks'
+      preLoaderRoute: typeof AdminTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/students': {
+      id: '/admin/students'
+      path: '/admin/students'
+      fullPath: '/admin/students'
+      preLoaderRoute: typeof AdminStudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reset-password': {
+      id: '/admin/reset-password'
+      path: '/admin/reset-password'
+      fullPath: '/admin/reset-password'
+      preLoaderRoute: typeof AdminResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/programs': {
+      id: '/admin/programs'
+      path: '/admin/programs'
+      fullPath: '/admin/programs'
+      preLoaderRoute: typeof AdminProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/forgot-password': {
+      id: '/admin/forgot-password'
+      path: '/admin/forgot-password'
+      fullPath: '/admin/forgot-password'
+      preLoaderRoute: typeof AdminForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/fees': {
+      id: '/admin/fees'
+      path: '/admin/fees'
+      fullPath: '/admin/fees'
+      preLoaderRoute: typeof AdminFeesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/demos': {
@@ -859,11 +1329,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDemosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/content': {
       id: '/admin/content'
       path: '/admin/content'
       fullPath: '/admin/content'
       preLoaderRoute: typeof AdminContentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/communications': {
+      id: '/admin/communications'
+      path: '/admin/communications'
+      fullPath: '/admin/communications'
+      preLoaderRoute: typeof AdminCommunicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/batches': {
+      id: '/admin/batches'
+      path: '/admin/batches'
+      fullPath: '/admin/batches'
+      preLoaderRoute: typeof AdminBatchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/admin/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/admissions': {
@@ -880,11 +1378,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContentKindRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/users': {
+      id: '/api/admin/users'
+      path: '/api/admin/users'
+      fullPath: '/api/admin/users'
+      preLoaderRoute: typeof ApiAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/timetable': {
+      id: '/api/admin/timetable'
+      path: '/api/admin/timetable'
+      fullPath: '/api/admin/timetable'
+      preLoaderRoute: typeof ApiAdminTimetableRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/tasks': {
+      id: '/api/admin/tasks'
+      path: '/api/admin/tasks'
+      fullPath: '/api/admin/tasks'
+      preLoaderRoute: typeof ApiAdminTasksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/students': {
+      id: '/api/admin/students'
+      path: '/api/admin/students'
+      fullPath: '/api/admin/students'
+      preLoaderRoute: typeof ApiAdminStudentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reports': {
+      id: '/api/admin/reports'
+      path: '/api/admin/reports'
+      fullPath: '/api/admin/reports'
+      preLoaderRoute: typeof ApiAdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/reminders': {
+      id: '/api/admin/reminders'
+      path: '/api/admin/reminders'
+      fullPath: '/api/admin/reminders'
+      preLoaderRoute: typeof ApiAdminRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/notifications': {
+      id: '/api/admin/notifications'
+      path: '/api/admin/notifications'
+      fullPath: '/api/admin/notifications'
+      preLoaderRoute: typeof ApiAdminNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/me': {
       id: '/api/admin/me'
       path: '/api/admin/me'
       fullPath: '/api/admin/me'
       preLoaderRoute: typeof ApiAdminMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/fees': {
+      id: '/api/admin/fees'
+      path: '/api/admin/fees'
+      fullPath: '/api/admin/fees'
+      preLoaderRoute: typeof ApiAdminFeesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/communications': {
+      id: '/api/admin/communications'
+      path: '/api/admin/communications'
+      fullPath: '/api/admin/communications'
+      preLoaderRoute: typeof ApiAdminCommunicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/batches': {
+      id: '/api/admin/batches'
+      path: '/api/admin/batches'
+      fullPath: '/api/admin/batches'
+      preLoaderRoute: typeof ApiAdminBatchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/audit': {
+      id: '/api/admin/audit'
+      path: '/api/admin/audit'
+      fullPath: '/api/admin/audit'
+      preLoaderRoute: typeof ApiAdminAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/admissions': {
@@ -894,11 +1469,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAdmissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/timetable/$id': {
+      id: '/api/admin/timetable/$id'
+      path: '/$id'
+      fullPath: '/api/admin/timetable/$id'
+      preLoaderRoute: typeof ApiAdminTimetableIdRouteImport
+      parentRoute: typeof ApiAdminTimetableRoute
+    }
+    '/api/admin/tasks/$id': {
+      id: '/api/admin/tasks/$id'
+      path: '/$id'
+      fullPath: '/api/admin/tasks/$id'
+      preLoaderRoute: typeof ApiAdminTasksIdRouteImport
+      parentRoute: typeof ApiAdminTasksRoute
+    }
+    '/api/admin/students/$id': {
+      id: '/api/admin/students/$id'
+      path: '/$id'
+      fullPath: '/api/admin/students/$id'
+      preLoaderRoute: typeof ApiAdminStudentsIdRouteImport
+      parentRoute: typeof ApiAdminStudentsRoute
+    }
+    '/api/admin/reminders/process': {
+      id: '/api/admin/reminders/process'
+      path: '/process'
+      fullPath: '/api/admin/reminders/process'
+      preLoaderRoute: typeof ApiAdminRemindersProcessRouteImport
+      parentRoute: typeof ApiAdminRemindersRoute
+    }
     '/api/admin/content/$kind': {
       id: '/api/admin/content/$kind'
       path: '/api/admin/content/$kind'
       fullPath: '/api/admin/content/$kind'
       preLoaderRoute: typeof ApiAdminContentKindRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/batches/$id': {
+      id: '/api/admin/batches/$id'
+      path: '/$id'
+      fullPath: '/api/admin/batches/$id'
+      preLoaderRoute: typeof ApiAdminBatchesIdRouteImport
+      parentRoute: typeof ApiAdminBatchesRoute
+    }
+    '/api/admin/auth/password-reset': {
+      id: '/api/admin/auth/password-reset'
+      path: '/api/admin/auth/password-reset'
+      fullPath: '/api/admin/auth/password-reset'
+      preLoaderRoute: typeof ApiAdminAuthPasswordResetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/admissions/$id': {
@@ -928,6 +1545,63 @@ const ApiAdminAdmissionsRouteChildren: ApiAdminAdmissionsRouteChildren = {
 
 const ApiAdminAdmissionsRouteWithChildren =
   ApiAdminAdmissionsRoute._addFileChildren(ApiAdminAdmissionsRouteChildren)
+
+interface ApiAdminBatchesRouteChildren {
+  ApiAdminBatchesIdRoute: typeof ApiAdminBatchesIdRoute
+}
+
+const ApiAdminBatchesRouteChildren: ApiAdminBatchesRouteChildren = {
+  ApiAdminBatchesIdRoute: ApiAdminBatchesIdRoute,
+}
+
+const ApiAdminBatchesRouteWithChildren = ApiAdminBatchesRoute._addFileChildren(
+  ApiAdminBatchesRouteChildren,
+)
+
+interface ApiAdminRemindersRouteChildren {
+  ApiAdminRemindersProcessRoute: typeof ApiAdminRemindersProcessRoute
+}
+
+const ApiAdminRemindersRouteChildren: ApiAdminRemindersRouteChildren = {
+  ApiAdminRemindersProcessRoute: ApiAdminRemindersProcessRoute,
+}
+
+const ApiAdminRemindersRouteWithChildren =
+  ApiAdminRemindersRoute._addFileChildren(ApiAdminRemindersRouteChildren)
+
+interface ApiAdminStudentsRouteChildren {
+  ApiAdminStudentsIdRoute: typeof ApiAdminStudentsIdRoute
+}
+
+const ApiAdminStudentsRouteChildren: ApiAdminStudentsRouteChildren = {
+  ApiAdminStudentsIdRoute: ApiAdminStudentsIdRoute,
+}
+
+const ApiAdminStudentsRouteWithChildren =
+  ApiAdminStudentsRoute._addFileChildren(ApiAdminStudentsRouteChildren)
+
+interface ApiAdminTasksRouteChildren {
+  ApiAdminTasksIdRoute: typeof ApiAdminTasksIdRoute
+}
+
+const ApiAdminTasksRouteChildren: ApiAdminTasksRouteChildren = {
+  ApiAdminTasksIdRoute: ApiAdminTasksIdRoute,
+}
+
+const ApiAdminTasksRouteWithChildren = ApiAdminTasksRoute._addFileChildren(
+  ApiAdminTasksRouteChildren,
+)
+
+interface ApiAdminTimetableRouteChildren {
+  ApiAdminTimetableIdRoute: typeof ApiAdminTimetableIdRoute
+}
+
+const ApiAdminTimetableRouteChildren: ApiAdminTimetableRouteChildren = {
+  ApiAdminTimetableIdRoute: ApiAdminTimetableIdRoute,
+}
+
+const ApiAdminTimetableRouteWithChildren =
+  ApiAdminTimetableRoute._addFileChildren(ApiAdminTimetableRouteChildren)
 
 interface ApiAdminContentKindRouteChildren {
   ApiAdminContentKindIdRoute: typeof ApiAdminContentKindIdRoute
@@ -964,9 +1638,23 @@ const rootRouteChildren: RootRouteChildren = {
   TestimonialsRoute: TestimonialsRoute,
   WebDevelopmentCourseOnlineRoute: WebDevelopmentCourseOnlineRoute,
   AdminAdmissionsRoute: AdminAdmissionsRoute,
+  AdminAuditRoute: AdminAuditRoute,
+  AdminBatchesRoute: AdminBatchesRoute,
+  AdminCommunicationsRoute: AdminCommunicationsRoute,
   AdminContentRoute: AdminContentRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminDemosRoute: AdminDemosRoute,
+  AdminFeesRoute: AdminFeesRoute,
+  AdminForgotPasswordRoute: AdminForgotPasswordRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminProgramsRoute: AdminProgramsRoute,
+  AdminReportsRoute: AdminReportsRoute,
+  AdminResetPasswordRoute: AdminResetPasswordRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminStudentsRoute: AdminStudentsRoute,
+  AdminTasksRoute: AdminTasksRoute,
+  AdminTimetableRoute: AdminTimetableRoute,
+  AdminUsersRoute: AdminUsersRoute,
   ApiAdmissionsRoute: ApiAdmissionsRoute,
   BlogSlugRoute: BlogSlugRoute,
   CoursesSlugRoute: CoursesSlugRoute,
@@ -980,8 +1668,20 @@ const rootRouteChildren: RootRouteChildren = {
   SpecializationsIndexRoute: SpecializationsIndexRoute,
   TutoringIndexRoute: TutoringIndexRoute,
   ApiAdminAdmissionsRoute: ApiAdminAdmissionsRouteWithChildren,
+  ApiAdminAuditRoute: ApiAdminAuditRoute,
+  ApiAdminBatchesRoute: ApiAdminBatchesRouteWithChildren,
+  ApiAdminCommunicationsRoute: ApiAdminCommunicationsRoute,
+  ApiAdminFeesRoute: ApiAdminFeesRoute,
   ApiAdminMeRoute: ApiAdminMeRoute,
+  ApiAdminNotificationsRoute: ApiAdminNotificationsRoute,
+  ApiAdminRemindersRoute: ApiAdminRemindersRouteWithChildren,
+  ApiAdminReportsRoute: ApiAdminReportsRoute,
+  ApiAdminStudentsRoute: ApiAdminStudentsRouteWithChildren,
+  ApiAdminTasksRoute: ApiAdminTasksRouteWithChildren,
+  ApiAdminTimetableRoute: ApiAdminTimetableRouteWithChildren,
+  ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiContentKindRoute: ApiContentKindRoute,
+  ApiAdminAuthPasswordResetRoute: ApiAdminAuthPasswordResetRoute,
   ApiAdminContentKindRoute: ApiAdminContentKindRouteWithChildren,
 }
 export const routeTree = rootRouteImport

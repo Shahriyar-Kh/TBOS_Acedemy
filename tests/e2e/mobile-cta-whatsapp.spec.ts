@@ -130,9 +130,12 @@ test.describe("Mobile CTA & Program-Specific WhatsApp Context", () => {
 
     // Dismiss cookie consent banner if present so mobile sticky CTA interaction is unobstructed
     const noThanksBtn = page.getByRole("button", { name: /no thanks/i });
-    if (await noThanksBtn.isVisible()) {
+    try {
+      await noThanksBtn.waitFor({ state: "visible", timeout: 2000 });
       await noThanksBtn.click();
       await page.waitForTimeout(200);
+    } catch {
+      // Banner not visible or already dismissed
     }
 
     const stickyCta = page.locator('[data-testid="live-program-mobile-cta"]');
