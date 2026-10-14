@@ -51,7 +51,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: TypeScript
         run: node ./node_modules/typescript/bin/tsc --noEmit
@@ -90,7 +90,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4.145.0"
-          packageManager: bun
+          packageManager: npm
           command: deploy --config .output/server/wrangler.json --secrets-file .env.phase10b-deploy
 
       - name: Remove ephemeral secrets
