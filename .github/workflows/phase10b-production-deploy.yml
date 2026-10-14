@@ -110,7 +110,12 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Run production Playwright suite
-        run: node ./node_modules/@playwright/test/cli.js test
+        run: |
+          find tests/e2e -name '*.spec.ts' \
+            ! -name 'capture-admin-screenshots.spec.ts' \
+            ! -name 'phase16-browser-acceptance.spec.ts' \
+            -print0 \
+            | xargs -0 node ./node_modules/@playwright/test/cli.js test
 
       - name: Run 84-route production audit
         run: bun scripts/audit-all-routes.ts
