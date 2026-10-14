@@ -30,6 +30,11 @@ export const Route = createFileRoute("/api/admin/tasks")({
         let query = client.from("crm_tasks").select("*, admin_users(email, role)").order("due_date", { ascending: true });
         if (status !== "all") query = query.eq("status", status);
 
+        // RBAC row scoping: instructors only see tasks assigned to them
+        if (auth.admin.admin.role === "instructor") {
+          query = query.eq("assigned_to", auth.admin.user.id);
+        }
+
         const { data: tasks, error } = await query;
         if (error) {
           return new Response(JSON.stringify({ ok: false, error: "Failed to fetch tasks" }), {

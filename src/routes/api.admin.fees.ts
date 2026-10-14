@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { recordPaymentSchema } from "@/lib/crmSchemas";
-import { generateInvoiceNumber, logCrmAction } from "@/lib/crm.server";
+import { generateInvoiceNumber, logCrmAction, recordPaymentTx } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/fees")({
   server: {
@@ -117,84 +117,62 @@ export const Route = createFileRoute("/api/admin/fees")({
           }
 
           const { invoiceId, studentId, amount, paymentDate, paymentMethod, referenceNumber, notes } = parsed.data;
+          const idempotencyKey = body.idempotencyKey || null;
 
-          // 1. Fetch target invoice
-          const { data: invoice, error: findInvErr } = await client
-            .from("fee_invoices")
-            .select("*")
-            .eq("id", invoiceId)
-            .single();
-
-          if (findInvErr || !invoice) {
-            return new Response(JSON.stringify({ ok: false, error: "Invoice not found" }), {
-              status: 404,
-              headers: { "Content-Type": "application/json" },
-            });
-          }
-
-          // 2. Insert fee payment
-          const { data: newPayment, error: payErr } = await client
-            .from("fee_payments")
-            .insert({
-              invoice_id: invoiceId,
-              student_id: studentId,
-              amount,
-              payment_date: paymentDate,
-              payment_method: paymentMethod,
-              reference_number: referenceNumber || null,
-              notes: notes || null,
-              recorded_by: auth.admin.user.id,
-            })
-            .select()
-            .single();
-
-          if (payErr || !newPayment) {
-            console.error("Payment insert error:", payErr);
-            return new Response(JSON.stringify({ ok: false, error: "Failed to record payment" }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
-            });
-          }
-
-          // 3. Update invoice balance and status
-          const updatedPaid = (Number(invoice.amount_paid) || 0) + amount;
-          const updatedBalance = Math.max(0, (Number(invoice.amount_due) || 0) - updatedPaid);
-          const newStatus = updatedBalance === 0 ? "paid" : "partially_paid";
-
-          const { data: updatedInvoice } = await client
-            .from("fee_invoices")
-            .update({
-              amount_paid: updatedPaid,
-              balance: updatedBalance,
-              status: newStatus,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", invoiceId)
-            .select()
-            .single();
-
-          await logCrmAction({
-            adminUserId: auth.admin.user.id,
-            actorEmail: auth.admin.user.email,
-            action: "record_payment",
-            entity: "fee_payments",
-            entityId: newPayment.id,
-            details: {
-              invoiceNumber: invoice.invoice_number,
+          try {
+            const result = await recordPaymentTx({
+              invoiceId,
+              studentId,
               amount,
               paymentMethod,
-              balanceRemaining: updatedBalance,
-            },
-          });
+              paymentDate,
+              referenceNumber,
+              notes,
+              recordedBy: auth.admin.user.id,
+              idempotencyKey,
+              actorEmail: auth.admin.user.email,
+            });
 
-          return new Response(
-            JSON.stringify({
-              ok: true,
-              payment: newPayment,
-              invoice: updatedInvoice,
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                payment: result.payment,
+                invoice: result.invoice,
+                is_duplicate: result.is_duplicate || false,
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            if (err.message === "STUDENT_INVOICE_MISMATCH") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Student ID does not match invoice recipient." }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            if (err.message === "OVERPAYMENT_EXCEEDS_BALANCE") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Payment amount exceeds remaining invoice balance." }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            if (err.message === "INVOICE_NOT_FOUND") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Target invoice record not found." }),
+                { status: 404, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            if (err.message === "INVALID_AMOUNT") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Payment amount must be greater than zero." }),
+                { status: 422, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            console.error("Payment recording error:", err);
+            return new Response(
+              JSON.stringify({ ok: false, error: err.message || "Failed to record payment" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
         }
 
         // Action: Generate Monthly Dues (Idempotent)

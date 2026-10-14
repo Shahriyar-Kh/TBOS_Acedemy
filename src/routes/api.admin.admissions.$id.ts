@@ -130,8 +130,8 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
       },
 
       PATCH: async ({ request, params }: { request: Request; params: { id: string } }) => {
-        // 1. Authorize admin
-        const auth = await verifyAdminRequest(request);
+        // 1. Authorize admin (only owner, admin, and admissions may mutate admissions leads)
+        const auth = await verifyAdminRequest(request, ["owner", "admin", "admissions"]);
         if (!auth.ok) {
           return new Response(JSON.stringify({ ok: false, error: auth.error }), {
             status: auth.status,
@@ -355,7 +355,7 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
         // Handle Convert to Enrolled Student
         if (body.action === "convert-to-student") {
           const { convertLeadToStudentSchema } = await import("@/lib/crmSchemas");
-          const { generateStudentId, generateInvoiceNumber, logCrmAction } = await import("@/lib/crm.server");
+          const { convertLeadToStudentTx } = await import("@/lib/crm.server");
 
           const parsed = convertLeadToStudentSchema.safeParse({
             leadId: admissionId,
@@ -371,187 +371,66 @@ export const Route = createFileRoute("/api/admin/admissions/$id")({
 
           const conv = parsed.data;
 
-          // 1. Fetch admission lead to verify existence
-          const { data: lead, error: leadErr } = await client
-            .from("admissions_requests")
-            .select("*")
-            .eq("id", admissionId)
-            .single();
-
-          if (leadErr || !lead) {
-            return new Response(JSON.stringify({ ok: false, error: "Lead not found" }), {
-              status: 404,
-              headers: { "Content-Type": "application/json" },
+          try {
+            const txResult = await convertLeadToStudentTx({
+              leadId: admissionId,
+              fullName: conv.fullName,
+              email: conv.email,
+              phone: conv.phone,
+              whatsapp: conv.whatsapp,
+              guardianName: conv.guardianName,
+              guardianPhone: conv.guardianPhone,
+              guardianEmail: conv.guardianEmail,
+              age: conv.age,
+              country: conv.country,
+              city: conv.city,
+              programSlug: conv.programSlug,
+              programTitle: conv.programTitle,
+              programType: conv.programType,
+              batchId: conv.batchId,
+              instructorId: conv.instructorId,
+              instructorName: conv.instructorName,
+              agreedFee: conv.agreedFee,
+              discount: conv.discount,
+              billingDay: conv.billingDay,
+              enrollmentDate: conv.enrollmentDate,
+              schedule: conv.schedule,
+              notes: conv.notes,
+              createInitialInvoice: conv.createInitialInvoice,
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email,
             });
-          }
 
-          // 2. Prevent accidental duplicate enrollment from same lead
-          const { data: existingStudent } = await client
-            .from("students")
-            .select("id, student_id, full_name")
-            .or(`lead_id.eq.${admissionId},email.eq.${conv.email.toLowerCase().trim()}`)
-            .maybeSingle();
-
-          let studentRecord = existingStudent;
-
-          if (!studentRecord) {
-            // Create new student
-            const studentId = await generateStudentId();
-            const { data: newStud, error: studErr } = await client
-              .from("students")
-              .insert({
-                student_id: studentId,
-                full_name: conv.fullName,
-                email: conv.email.toLowerCase().trim(),
-                phone: conv.phone,
-                whatsapp: conv.whatsapp || conv.phone,
-                guardian_name: conv.guardianName || null,
-                guardian_phone: conv.guardianPhone || null,
-                guardian_email: conv.guardianEmail || null,
-                age: conv.age || null,
-                country: conv.country || "Pakistan",
-                city: conv.city || null,
-                timezone: "Asia/Karachi",
-                status: "active",
-                enrollment_date: conv.enrollmentDate,
-                billing_day: conv.billingDay,
-                lead_id: admissionId,
-              })
-              .select()
-              .single();
-
-            if (studErr || !newStud) {
-              console.error("Student creation error in conversion:", studErr);
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                student: txResult.student,
+                enrollment: txResult.enrollment,
+                invoice: txResult.invoice,
+              }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            if (err.message === "LEAD_ALREADY_CONVERTED") {
               return new Response(
-                JSON.stringify({ ok: false, error: "Failed to create student record" }),
-                { status: 500, headers: { "Content-Type": "application/json" } },
+                JSON.stringify({ ok: false, error: "This lead has already been converted to a student." }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
               );
             }
-            studentRecord = newStud;
-          }
-
-          if (!studentRecord) {
-            return new Response(
-              JSON.stringify({ ok: false, error: "Failed to create or find student record" }),
-              { status: 500, headers: { "Content-Type": "application/json" } },
-            );
-          }
-
-          // 3. Create Enrollment record
-          const { data: enrollment, error: enrollErr } = await client
-            .from("enrollments")
-            .insert({
-              student_id: studentRecord.id,
-              batch_id: conv.batchId || null,
-              program_slug: conv.programSlug,
-              program_title: conv.programTitle,
-              program_type: conv.programType,
-              instructor_id: conv.instructorId || null,
-              instructor_name: conv.instructorName || null,
-              agreed_fee: conv.agreedFee,
-              discount: conv.discount || 0,
-              billing_day: conv.billingDay,
-              enrollment_date: conv.enrollmentDate,
-              schedule: conv.schedule || null,
-              status: "active",
-            })
-            .select()
-            .single();
-
-          if (enrollErr || !enrollment) {
-            console.error("Enrollment creation error in conversion:", enrollErr);
-            return new Response(
-              JSON.stringify({ ok: false, error: "Failed to create enrollment record" }),
-              { status: 500, headers: { "Content-Type": "application/json" } },
-            );
-          }
-
-          // If batch was assigned, increment active student count
-          if (conv.batchId) {
-            const { data: bData } = await client
-              .from("batches")
-              .select("active_student_count")
-              .eq("id", conv.batchId)
-              .maybeSingle();
-            if (bData) {
-              await client
-                .from("batches")
-                .update({ active_student_count: (bData.active_student_count || 0) + 1 })
-                .eq("id", conv.batchId);
+            if (err.message === "LEAD_NOT_FOUND") {
+              return new Response(
+                JSON.stringify({ ok: false, error: "Admissions lead record not found." }),
+                { status: 404, headers: { "Content-Type": "application/json" } },
+              );
             }
+            console.error("Conversion transaction error:", err);
+            return new Response(
+              JSON.stringify({ ok: false, error: err.message || "Failed to convert lead to student" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
           }
-
-          // 4. Create Initial Fee Invoice if requested
-          let invoiceRecord = null;
-          if (conv.createInitialInvoice && conv.agreedFee > 0) {
-            const now = new Date();
-            const billingMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-            const invNumber = await generateInvoiceNumber();
-            const dueDate = new Date();
-            dueDate.setDate(dueDate.getDate() + 7); // 7 days grace period
-
-            const { data: inv } = await client
-              .from("fee_invoices")
-              .insert({
-                invoice_number: invNumber,
-                student_id: studentRecord.id,
-                enrollment_id: enrollment.id,
-                billing_month: billingMonth,
-                amount_due: conv.agreedFee,
-                amount_paid: 0,
-                balance: conv.agreedFee,
-                due_date: dueDate.toISOString().split("T")[0],
-                status: "due",
-                notes: `Initial monthly tuition for ${conv.programTitle}`,
-              })
-              .select()
-              .maybeSingle();
-
-            invoiceRecord = inv;
-          }
-
-          // 5. Update Lead Status to 'enrolled'
-          await client
-            .from("admissions_requests")
-            .update({
-              status: "enrolled",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", admissionId);
-
-          // 6. Record Activity & Audit
-          await client.from("admissions_activity").insert({
-            admission_id: admissionId,
-            admin_user_id: auth.admin.user.id,
-            action_type: "status_changed",
-            old_status: lead.status,
-            new_status: "enrolled",
-            note: `Converted to Student: ${studentRecord.student_id} (${conv.programTitle})`,
-          });
-
-          await logCrmAction({
-            adminUserId: auth.admin.user.id,
-            actorEmail: auth.admin.user.email,
-            action: "convert_lead_to_student",
-            entity: "admissions_requests",
-            entityId: admissionId,
-            details: {
-              studentId: studentRecord.student_id,
-              programTitle: conv.programTitle,
-              agreedFee: conv.agreedFee,
-            },
-          });
-
-          return new Response(
-            JSON.stringify({
-              ok: true,
-              student: studentRecord,
-              enrollment,
-              invoice: invoiceRecord,
-            }),
-            { status: 200, headers: { "Content-Type": "application/json" } },
-          );
         }
+
 
         if (body.action && body.action !== "retry-delivery") {
           return new Response(JSON.stringify({ ok: false, error: "Unsupported action" }), {

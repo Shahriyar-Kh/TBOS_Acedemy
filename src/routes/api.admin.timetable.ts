@@ -100,7 +100,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
 
         // Action 1: Check Conflicts Pre-flight
         if (body.action === "check-conflicts") {
-          const { sessionDate, startTime, endTime, instructorId, batchId, excludeSessionId } = body;
+          const { sessionDate, startTime, endTime, instructorId, batchId, studentId, excludeSessionId } = body;
           if (!sessionDate || !startTime || !endTime) {
             return new Response(JSON.stringify({ ok: false, error: "Missing required date/time parameters" }), {
               status: 400,
@@ -114,6 +114,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
             endTime,
             instructorId,
             batchId,
+            studentId,
             excludeSessionId,
           });
 
@@ -141,6 +142,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
           endTime: d.endTime,
           instructorId: d.instructorId,
           batchId: d.batchId,
+          studentId: body.studentId || null,
         });
 
         if (conflictCheck.hasConflict && !body.ignoreWarnings) {
@@ -162,6 +164,27 @@ export const Route = createFileRoute("/api/admin/timetable")({
           const sessionDateObj = new Date(d.sessionDate);
           sessionDateObj.setDate(sessionDateObj.getDate() + week * 7);
           const computedDate = sessionDateObj.toISOString().split("T")[0];
+
+          if (week > 0 && !body.ignoreWarnings) {
+            const weekConflict = await checkClassScheduleConflicts({
+              sessionDate: computedDate,
+              startTime: d.startTime,
+              endTime: d.endTime,
+              instructorId: d.instructorId,
+              batchId: d.batchId,
+              studentId: body.studentId || null,
+            });
+            if (weekConflict.hasConflict) {
+              return new Response(
+                JSON.stringify({
+                  ok: false,
+                  error: `Schedule clash in recurring week ${week + 1}: ${weekConflict.conflicts[0]?.message}`,
+                  conflicts: weekConflict.conflicts,
+                }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
 
           const { data: newSession, error: insErr } = await client
             .from("class_sessions")

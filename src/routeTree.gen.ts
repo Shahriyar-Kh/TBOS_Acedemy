@@ -67,6 +67,7 @@ import { Route as ApiAdminTimetableRouteImport } from './routes/api.admin.timeta
 import { Route as ApiAdminTasksRouteImport } from './routes/api.admin.tasks'
 import { Route as ApiAdminStudentsRouteImport } from './routes/api.admin.students'
 import { Route as ApiAdminReportsRouteImport } from './routes/api.admin.reports'
+import { Route as ApiAdminRemindersRouteImport } from './routes/api.admin.reminders'
 import { Route as ApiAdminNotificationsRouteImport } from './routes/api.admin.notifications'
 import { Route as ApiAdminMeRouteImport } from './routes/api.admin.me'
 import { Route as ApiAdminFeesRouteImport } from './routes/api.admin.fees'
@@ -77,6 +78,7 @@ import { Route as ApiAdminAdmissionsRouteImport } from './routes/api.admin.admis
 import { Route as ApiAdminTimetableIdRouteImport } from './routes/api.admin.timetable.$id'
 import { Route as ApiAdminTasksIdRouteImport } from './routes/api.admin.tasks.$id'
 import { Route as ApiAdminStudentsIdRouteImport } from './routes/api.admin.students.$id'
+import { Route as ApiAdminRemindersProcessRouteImport } from './routes/api.admin.reminders.process'
 import { Route as ApiAdminContentKindRouteImport } from './routes/api.admin.content.$kind'
 import { Route as ApiAdminBatchesIdRouteImport } from './routes/api.admin.batches.$id'
 import { Route as ApiAdminAuthPasswordResetRouteImport } from './routes/api.admin.auth.password-reset'
@@ -378,6 +380,11 @@ const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
   path: '/api/admin/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminRemindersRoute = ApiAdminRemindersRouteImport.update({
+  id: '/api/admin/reminders',
+  path: '/api/admin/reminders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminNotificationsRoute = ApiAdminNotificationsRouteImport.update({
   id: '/api/admin/notifications',
   path: '/api/admin/notifications',
@@ -428,6 +435,12 @@ const ApiAdminStudentsIdRoute = ApiAdminStudentsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminStudentsRoute,
 } as any)
+const ApiAdminRemindersProcessRoute =
+  ApiAdminRemindersProcessRouteImport.update({
+    id: '/process',
+    path: '/process',
+    getParentRoute: () => ApiAdminRemindersRoute,
+  } as any)
 const ApiAdminContentKindRoute = ApiAdminContentKindRouteImport.update({
   id: '/api/admin/content/$kind',
   path: '/api/admin/content/$kind',
@@ -515,6 +528,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
   '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
   '/api/admin/reports': typeof ApiAdminReportsRoute
   '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
   '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
@@ -525,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
   '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
   '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
   '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
@@ -590,6 +605,7 @@ export interface FileRoutesByTo {
   '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
   '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
   '/api/admin/reports': typeof ApiAdminReportsRoute
   '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
   '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
@@ -600,6 +616,7 @@ export interface FileRoutesByTo {
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
   '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
   '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
   '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
@@ -666,6 +683,7 @@ export interface FileRoutesById {
   '/api/admin/fees': typeof ApiAdminFeesRoute
   '/api/admin/me': typeof ApiAdminMeRoute
   '/api/admin/notifications': typeof ApiAdminNotificationsRoute
+  '/api/admin/reminders': typeof ApiAdminRemindersRouteWithChildren
   '/api/admin/reports': typeof ApiAdminReportsRoute
   '/api/admin/students': typeof ApiAdminStudentsRouteWithChildren
   '/api/admin/tasks': typeof ApiAdminTasksRouteWithChildren
@@ -676,6 +694,7 @@ export interface FileRoutesById {
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
+  '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
   '/api/admin/students/$id': typeof ApiAdminStudentsIdRoute
   '/api/admin/tasks/$id': typeof ApiAdminTasksIdRoute
   '/api/admin/timetable/$id': typeof ApiAdminTimetableIdRoute
@@ -743,6 +762,7 @@ export interface FileRouteTypes {
     | '/api/admin/fees'
     | '/api/admin/me'
     | '/api/admin/notifications'
+    | '/api/admin/reminders'
     | '/api/admin/reports'
     | '/api/admin/students'
     | '/api/admin/tasks'
@@ -753,6 +773,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/password-reset'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
     | '/api/admin/students/$id'
     | '/api/admin/tasks/$id'
     | '/api/admin/timetable/$id'
@@ -818,6 +839,7 @@ export interface FileRouteTypes {
     | '/api/admin/fees'
     | '/api/admin/me'
     | '/api/admin/notifications'
+    | '/api/admin/reminders'
     | '/api/admin/reports'
     | '/api/admin/students'
     | '/api/admin/tasks'
@@ -828,6 +850,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/password-reset'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
     | '/api/admin/students/$id'
     | '/api/admin/tasks/$id'
     | '/api/admin/timetable/$id'
@@ -893,6 +916,7 @@ export interface FileRouteTypes {
     | '/api/admin/fees'
     | '/api/admin/me'
     | '/api/admin/notifications'
+    | '/api/admin/reminders'
     | '/api/admin/reports'
     | '/api/admin/students'
     | '/api/admin/tasks'
@@ -903,6 +927,7 @@ export interface FileRouteTypes {
     | '/api/admin/auth/password-reset'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
+    | '/api/admin/reminders/process'
     | '/api/admin/students/$id'
     | '/api/admin/tasks/$id'
     | '/api/admin/timetable/$id'
@@ -969,6 +994,7 @@ export interface RootRouteChildren {
   ApiAdminFeesRoute: typeof ApiAdminFeesRoute
   ApiAdminMeRoute: typeof ApiAdminMeRoute
   ApiAdminNotificationsRoute: typeof ApiAdminNotificationsRoute
+  ApiAdminRemindersRoute: typeof ApiAdminRemindersRouteWithChildren
   ApiAdminReportsRoute: typeof ApiAdminReportsRoute
   ApiAdminStudentsRoute: typeof ApiAdminStudentsRouteWithChildren
   ApiAdminTasksRoute: typeof ApiAdminTasksRouteWithChildren
@@ -1387,6 +1413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/reminders': {
+      id: '/api/admin/reminders'
+      path: '/api/admin/reminders'
+      fullPath: '/api/admin/reminders'
+      preLoaderRoute: typeof ApiAdminRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/notifications': {
       id: '/api/admin/notifications'
       path: '/api/admin/notifications'
@@ -1457,6 +1490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminStudentsIdRouteImport
       parentRoute: typeof ApiAdminStudentsRoute
     }
+    '/api/admin/reminders/process': {
+      id: '/api/admin/reminders/process'
+      path: '/process'
+      fullPath: '/api/admin/reminders/process'
+      preLoaderRoute: typeof ApiAdminRemindersProcessRouteImport
+      parentRoute: typeof ApiAdminRemindersRoute
+    }
     '/api/admin/content/$kind': {
       id: '/api/admin/content/$kind'
       path: '/api/admin/content/$kind'
@@ -1517,6 +1557,17 @@ const ApiAdminBatchesRouteChildren: ApiAdminBatchesRouteChildren = {
 const ApiAdminBatchesRouteWithChildren = ApiAdminBatchesRoute._addFileChildren(
   ApiAdminBatchesRouteChildren,
 )
+
+interface ApiAdminRemindersRouteChildren {
+  ApiAdminRemindersProcessRoute: typeof ApiAdminRemindersProcessRoute
+}
+
+const ApiAdminRemindersRouteChildren: ApiAdminRemindersRouteChildren = {
+  ApiAdminRemindersProcessRoute: ApiAdminRemindersProcessRoute,
+}
+
+const ApiAdminRemindersRouteWithChildren =
+  ApiAdminRemindersRoute._addFileChildren(ApiAdminRemindersRouteChildren)
 
 interface ApiAdminStudentsRouteChildren {
   ApiAdminStudentsIdRoute: typeof ApiAdminStudentsIdRoute
@@ -1623,6 +1674,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminFeesRoute: ApiAdminFeesRoute,
   ApiAdminMeRoute: ApiAdminMeRoute,
   ApiAdminNotificationsRoute: ApiAdminNotificationsRoute,
+  ApiAdminRemindersRoute: ApiAdminRemindersRouteWithChildren,
   ApiAdminReportsRoute: ApiAdminReportsRoute,
   ApiAdminStudentsRoute: ApiAdminStudentsRouteWithChildren,
   ApiAdminTasksRoute: ApiAdminTasksRouteWithChildren,

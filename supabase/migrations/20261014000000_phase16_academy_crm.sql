@@ -1,17 +1,18 @@
 -- ==============================================================================
 -- PHASE 16: COMPLETE TBOS ACADEMY CRM, STUDENT, FEE & CLASS MANAGEMENT SYSTEM
 -- Migration: 20261014000000_phase16_academy_crm.sql
+--
+-- SAFETY & AUDIT NOTICE:
+-- 1. This migration must be executed by a database administrator / system owner.
+-- 2. Do NOT run this migration automatically without prior backup.
+-- 3. All operations are idempotent (IF NOT EXISTS / DROP CONSTRAINT IF EXISTS).
+-- 4. Complete rollback script is provided in docs/CRM_MIGRATION_ROLLBACK.md.
 -- ==============================================================================
 
 -- 1. Extend admin_users role constraint to support 'instructor' and 'accountant'
-do $$
-begin
-  alter table public.admin_users drop constraint if exists admin_users_role_check;
-  alter table public.admin_users add constraint admin_users_role_check
-    check (role in ('owner', 'admin', 'admissions', 'instructor', 'accountant'));
-exception
-  when others then null;
-end $$;
+alter table public.admin_users drop constraint if exists admin_users_role_check;
+alter table public.admin_users add constraint admin_users_role_check
+  check (role in ('owner', 'admin', 'admissions', 'instructor', 'accountant'));
 
 -- Add optional name and phone to admin_users if not present
 alter table public.admin_users
@@ -43,7 +44,8 @@ create table if not exists public.students (
   notes text,
   lead_id uuid references public.admissions_requests(id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint uq_students_lead_id unique (lead_id)
 );
 
 create index if not exists idx_students_student_id on public.students (student_id);
@@ -169,6 +171,8 @@ create table if not exists public.fee_payments (
     payment_method in ('bank_transfer', 'jazzcash', 'easypaisa', 'cash', 'other')
   ),
   reference_number text,
+  receipt_number text unique,
+  idempotency_key text unique,
   notes text,
   recorded_by uuid references public.admin_users(id) on delete set null,
   created_at timestamptz not null default now()
@@ -177,6 +181,8 @@ create table if not exists public.fee_payments (
 create index if not exists idx_fee_payments_invoice_id on public.fee_payments (invoice_id);
 create index if not exists idx_fee_payments_student_id on public.fee_payments (student_id);
 create index if not exists idx_fee_payments_payment_date on public.fee_payments (payment_date desc);
+create index if not exists idx_fee_payments_receipt_number on public.fee_payments (receipt_number);
+create index if not exists idx_fee_payments_idempotency_key on public.fee_payments (idempotency_key);
 
 alter table public.fee_payments enable row level security;
 revoke all on public.fee_payments from anon, public;
@@ -237,7 +243,7 @@ revoke all on public.class_attendance from anon, public;
 grant all on public.class_attendance to service_role;
 
 
--- 9. Instructor Availability Table
+-- 9. Instructor Availability & Calendar Exceptions Table
 create table if not exists public.instructor_availability (
   id uuid primary key default gen_random_uuid(),
   instructor_id uuid not null references public.admin_users(id) on delete cascade,
@@ -366,7 +372,7 @@ revoke all on public.crm_audit_logs from anon, public;
 grant all on public.crm_audit_logs to service_role;
 
 
--- 15. Password Reset Tokens Table
+-- 15. Password Reset Tokens Table (Hashed Tokens Only)
 create table if not exists public.password_reset_tokens (
   id uuid primary key default gen_random_uuid(),
   email text not null,
@@ -383,3 +389,588 @@ alter table public.password_reset_tokens enable row level security;
 revoke all on public.password_reset_tokens from anon, public;
 grant all on public.password_reset_tokens to service_role;
 
+
+-- 16. Admin Invitations Table (Token-based invitation, no temporary passwords)
+create table if not exists public.admin_invitations (
+  id uuid primary key default gen_random_uuid(),
+  email text unique not null,
+  role text not null check (role in ('owner', 'admin', 'admissions', 'instructor', 'accountant')),
+  full_name text,
+  phone text,
+  token_hash text not null,
+  invited_by uuid references public.admin_users(id) on delete set null,
+  expires_at timestamptz not null,
+  accepted boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_admin_invitations_token on public.admin_invitations (token_hash);
+create index if not exists idx_admin_invitations_email on public.admin_invitations (lower(email));
+
+alter table public.admin_invitations enable row level security;
+revoke all on public.admin_invitations from anon, public;
+grant all on public.admin_invitations to service_role;
+
+
+-- 17. CRM Rate Limits Table
+create table if not exists public.crm_rate_limits (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,
+  hit_count integer not null default 1,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_crm_rate_limits_key on public.crm_rate_limits (key);
+create index if not exists idx_crm_rate_limits_expires on public.crm_rate_limits (expires_at);
+
+alter table public.crm_rate_limits enable row level security;
+revoke all on public.crm_rate_limits from anon, public;
+grant all on public.crm_rate_limits to service_role;
+
+
+-- 18. Persistent CRM Reminders Table (Engine for Automated Notifications)
+create table if not exists public.crm_reminders (
+  id uuid primary key default gen_random_uuid(),
+  type text not null check (type in ('class_reminder', 'demo_reminder', 'fee_reminder')),
+  entity_type text not null check (entity_type in ('class_session', 'demo_booking', 'fee_invoice')),
+  entity_id uuid not null,
+  recipient text not null,
+  recipient_name text,
+  channel text not null check (channel in ('email', 'whatsapp')),
+  scheduled_for timestamptz not null,
+  status text not null default 'scheduled' check (
+    status in ('scheduled', 'processing', 'sent', 'failed', 'cancelled')
+  ),
+  idempotency_key text unique not null,
+  attempts integer not null default 0,
+  max_attempts integer not null default 3,
+  sent_at timestamptz,
+  last_error text,
+  payload jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_crm_reminders_status_scheduled on public.crm_reminders (status, scheduled_for);
+create index if not exists idx_crm_reminders_idempotency on public.crm_reminders (idempotency_key);
+create index if not exists idx_crm_reminders_entity on public.crm_reminders (entity_type, entity_id);
+
+alter table public.crm_reminders enable row level security;
+revoke all on public.crm_reminders from anon, public;
+grant all on public.crm_reminders to service_role;
+
+
+-- 19. Atomic Sequence Counters Table (No Random Fallback)
+create table if not exists public.crm_sequences (
+  sequence_key text primary key,
+  current_value bigint not null default 0,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.crm_sequences enable row level security;
+revoke all on public.crm_sequences from anon, public;
+grant all on public.crm_sequences to service_role;
+
+
+-- ==============================================================================
+-- DATABASE FUNCTIONS & ATOMIC PROCEDURES (RPCs)
+-- ==============================================================================
+
+-- 20. Atomic sequence counter helper
+create or replace function public.get_next_crm_sequence(p_sequence_key text)
+returns bigint
+language plpgsql
+security definer
+as $$
+declare
+  v_next_val bigint;
+begin
+  insert into public.crm_sequences (sequence_key, current_value, updated_at)
+  values (p_sequence_key, 1, now())
+  on conflict (sequence_key)
+  do update set
+    current_value = crm_sequences.current_value + 1,
+    updated_at = now()
+  returning current_value into v_next_val;
+
+  return v_next_val;
+end;
+$$;
+
+-- Atomic Student ID Generator: TBOS-YYYY-XXXX
+create or replace function public.get_next_student_id(p_year int default extract(year from current_date)::int)
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_seq bigint;
+begin
+  v_seq := public.get_next_crm_sequence('student_id_' || p_year::text);
+  return 'TBOS-' || p_year::text || '-' || lpad(v_seq::text, 4, '0');
+end;
+$$;
+
+-- Atomic Invoice Number Generator: INV-YYYYMM-XXXX
+create or replace function public.get_next_invoice_number(p_now timestamptz default now())
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_ym text;
+  v_seq bigint;
+begin
+  v_ym := to_char(p_now, 'YYYYMM');
+  v_seq := public.get_next_crm_sequence('invoice_number_' || v_ym);
+  return 'INV-' || v_ym || '-' || lpad(v_seq::text, 4, '0');
+end;
+$$;
+
+-- Atomic Receipt Number Generator: REC-YYYYMM-XXXX
+create or replace function public.get_next_receipt_number(p_now timestamptz default now())
+returns text
+language plpgsql
+security definer
+as $$
+declare
+  v_ym text;
+  v_seq bigint;
+begin
+  v_ym := to_char(p_now, 'YYYYMM');
+  v_seq := public.get_next_crm_sequence('receipt_number_' || v_ym);
+  return 'REC-' || v_ym || '-' || lpad(v_seq::text, 4, '0');
+end;
+$$;
+
+
+-- 21. Single Transaction RPC: Convert Lead to Student
+create or replace function public.convert_lead_to_student_tx(
+  p_lead_id uuid,
+  p_program_slug text,
+  p_program_title text,
+  p_program_type text,
+  p_agreed_fee numeric,
+  p_batch_id uuid default null,
+  p_instructor_id uuid default null,
+  p_instructor_name text default null,
+  p_discount numeric default 0,
+  p_billing_day int default 1,
+  p_enrollment_date date default current_date,
+  p_schedule text default null,
+  p_notes text default null,
+  p_create_initial_invoice boolean default true,
+  p_admin_user_id uuid default null,
+  p_actor_email text default null
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_lead record;
+  v_existing_student record;
+  v_student record;
+  v_enrollment record;
+  v_invoice record;
+  v_student_id_str text;
+  v_invoice_num_str text;
+  v_billing_month text;
+  v_due_date date;
+  v_now timestamptz := now();
+begin
+  -- 1. Lock lead record with FOR UPDATE
+  select * into v_lead
+  from public.admissions_requests
+  where id = p_lead_id
+  for update;
+
+  if not found then
+    raise exception 'LEAD_NOT_FOUND' using errcode = 'P0002';
+  end if;
+
+  -- 2. Check for duplicate conversion / existing student
+  select * into v_existing_student
+  from public.students
+  where lead_id = p_lead_id;
+
+  if found then
+    raise exception 'LEAD_ALREADY_CONVERTED' using errcode = '23505';
+  end if;
+
+  -- 3. Atomic sequential Student ID
+  v_student_id_str := public.get_next_student_id(extract(year from v_now)::int);
+
+  -- 4. Insert student
+  insert into public.students (
+    student_id,
+    full_name,
+    email,
+    phone,
+    whatsapp,
+    guardian_name,
+    guardian_phone,
+    guardian_email,
+    age,
+    country,
+    city,
+    timezone,
+    status,
+    enrollment_date,
+    billing_day,
+    notes,
+    lead_id,
+    created_at,
+    updated_at
+  ) values (
+    v_student_id_str,
+    coalesce(v_lead.student_name, v_lead.contact_name, 'Unknown Student'),
+    lower(trim(v_lead.email)),
+    v_lead.phone,
+    coalesce(v_lead.whatsapp, v_lead.phone),
+    v_lead.guardian_name,
+    v_lead.guardian_phone,
+    v_lead.guardian_email,
+    v_lead.age,
+    coalesce(v_lead.country, 'Pakistan'),
+    v_lead.city,
+    'Asia/Karachi',
+    'active',
+    p_enrollment_date,
+    p_billing_day,
+    p_notes,
+    p_lead_id,
+    v_now,
+    v_now
+  ) returning * into v_student;
+
+  -- 5. Insert enrollment
+  insert into public.enrollments (
+    student_id,
+    batch_id,
+    program_slug,
+    program_title,
+    program_type,
+    instructor_id,
+    instructor_name,
+    agreed_fee,
+    discount,
+    billing_day,
+    enrollment_date,
+    schedule,
+    status,
+    created_at,
+    updated_at
+  ) values (
+    v_student.id,
+    p_batch_id,
+    p_program_slug,
+    p_program_title,
+    p_program_type,
+    p_instructor_id,
+    p_instructor_name,
+    p_agreed_fee,
+    p_discount,
+    p_billing_day,
+    p_enrollment_date,
+    p_schedule,
+    'active',
+    v_now,
+    v_now
+  ) returning * into v_enrollment;
+
+  -- 6. Update batch count if batch assigned
+  if p_batch_id is not null then
+    update public.batches
+    set active_student_count = active_student_count + 1,
+        updated_at = v_now
+    where id = p_batch_id;
+  end if;
+
+  -- 7. Create initial fee invoice if requested and fee > 0
+  if p_create_initial_invoice and p_agreed_fee > 0 then
+    v_invoice_num_str := public.get_next_invoice_number(v_now);
+    v_billing_month := to_char(v_now, 'YYYY-MM');
+    v_due_date := (current_date + interval '7 days')::date;
+
+    insert into public.fee_invoices (
+      invoice_number,
+      student_id,
+      enrollment_id,
+      billing_month,
+      amount_due,
+      amount_paid,
+      balance,
+      due_date,
+      status,
+      notes,
+      created_at,
+      updated_at
+    ) values (
+      v_invoice_num_str,
+      v_student.id,
+      v_enrollment.id,
+      v_billing_month,
+      p_agreed_fee,
+      0,
+      p_agreed_fee,
+      v_due_date,
+      'due',
+      'Initial monthly tuition for ' || p_program_title,
+      v_now,
+      v_now
+    ) returning * into v_invoice;
+  end if;
+
+  -- 8. Update lead status to 'enrolled'
+  update public.admissions_requests
+  set status = 'enrolled',
+      updated_at = v_now
+  where id = p_lead_id;
+
+  -- 9. Insert activity audit
+  insert into public.admissions_activity (
+    admission_id,
+    admin_user_id,
+    action_type,
+    old_status,
+    new_status,
+    note,
+    created_at
+  ) values (
+    p_lead_id,
+    p_admin_user_id,
+    'status_changed',
+    v_lead.status,
+    'enrolled',
+    'Converted to Student: ' || v_student_id_str || ' (' || p_program_title || ')',
+    v_now
+  );
+
+  -- 10. Insert CRM audit log
+  insert into public.crm_audit_logs (
+    admin_user_id,
+    actor_email,
+    action,
+    entity,
+    entity_id,
+    details,
+    created_at
+  ) values (
+    p_admin_user_id,
+    p_actor_email,
+    'convert_lead_to_student',
+    'admissions_requests',
+    p_lead_id::text,
+    jsonb_build_object(
+      'student_id', v_student_id_str,
+      'program_title', p_program_title,
+      'agreed_fee', p_agreed_fee
+    ),
+    v_now
+  );
+
+  return jsonb_build_object(
+    'student', row_to_json(v_student),
+    'enrollment', row_to_json(v_enrollment),
+    'invoice', case when v_invoice.id is not null then row_to_json(v_invoice) else null end
+  );
+end;
+$$;
+
+
+-- 22. Single Transaction RPC: Record Fee Payment
+create or replace function public.record_payment_tx(
+  p_invoice_id uuid,
+  p_student_id uuid,
+  p_amount numeric,
+  p_payment_method text,
+  p_payment_date date default current_date,
+  p_reference_number text default null,
+  p_notes text default null,
+  p_recorded_by uuid default null,
+  p_idempotency_key text default null,
+  p_actor_email text default null
+)
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_invoice record;
+  v_existing_payment record;
+  v_payment record;
+  v_receipt_number text;
+  v_new_paid numeric;
+  v_new_balance numeric;
+  v_new_status text;
+  v_now timestamptz := now();
+begin
+  -- 1. Check idempotency
+  if p_idempotency_key is not null and p_idempotency_key <> '' then
+    select * into v_existing_payment
+    from public.fee_payments
+    where idempotency_key = p_idempotency_key;
+
+    if found then
+      select * into v_invoice from public.fee_invoices where id = v_existing_payment.invoice_id;
+      return jsonb_build_object(
+        'payment', row_to_json(v_existing_payment),
+        'invoice', row_to_json(v_invoice),
+        'is_duplicate', true
+      );
+    end if;
+  end if;
+
+  -- 2. Validate amount > 0
+  if p_amount is null or p_amount <= 0 then
+    raise exception 'INVALID_AMOUNT' using errcode = '22003';
+  end if;
+
+  -- 3. Lock target invoice FOR UPDATE
+  select * into v_invoice
+  from public.fee_invoices
+  where id = p_invoice_id
+  for update;
+
+  if not found then
+    raise exception 'INVOICE_NOT_FOUND' using errcode = 'P0002';
+  end if;
+
+  -- 4. Validate student matches invoice.student_id
+  if v_invoice.student_id <> p_student_id then
+    raise exception 'STUDENT_INVOICE_MISMATCH' using errcode = '22023';
+  end if;
+
+  -- 5. Validate no overpayment (amount <= remaining balance)
+  if p_amount > v_invoice.balance then
+    raise exception 'OVERPAYMENT_EXCEEDS_BALANCE' using errcode = '22023';
+  end if;
+
+  -- 6. Generate atomic receipt number
+  v_receipt_number := public.get_next_receipt_number(v_now);
+
+  -- 7. Insert payment record
+  insert into public.fee_payments (
+    invoice_id,
+    student_id,
+    amount,
+    payment_date,
+    payment_method,
+    reference_number,
+    receipt_number,
+    idempotency_key,
+    notes,
+    recorded_by,
+    created_at
+  ) values (
+    p_invoice_id,
+    p_student_id,
+    p_amount,
+    p_payment_date,
+    p_payment_method,
+    p_reference_number,
+    v_receipt_number,
+    p_idempotency_key,
+    p_notes,
+    p_recorded_by,
+    v_now
+  ) returning * into v_payment;
+
+  -- 8. Compute updated invoice balances
+  v_new_paid := v_invoice.amount_paid + p_amount;
+  v_new_balance := v_invoice.balance - p_amount;
+  v_new_status := case when v_new_balance = 0 then 'paid' else 'partially_paid' end;
+
+  -- 9. Update invoice
+  update public.fee_invoices
+  set amount_paid = v_new_paid,
+      balance = v_new_balance,
+      status = v_new_status,
+      updated_at = v_now
+  where id = p_invoice_id
+  returning * into v_invoice;
+
+  -- 10. Log in CRM audit
+  insert into public.crm_audit_logs (
+    admin_user_id,
+    actor_email,
+    action,
+    entity,
+    entity_id,
+    details,
+    created_at
+  ) values (
+    p_recorded_by,
+    p_actor_email,
+    'record_payment',
+    'fee_payments',
+    v_payment.id::text,
+    jsonb_build_object(
+      'invoice_number', v_invoice.invoice_number,
+      'receipt_number', v_receipt_number,
+      'amount', p_amount,
+      'payment_method', p_payment_method,
+      'remaining_balance', v_new_balance,
+      'status', v_new_status
+    ),
+    v_now
+  );
+
+  return jsonb_build_object(
+    'payment', row_to_json(v_payment),
+    'invoice', row_to_json(v_invoice),
+    'is_duplicate', false
+  );
+end;
+$$;
+
+
+-- 23. Ironclad Dual-Owner Protection Trigger
+create or replace function public.protect_final_active_owner()
+returns trigger
+language plpgsql
+security definer
+as $$
+declare
+  v_other_owners_count int;
+begin
+  -- Prevent deactivating or demoting primary owner shahriyarkhanpk1@gmail.com
+  if old.email = 'shahriyarkhanpk1@gmail.com' then
+    if (TG_OP = 'DELETE') then
+      raise exception 'CANNOT_DELETE_PRIMARY_OWNER: shahriyarkhanpk1@gmail.com cannot be deleted.' using errcode = '22023';
+    end if;
+    if (TG_OP = 'UPDATE') then
+      if new.is_active = false or new.role <> 'owner' then
+        raise exception 'CANNOT_DEMOTE_PRIMARY_OWNER: shahriyarkhanpk1@gmail.com cannot be deactivated or demoted.' using errcode = '22023';
+      end if;
+    end if;
+  end if;
+
+  -- Prevent removing the last active owner across the entire system
+  if old.role = 'owner' and old.is_active = true then
+    if (TG_OP = 'DELETE') or (TG_OP = 'UPDATE' and (new.is_active = false or new.role <> 'owner')) then
+      select count(*) into v_other_owners_count
+      from public.admin_users
+      where role = 'owner' and is_active = true and id <> old.id;
+
+      if v_other_owners_count = 0 then
+        raise exception 'CANNOT_REMOVE_FINAL_OWNER: At least one active owner must remain.' using errcode = '22023';
+      end if;
+    end if;
+  end if;
+
+  if (TG_OP = 'DELETE') then
+    return old;
+  else
+    return new;
+  end if;
+end;
+$$;
+
+drop trigger if exists trg_protect_final_active_owner on public.admin_users;
+create trigger trg_protect_final_active_owner
+before update or delete on public.admin_users
+for each row
+execute function public.protect_final_active_owner();

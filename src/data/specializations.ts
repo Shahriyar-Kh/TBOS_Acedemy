@@ -382,3 +382,29 @@ export const specializations: Specialization[] = [
 export const getSpecialization = (slug: string) =>
   specializations.find((s) => s.slug === slug);
 export const featuredSpecializations = specializations.filter((s) => s.featured);
+
+export const PREMIUM_SPECIALIZATION_SLUGS = [
+  "full-stack-developer",
+  "data-analyst",
+  "data-science",
+  "ai-machine-learning",
+] as const;
+
+export type PremiumSpecializationSlug = (typeof PREMIUM_SPECIALIZATION_SLUGS)[number];
+
+export const PREMIUM_SPECIALIZATION_FEE = 20000;
+export const STANDARD_SPECIALIZATION_FEE = 15000;
+
+export function isSpecializationSlug(slug: string): boolean {
+  return specializations.some((s) => s.slug === slug);
+}
+
+export function getSpecializationMonthlyFee(slug: string): number {
+  if ((PREMIUM_SPECIALIZATION_SLUGS as readonly string[]).includes(slug)) {
+    return PREMIUM_SPECIALIZATION_FEE;
+  }
+  if (isSpecializationSlug(slug)) {
+    return STANDARD_SPECIALIZATION_FEE;
+  }
+  return 0;
+}

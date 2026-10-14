@@ -46,7 +46,6 @@ function AdminUsersPage() {
     email: "",
     fullName: "",
     role: "admin",
-    password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -89,20 +88,19 @@ function AdminUsersPage() {
           email: inviteForm.email.trim().toLowerCase(),
           fullName: inviteForm.fullName.trim(),
           role: inviteForm.role,
-          password: inviteForm.password || undefined,
         }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
-        toast.success(`User ${inviteForm.email} provisioned with role: ${inviteForm.role}!`);
+      if (res.ok && (data.ok || data.success)) {
+        toast.success(`Invitation sent to ${inviteForm.email} with role: ${inviteForm.role}!`);
         setShowInviteModal(false);
-        setInviteForm({ email: "", fullName: "", role: "admin", password: "" });
+        setInviteForm({ email: "", fullName: "", role: "admin" });
         fetchUsers();
       } else {
-        toast.error(data.error || "Failed to provision user");
+        toast.error(data.error || "Failed to invite user");
       }
     } catch {
-      toast.error("Network error provisioning user");
+      toast.error("Network error inviting user");
     } finally {
       setIsSubmitting(false);
     }
@@ -319,15 +317,14 @@ function AdminUsersPage() {
                 </select>
               </div>
 
-              <div>
-                <Label className="text-xs text-slate-300">Initial Password (Optional)</Label>
-                <Input
-                  type="password"
-                  value={inviteForm.password}
-                  onChange={(e) => setInviteForm({ ...inviteForm, password: e.target.value })}
-                  placeholder="Leave blank to invite via email password reset"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
-                />
+              <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 flex items-start gap-2.5">
+                <KeyRound className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-medium text-slate-200">Secure Token Invitation:</span>
+                  <p className="mt-0.5 text-slate-400">
+                    A cryptographic invitation token (valid for 48 hours) will be generated and dispatched. The recipient will securely establish their own administrative password.
+                  </p>
+                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">

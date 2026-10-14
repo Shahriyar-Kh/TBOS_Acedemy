@@ -41,28 +41,12 @@ function AdminSettingsPage() {
   const handleExportFullBackup = async () => {
     setIsExporting(true);
     try {
-      // Gather data from all core endpoints
-      const [studentsRes, batchesRes, feesRes, timetableRes, tasksRes, auditRes] = await Promise.all([
-        fetch("/api/admin/students?limit=1000", { headers: getAuthHeader() }),
-        fetch("/api/admin/batches?limit=1000", { headers: getAuthHeader() }),
-        fetch("/api/admin/fees?limit=1000", { headers: getAuthHeader() }),
-        fetch("/api/admin/timetable?limit=1000", { headers: getAuthHeader() }),
-        fetch("/api/admin/tasks?limit=1000", { headers: getAuthHeader() }),
-        fetch("/api/admin/audit?limit=1000", { headers: getAuthHeader() }),
-      ]);
-
-      const backup = {
-        exportedAt: new Date().toISOString(),
-        exportedBy: admin?.email,
-        academy: "TechBuilt Open School",
-        version: "Phase 16 CRM 1.0",
-        students: studentsRes.ok ? (await studentsRes.json()).students : [],
-        batches: batchesRes.ok ? (await batchesRes.json()).batches : [],
-        invoices: feesRes.ok ? (await feesRes.json()).invoices : [],
-        timetable: timetableRes.ok ? (await timetableRes.json()).sessions : [],
-        tasks: tasksRes.ok ? (await tasksRes.json()).tasks : [],
-        auditLogs: auditRes.ok ? (await auditRes.json()).logs : [],
-      };
+      const res = await fetch("/api/admin/reports?export=full-backup", { headers: getAuthHeader() });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to generate complete backup");
+      }
+      const backup = await res.json();
 
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
       const downloadAnchor = document.createElement("a");
@@ -75,9 +59,9 @@ function AdminSettingsPage() {
       downloadAnchor.click();
       downloadAnchor.remove();
 
-      toast.success("Complete Academy CRM backup downloaded successfully!");
-    } catch {
-      toast.error("Failed to generate complete backup");
+      toast.success("Complete Academy CRM disaster recovery backup downloaded!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate complete backup");
     } finally {
       setIsExporting(false);
     }

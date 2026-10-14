@@ -6,6 +6,8 @@ import {
   generatePasswordResetToken,
   hashPasswordResetToken,
   logCrmAction,
+  checkRateLimit,
+  escapeHtml,
 } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/auth/password-reset")({
@@ -40,7 +42,28 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
             });
           }
 
-          // Check if admin user exists and is active
+          // 1. IP & Email Rate Limiting (5 attempts / 15 minutes)
+          const clientIp =
+            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+            request.headers.get("cf-connecting-ip") ||
+            "127.0.0.1";
+
+          const [emailLimit, ipLimit] = await Promise.all([
+            checkRateLimit(`pwd_reset:email:${email}`, 5, 15 * 60),
+            checkRateLimit(`pwd_reset:ip:${clientIp}`, 5, 15 * 60),
+          ]);
+
+          if (!emailLimit.allowed || !ipLimit.allowed) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "Too many password reset requests. Please wait 15 minutes before trying again.",
+              }),
+              { status: 429, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          // 2. Check if admin user exists and is active
           const { data: adminUser } = await client
             .from("admin_users")
             .select("id, email, is_active")
@@ -71,6 +94,7 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
                 });
 
                 const resetUrl = `https://techbuiltos.online/admin/reset-password?token=${rawToken}`;
+                const safeEmail = escapeHtml(email);
 
                 await transporter.sendMail({
                   from: `"TBOS Security" <${config.smtpUser}>`,
@@ -79,7 +103,7 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
                   html: `
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 8px;">
                       <h2 style="color: #0B192C; margin-top: 0;">Password Reset Request</h2>
-                      <p>A password reset was requested for your TBOS administrator account (<strong>${email}</strong>).</p>
+                      <p>A password reset was requested for your TBOS administrator account (<strong>${safeEmail}</strong>).</p>
                       <p>Click the button below to set a new password. This link is valid for <strong>30 minutes</strong> and can only be used once:</p>
                       <div style="margin: 28px 0; text-align: center;">
                         <a href="${resetUrl}" style="background: #008DDA; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
@@ -103,7 +127,7 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
             });
           }
 
-          // Always return generic success to prevent account enumeration
+          // Generic response: Never disclose account existence
           return new Response(
             JSON.stringify({
               ok: true,
@@ -134,7 +158,7 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
           const tokenHash = hashPasswordResetToken(token);
           const nowIso = new Date().toISOString();
 
-          // Query matching active token
+          // Query matching active token (must not be used and must not be expired)
           const { data: tokenRecord, error: tokenErr } = await client
             .from("password_reset_tokens")
             .select("*")
@@ -182,11 +206,24 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
             );
           }
 
-          // Invalidate single-use token
+          // Invalidate used token
           await client
             .from("password_reset_tokens")
             .update({ used: true })
             .eq("id", tokenRecord.id);
+
+          // Invalidate all other pending tokens and revoke sessions for this email
+          await client
+            .from("password_reset_tokens")
+            .update({ used: true })
+            .eq("email", targetEmail)
+            .neq("id", tokenRecord.id);
+
+          try {
+            await client.auth.admin.signOut(adminUser.id);
+          } catch {
+            // SignOut may not be supported on all Auth tiers, ignore
+          }
 
           await logCrmAction({
             actorEmail: targetEmail,
@@ -212,4 +249,3 @@ export const Route = createFileRoute("/api/admin/auth/password-reset")({
     },
   },
 });
-

@@ -5,7 +5,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { liveOffers } from "@/data/liveOffers";
-import { specializations } from "@/data/specializations";
+import { specializations, getSpecializationMonthlyFee } from "@/data/specializations";
 import { courses } from "@/data/courses";
 import { tutoringSubjects } from "@/data/tutoring";
 import {
@@ -114,10 +114,7 @@ function AdminProgramsPage() {
         {activeTab === "specializations" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {specializations.map((spec) => {
-              const specFee =
-                spec.slug.includes("full-stack") || spec.slug.includes("data") || spec.slug.includes("ai")
-                  ? "20,000"
-                  : "15,000";
+              const specFee = getSpecializationMonthlyFee(spec.slug).toLocaleString();
               return (
                 <div key={spec.slug} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow transition-shadow flex flex-col justify-between">
                   <div>

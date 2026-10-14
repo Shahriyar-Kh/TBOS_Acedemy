@@ -33,6 +33,11 @@ export const Route = createFileRoute("/api/admin/batches")({
         if (status !== "all") query = query.eq("status", status);
         if (programType !== "all") query = query.eq("program_type", programType);
 
+        // RBAC row scoping: instructors can only view batches assigned to them
+        if (auth.admin.admin.role === "instructor") {
+          query = query.eq("instructor_id", auth.admin.user.id);
+        }
+
         const { data: batches, error } = await query;
 
         if (error) {

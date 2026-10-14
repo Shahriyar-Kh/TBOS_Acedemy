@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { getSpecializationMonthlyFee } from "@/data/specializations";
 
 export const Route = createFileRoute("/admin/admissions")({
   head: () => ({ meta: adminNoIndexMeta("TBOS Admissions Admin") }),
@@ -873,8 +874,12 @@ function AdminAdmissionsPage() {
                     size="sm"
                     onClick={() => {
                       fetchBatchesForConvert();
-                      const prog = detailData.selected_program_title?.toLowerCase() || "";
-                      const fee = prog.includes("full-stack") || prog.includes("data") || prog.includes("ai") ? 20000 : 15000;
+                      const slug = (detailData.selected_program_slug || detailData.selected_program_title || "")
+                        .toLowerCase()
+                        .trim()
+                        .replace(/\s+/g, "-");
+                      const specFee = getSpecializationMonthlyFee(slug);
+                      const fee = specFee > 0 ? specFee : 15000;
                       setConvertMonthlyFee(fee);
                       setShowConvertModal(true);
                     }}
