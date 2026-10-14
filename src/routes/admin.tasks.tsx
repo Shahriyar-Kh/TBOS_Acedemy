@@ -51,8 +51,11 @@ function AdminTasksPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [hasError, setHasError] = useState(false);
+
   const fetchTasks = useCallback(async () => {
     setIsLoading(true);
+    setHasError(false);
     try {
       const params = new URLSearchParams();
       if (filterStatus !== "all") params.set("status", filterStatus);
@@ -66,9 +69,11 @@ function AdminTasksPage() {
         const data = await res.json();
         setTasks(data.tasks || []);
       } else {
+        setHasError(true);
         toast.error("Failed to load operational tasks");
       }
     } catch {
+      setHasError(true);
       toast.error("Network error loading tasks");
     } finally {
       setIsLoading(false);
@@ -95,7 +100,7 @@ function AdminTasksPage() {
         body: JSON.stringify(taskForm),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && (data.ok || data.success)) {
         toast.success("Task created successfully!");
         setShowAddModal(false);
         setTaskForm({
@@ -151,44 +156,35 @@ function AdminTasksPage() {
   const getPriorityBadge = (priority: string) => {
     switch (priority) {
       case "urgent":
-        return <Badge className="bg-rose-500/15 text-rose-400 border-rose-500/30">Urgent</Badge>;
+        return <Badge className="bg-rose-50 text-rose-700 border-rose-200 font-semibold">Urgent</Badge>;
       case "high":
-        return <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30">High</Badge>;
+        return <Badge className="bg-amber-50 text-amber-700 border-amber-200 font-semibold">High</Badge>;
       case "medium":
-        return <Badge className="bg-blue-500/15 text-blue-400 border-blue-500/30">Medium</Badge>;
+        return <Badge className="bg-sky-50 text-sky-700 border-sky-200 font-semibold">Medium</Badge>;
       default:
-        return <Badge className="bg-slate-500/15 text-slate-400 border-slate-500/30">Low</Badge>;
+        return <Badge className="bg-slate-100 text-slate-600 border-slate-200 font-semibold">Low</Badge>;
     }
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Operational Tasks & Follow-ups"
+      description="Track team follow-ups, fee verification tasks, batch planning, and operational milestones."
+      actions={
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="bg-sky-600 hover:bg-sky-700 text-white font-medium shadow-sm"
+        >
+          <PlusCircle className="w-4 h-4 mr-2" />
+          Add Task
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <CheckSquare className="w-6 h-6 text-cyan-400" />
-              Operational Tasks & To-Dos
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Track team follow-ups, fee verification tasks, batch planning, and operational milestones.
-            </p>
-          </div>
-
-          <Button
-            onClick={() => setShowAddModal(true)}
-            className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
-          >
-            <PlusCircle className="w-4 h-4 mr-2" />
-            Add Task
-          </Button>
-        </div>
-
         {/* Filter Bar */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-wrap gap-4 items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-wrap gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400">Status:</span>
+            <span className="text-xs font-medium text-slate-500">Status:</span>
             {["all", "pending", "in_progress", "completed"].map((st) => (
               <Button
                 key={st}
@@ -197,8 +193,8 @@ function AdminTasksPage() {
                 onClick={() => setFilterStatus(st)}
                 className={
                   filterStatus === st
-                    ? "bg-cyan-500 hover:bg-cyan-600 text-slate-950 capitalize"
-                    : "border-slate-800 text-slate-300 capitalize"
+                    ? "bg-slate-900 hover:bg-slate-800 text-white capitalize shadow-sm"
+                    : "border-slate-200 text-slate-700 hover:bg-slate-50 capitalize"
                 }
               >
                 {st.replace("_", " ")}
@@ -207,11 +203,11 @@ function AdminTasksPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Priority:</span>
+            <span className="text-xs font-medium text-slate-500">Priority:</span>
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              className="bg-white border border-slate-300 text-xs text-slate-800 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
             >
               <option value="all">All Priorities</option>
               <option value="urgent">Urgent</option>
@@ -223,20 +219,29 @@ function AdminTasksPage() {
         </div>
 
         {/* Tasks List */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           {isLoading ? (
-            <div className="flex items-center justify-center p-12 text-slate-400">
+            <div className="flex items-center justify-center p-12 text-slate-500">
               <Loader2 className="w-6 h-6 animate-spin mr-2" />
               Loading tasks...
             </div>
+          ) : hasError ? (
+            <div className="text-center p-12 text-slate-500">
+              <AlertCircle className="w-10 h-10 mx-auto mb-3 text-rose-500" />
+              <p className="text-base font-semibold text-slate-900">Failed to load tasks</p>
+              <p className="text-xs text-slate-500 mt-1 mb-4">An error occurred while fetching the operational task list.</p>
+              <Button onClick={() => fetchTasks()} variant="outline" size="sm" className="border-slate-300">
+                Retry
+              </Button>
+            </div>
           ) : tasks.length === 0 ? (
             <div className="text-center p-12 text-slate-400">
-              <CheckSquare className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-base font-medium text-slate-300">No tasks found</p>
-              <p className="text-xs text-slate-400 mt-1">Keep operations running smoothly by creating your first task.</p>
+              <CheckSquare className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-semibold text-slate-700">No tasks found</p>
+              <p className="text-xs text-slate-500 mt-1">Keep operations running smoothly by creating your first task.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-slate-100">
               {tasks.map((task) => {
                 const isCompleted = task.status === "completed";
                 const isOverdue = task.due_date && new Date(task.due_date) < new Date() && !isCompleted;
@@ -244,7 +249,7 @@ function AdminTasksPage() {
                 return (
                   <div
                     key={task.id}
-                    className="p-4 hover:bg-slate-800/30 transition-colors flex items-center justify-between gap-4"
+                    className="p-4 hover:bg-slate-50/80 transition-colors flex items-center justify-between gap-4"
                   >
                     <div className="flex items-start gap-3 min-w-0">
                       <button
@@ -252,8 +257,8 @@ function AdminTasksPage() {
                         onClick={() => handleToggleTask(task)}
                         className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
                           isCompleted
-                            ? "bg-emerald-500 border-emerald-500 text-slate-950"
-                            : "border-slate-700 bg-slate-950 hover:border-cyan-400"
+                            ? "bg-emerald-600 border-emerald-600 text-white"
+                            : "border-slate-300 bg-white hover:border-sky-500"
                         }`}
                       >
                         {isCompleted && <CheckCircle2 className="w-4 h-4" />}
@@ -261,20 +266,20 @@ function AdminTasksPage() {
 
                       <div className="min-w-0">
                         <div
-                          className={`font-medium text-sm text-white ${
+                          className={`font-semibold text-sm text-slate-900 ${
                             isCompleted ? "line-through text-slate-400" : ""
                           }`}
                         >
                           {task.title}
                         </div>
                         {task.description && (
-                          <div className="text-xs text-slate-400 mt-0.5 line-clamp-1">{task.description}</div>
+                          <div className="text-xs text-slate-600 mt-0.5 line-clamp-1">{task.description}</div>
                         )}
-                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-400">
+                        <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-slate-500">
                           {task.due_date && (
                             <span
-                              className={`flex items-center gap-1 ${
-                                isOverdue ? "text-rose-400 font-semibold" : "text-slate-400"
+                              className={`flex items-center gap-1 font-medium ${
+                                isOverdue ? "text-rose-600 font-bold" : "text-slate-500"
                               }`}
                             >
                               <Calendar className="w-3.5 h-3.5" />
@@ -282,7 +287,7 @@ function AdminTasksPage() {
                               {isOverdue && " (Overdue)"}
                             </span>
                           )}
-                          {task.assigned_to && <span>Assigned to: {task.assigned_to}</span>}
+                          {task.assigned_to && <span>Assigned: {task.assigned_to}</span>}
                         </div>
                       </div>
                     </div>
@@ -292,7 +297,7 @@ function AdminTasksPage() {
                       <button
                         type="button"
                         onClick={() => handleDeleteTask(task.id)}
-                        className="text-slate-400 hover:text-rose-400 transition-colors p-1"
+                        className="text-slate-400 hover:text-rose-600 transition-colors p-1"
                         title="Delete Task"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -308,48 +313,48 @@ function AdminTasksPage() {
 
       {/* Add Task Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <CheckSquare className="w-5 h-5 text-sky-600" />
                 Create New Task
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateTask} className="space-y-4 mt-4">
               <div>
-                <Label className="text-xs text-slate-300">Task Title *</Label>
+                <Label className="text-xs font-semibold text-slate-700">Task Title *</Label>
                 <Input
                   required
                   value={taskForm.title}
                   onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
                   placeholder="e.g. Follow up on fee deposit receipt #892"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 bg-white border-slate-300 text-slate-900"
                 />
               </div>
 
               <div>
-                <Label className="text-xs text-slate-300">Description</Label>
+                <Label className="text-xs font-semibold text-slate-700">Description</Label>
                 <textarea
                   rows={3}
                   value={taskForm.description}
                   onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
                   placeholder="Additional context or checklist items..."
-                  className="w-full mt-1 p-2.5 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full mt-1 p-2.5 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-normal"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-300">Priority</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Priority</Label>
                   <select
                     value={taskForm.priority}
                     onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
-                    className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className="w-full mt-1 px-3 py-2 bg-white border border-slate-300 rounded-md text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -358,29 +363,29 @@ function AdminTasksPage() {
                   </select>
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-300">Due Date</Label>
+                  <Label className="text-xs font-semibold text-slate-700">Due Date</Label>
                   <Input
                     type="date"
                     value={taskForm.dueDate}
                     onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                    className="mt-1 bg-slate-950 border-slate-800 text-white"
+                    className="mt-1 bg-white border-slate-300 text-slate-900"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowAddModal(false)}
-                  className="border-slate-800 text-slate-300"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-medium"
                 >
                   {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Create Task

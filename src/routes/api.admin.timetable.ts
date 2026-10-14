@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
 
         let query = client
           .from("class_sessions")
-          .select("*, batches(id, name, program_title), class_attendance(*, students(id, full_name, email, phone))")
+          .select("*, batches(id, name, program_title), students(id, full_name, student_id, email), class_attendance(*, students(id, full_name, email, phone))")
           .order("session_date", { ascending: true })
           .order("start_time", { ascending: true });
 
@@ -63,6 +63,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
         return new Response(
           JSON.stringify({
             ok: true,
+            success: true,
             sessions: allSessions,
             todaySessions,
             upcomingSessions,
@@ -112,13 +113,13 @@ export const Route = createFileRoute("/api/admin/timetable")({
             sessionDate,
             startTime,
             endTime,
-            instructorId,
-            batchId,
-            studentId,
-            excludeSessionId,
+            instructorId: instructorId || null,
+            batchId: batchId || null,
+            studentId: studentId || null,
+            excludeSessionId: excludeSessionId || null,
           });
 
-          return new Response(JSON.stringify({ ok: true, ...conflictResult }), {
+          return new Response(JSON.stringify({ ok: true, success: true, ...conflictResult }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
@@ -135,20 +136,22 @@ export const Route = createFileRoute("/api/admin/timetable")({
 
         const d = parsed.data;
 
-        // Perform hard conflict check before inserting
+        // Perform conflict check before inserting
         const conflictCheck = await checkClassScheduleConflicts({
           sessionDate: d.sessionDate,
           startTime: d.startTime,
           endTime: d.endTime,
-          instructorId: d.instructorId,
-          batchId: d.batchId,
-          studentId: body.studentId || null,
+          instructorId: d.instructorId || null,
+          batchId: d.batchId || null,
+          studentId: d.studentId || null,
         });
 
-        if (conflictCheck.hasConflict && !body.ignoreWarnings) {
+        const isOverrideAllowed = Boolean(d.override || body.ignoreWarnings);
+        if (conflictCheck.hasConflict && !isOverrideAllowed) {
           return new Response(
             JSON.stringify({
               ok: false,
+              hasConflict: true,
               error: `Schedule clash detected: ${conflictCheck.conflicts[0]?.message}`,
               conflicts: conflictCheck.conflicts,
             }),
@@ -165,19 +168,20 @@ export const Route = createFileRoute("/api/admin/timetable")({
           sessionDateObj.setDate(sessionDateObj.getDate() + week * 7);
           const computedDate = sessionDateObj.toISOString().split("T")[0];
 
-          if (week > 0 && !body.ignoreWarnings) {
+          if (week > 0 && !isOverrideAllowed) {
             const weekConflict = await checkClassScheduleConflicts({
               sessionDate: computedDate,
               startTime: d.startTime,
               endTime: d.endTime,
-              instructorId: d.instructorId,
-              batchId: d.batchId,
-              studentId: body.studentId || null,
+              instructorId: d.instructorId || null,
+              batchId: d.batchId || null,
+              studentId: d.studentId || null,
             });
             if (weekConflict.hasConflict) {
               return new Response(
                 JSON.stringify({
                   ok: false,
+                  hasConflict: true,
                   error: `Schedule clash in recurring week ${week + 1}: ${weekConflict.conflicts[0]?.message}`,
                   conflicts: weekConflict.conflicts,
                 }),
@@ -191,6 +195,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
             .insert({
               batch_id: d.batchId || null,
               enrollment_id: d.enrollmentId || null,
+              student_id: d.studentId || null,
               instructor_id: d.instructorId || null,
               instructor_name: d.instructorName || null,
               title: repeatWeeks > 1 ? `${d.title} (Week ${week + 1})` : d.title,
@@ -203,6 +208,9 @@ export const Route = createFileRoute("/api/admin/timetable")({
               topic_covered: d.topicCovered || null,
               homework: d.homework || null,
               instructor_notes: d.instructorNotes || null,
+              is_override: Boolean(conflictCheck.hasConflict && isOverrideAllowed),
+              override_reason: conflictCheck.hasConflict && isOverrideAllowed ? (d.overrideReason || "Override confirmed by administrator") : null,
+              override_by: conflictCheck.hasConflict && isOverrideAllowed ? auth.admin.user.id : null,
             })
             .select()
             .single();
@@ -215,16 +223,24 @@ export const Route = createFileRoute("/api/admin/timetable")({
         await logCrmAction({
           adminUserId: auth.admin.user.id,
           actorEmail: auth.admin.user.email,
-          action: "create_class_session",
+          action: conflictCheck.hasConflict && isOverrideAllowed ? "schedule_clash_override" : "create_class_session",
           entity: "class_sessions",
-          details: { title: d.title, sessionDate: d.sessionDate, count: createdSessions.length },
+          details: {
+            title: d.title,
+            sessionDate: d.sessionDate,
+            count: createdSessions.length,
+            isOverride: Boolean(conflictCheck.hasConflict && isOverrideAllowed),
+            overrideReason: d.overrideReason || null,
+          },
         });
 
         return new Response(
           JSON.stringify({
             ok: true,
+            success: true,
             createdSessions,
             count: createdSessions.length,
+            recurringCount: createdSessions.length,
           }),
           { status: 201, headers: { "Content-Type": "application/json" } },
         );

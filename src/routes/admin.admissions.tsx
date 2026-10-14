@@ -414,29 +414,25 @@ function AdminAdmissionsPage() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Admissions CRM & Inbound Pipeline"
+      description="Review admissions inquiries, trial requests, lead progression, and convert leads to enrolled students."
+      onRefresh={fetchAdmissions}
+      isRefreshing={isLoading}
+      actions={
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchAdmissions()}
+          disabled={isLoading}
+          className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+          Refresh Leads
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-cyan-400" />
-              Admissions CRM & Inbound Pipeline
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Review admissions inquiries, trial requests, lead progression, and convert leads to enrolled students.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchAdmissions()}
-            disabled={isLoading}
-            className="border-slate-800 text-slate-300 hover:bg-slate-800"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh Leads
-          </Button>
-        </div>
         {/* Real Stats Ribbon */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           <div className="rounded-xl border border-blue-100 bg-white p-4 shadow-sm hover:shadow transition-shadow">

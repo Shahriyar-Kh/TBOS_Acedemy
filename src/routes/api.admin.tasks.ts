@@ -101,7 +101,8 @@ export const Route = createFileRoute("/api/admin/tasks")({
           .single();
 
         if (insErr || !newTask) {
-          return new Response(JSON.stringify({ ok: false, error: "Failed to create task" }), {
+          console.error("Task insert error:", insErr);
+          return new Response(JSON.stringify({ ok: false, success: false, error: insErr?.message || "Failed to create task" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
           });
@@ -117,7 +118,7 @@ export const Route = createFileRoute("/api/admin/tasks")({
         });
 
         return new Response(
-          JSON.stringify({ ok: true, task: newTask }),
+          JSON.stringify({ ok: true, success: true, task: newTask }),
           { status: 201, headers: { "Content-Type": "application/json" } },
         );
       },

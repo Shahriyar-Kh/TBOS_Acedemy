@@ -440,7 +440,12 @@ export function AdminContentPage() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Content Management System"
+      description="Manage educational course offerings, career specializations, live cohorts, and tutoring tracks."
+      onRefresh={fetchItems}
+      isRefreshing={isLoading}
+    >
       <div className="space-y-6">
         {/* Content Navigation Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-4">

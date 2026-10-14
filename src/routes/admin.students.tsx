@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { generateIcsCalendar, downloadIcsFile } from "@/lib/icalendar";
 import {
   Users,
   Search,
@@ -25,15 +26,28 @@ import {
   Mail,
   Phone,
   MessageCircle,
+  ChevronRight,
+  ChevronLeft,
+  Plus,
+  Trash2,
+  Clock,
+  Check,
+  ExternalLink,
+  Video,
+  FileText,
+  DollarSign,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/students")({
-  head: () => ({ meta: adminNoIndexMeta("TBOS Students Roster") }),
+  head: () => ({ meta: adminNoIndexMeta("TBOS Students Roster & Operations") }),
   component: AdminStudentsPage,
 });
 
-function AdminStudentsPage() {
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export function AdminStudentsPage() {
   const { admin, isLoading: authLoading, getAuthHeader } = useAdminAuth();
   const navigate = useNavigate();
 
@@ -51,29 +65,67 @@ function AdminStudentsPage() {
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Batches for enrollment dropdown
+  const [batches, setBatches] = useState<any[]>([]);
+
   // Modals & Drawers
   const [showAddModal, setShowAddModal] = useState(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [studentDetail, setStudentDetail] = useState<any | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "enrollments" | "fees" | "attendance">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "enrollments" | "schedule" | "fees" | "attendance" | "tasks">("overview");
 
-  // Add Student Form State
-  const [addForm, setAddForm] = useState({
+  // Multi-Section Wizard Form State (Section B)
+  const initialWizardData = {
+    // Step 1: Personal Details
     fullName: "",
     email: "",
     phone: "",
     whatsapp: "",
     guardianName: "",
     guardianPhone: "",
+    guardianRelationship: "Parent",
+    emergencyContact: "",
     country: "Pakistan",
-    city: "",
-    status: "active",
-    billingDay: 1,
+    city: "Lahore",
+    timezone: "Asia/Karachi",
+    status: "active" as const,
     notes: "",
-  });
+
+    // Step 2: Program Enrollment
+    programSlug: "100-days-complete-python",
+    programTitle: "Complete Python Developer",
+    programType: "live_batch" as "live_batch" | "specialization" | "course" | "tutoring",
+    mode: "group" as "group" | "one_on_one",
+    batchId: "",
+    instructorId: "",
+    startDate: new Date().toISOString().split("T")[0],
+    expectedEndDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+
+    // Step 3: Fee Plan
+    planType: "monthly" as "monthly" | "one_time" | "custom",
+    baseFee: 5000,
+    discount: 0,
+    billingDay: 1,
+    createInitialInvoice: true,
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+
+    // Step 4: Schedule
+    schedules: [
+      { dayOfWeek: 1, startTime: "18:00", endTime: "19:30", meetingUrl: "https://meet.google.com/tbos-live", timezone: "Asia/Karachi" },
+      { dayOfWeek: 3, startTime: "18:00", endTime: "19:30", meetingUrl: "https://meet.google.com/tbos-live", timezone: "Asia/Karachi" },
+    ],
+    generateWeeks: 4,
+  };
+
+  const [wizardData, setWizardData] = useState(initialWizardData);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inline Quick Task inside Drawer
+  const [quickTaskTitle, setQuickTaskTitle] = useState("");
+  const [isAddingTask, setIsAddingTask] = useState(false);
 
   // CSV Import State
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -107,8 +159,14 @@ function AdminStudentsPage() {
   }, [search, statusFilter, page, getAuthHeader]);
 
   useEffect(() => {
-    if (admin) fetchStudents();
-  }, [admin, fetchStudents]);
+    if (admin) {
+      fetchStudents();
+      fetch("/api/admin/batches", { headers: getAuthHeader() })
+        .then((res) => (res.ok ? res.json() : { batches: [] }))
+        .then((data) => setBatches(data.batches || []))
+        .catch(() => {});
+    }
+  }, [admin, fetchStudents, getAuthHeader]);
 
   const loadStudentProfile = async (id: string) => {
     setSelectedStudentId(id);
@@ -128,33 +186,74 @@ function AdminStudentsPage() {
     }
   };
 
-  const handleAddStudent = async (e: React.FormEvent) => {
+  const handleCreateStudentFull = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!wizardData.fullName || !wizardData.email || !wizardData.phone) {
+      toast.error("Full name, email, and phone number are required.");
+      setWizardStep(1);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      const agreedFee = Math.max(0, Number(wizardData.baseFee) - Number(wizardData.discount || 0));
+      const payload = {
+        action: "create-student-full",
+        fullName: wizardData.fullName.trim(),
+        email: wizardData.email.trim(),
+        phone: wizardData.phone.trim(),
+        whatsapp: wizardData.whatsapp ? wizardData.whatsapp.trim() : wizardData.phone.trim(),
+        guardianName: wizardData.guardianName ? wizardData.guardianName.trim() : null,
+        guardianPhone: wizardData.guardianPhone ? wizardData.guardianPhone.trim() : null,
+        guardianRelationship: wizardData.guardianRelationship || null,
+        emergencyContact: wizardData.emergencyContact ? wizardData.emergencyContact.trim() : null,
+        country: wizardData.country || "Pakistan",
+        city: wizardData.city ? wizardData.city.trim() : null,
+        timezone: wizardData.timezone || "Asia/Karachi",
+        status: wizardData.status,
+        notes: wizardData.notes ? wizardData.notes.trim() : null,
+
+        programSlug: wizardData.programSlug,
+        programTitle: wizardData.programTitle,
+        programType: wizardData.programType,
+        mode: wizardData.mode,
+        batchId: wizardData.batchId || null,
+        instructorId: wizardData.instructorId || null,
+        startDate: wizardData.startDate,
+        expectedEndDate: wizardData.expectedEndDate || null,
+        agreedFee,
+        discount: Number(wizardData.discount || 0),
+
+        planType: wizardData.planType,
+        billingDay: Number(wizardData.billingDay),
+        createInitialInvoice: wizardData.createInitialInvoice,
+        dueDate: wizardData.createInitialInvoice ? wizardData.dueDate : null,
+
+        schedules: wizardData.schedules.map((s) => ({
+          dayOfWeek: Number(s.dayOfWeek),
+          startTime: s.startTime,
+          endTime: s.endTime,
+          meetingUrl: s.meetingUrl ? s.meetingUrl.trim() : null,
+          timezone: s.timezone || "Asia/Karachi",
+        })),
+        generateWeeks: Number(wizardData.generateWeeks),
+      };
+
       const res = await fetch("/api/admin/students", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
-        body: JSON.stringify(addForm),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (data.ok) {
-        toast.success(`Student ${data.student?.student_id} added successfully!`);
+      if (res.ok && (data.ok || data.success)) {
+        toast.success(`Student ${data.student?.student_id || ""} successfully registered with active plan!`);
         setShowAddModal(false);
-        setAddForm({
-          fullName: "",
-          email: "",
-          phone: "",
-          whatsapp: "",
-          guardianName: "",
-          guardianPhone: "",
-          country: "Pakistan",
-          city: "",
-          status: "active",
-          billingDay: 1,
-          notes: "",
-        });
+        setWizardStep(1);
+        setWizardData(initialWizardData);
         fetchStudents();
+        if (data.student?.id) {
+          loadStudentProfile(data.student.id);
+        }
       } else {
         toast.error(data.error || "Failed to create student");
       }
@@ -162,6 +261,80 @@ function AdminStudentsPage() {
       toast.error("Network error while creating student");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleAddSlot = () => {
+    setWizardData((prev) => ({
+      ...prev,
+      schedules: [
+        ...prev.schedules,
+        { dayOfWeek: 5, startTime: "18:00", endTime: "19:30", meetingUrl: "https://meet.google.com/tbos-live", timezone: "Asia/Karachi" },
+      ],
+    }));
+  };
+
+  const handleRemoveSlot = (index: number) => {
+    setWizardData((prev) => ({
+      ...prev,
+      schedules: prev.schedules.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleDownloadStudentIcs = () => {
+    if (!studentDetail || !studentDetail.student) return;
+    const student = studentDetail.student;
+    const sessions = studentDetail.sessions || [];
+
+    if (sessions.length === 0) {
+      toast.info("No scheduled class sessions found to export.");
+      return;
+    }
+
+    const events = sessions.map((s: any) => ({
+      id: s.id,
+      title: `${s.title} (${student.full_name})`,
+      description: `TBOS Academy Class Session. Instructor: ${s.instructor_name || "TBOS Mentor"}`,
+      sessionDate: s.session_date,
+      startTime: s.start_time,
+      endTime: s.end_time,
+      meetingLink: s.meeting_link || undefined,
+      instructorName: s.instructor_name || undefined,
+      batchOrStudentName: student.full_name,
+    }));
+
+    const ics = generateIcsCalendar(events);
+    downloadIcsFile(ics, `${student.student_id}-schedule.ics`);
+    toast.success("Schedule downloaded (.ics format)");
+  };
+
+  const handleAddQuickTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickTaskTitle.trim() || !selectedStudentId) return;
+    setIsAddingTask(true);
+    try {
+      const res = await fetch("/api/admin/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({
+          title: quickTaskTitle.trim(),
+          studentId: selectedStudentId,
+          priority: "medium",
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success("Task added for student!");
+        setQuickTaskTitle("");
+        loadStudentProfile(selectedStudentId);
+      } else {
+        toast.error(data.error || "Failed to create task");
+      }
+    } catch {
+      toast.error("Network error adding task");
+    } finally {
+      setIsAddingTask(false);
     }
   };
 
@@ -235,7 +408,7 @@ function AdminStudentsPage() {
 
   return (
     <AdminLayout
-      title="Students Management"
+      title="Students Management & Roster"
       description="Roster of all enrolled students, individual profile history, billing schedules, and CSV import."
       onRefresh={fetchStudents}
       isRefreshing={isLoading}
@@ -243,16 +416,19 @@ function AdminStudentsPage() {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            onClick={() => setShowAddModal(true)}
-            className="bg-[#008DDA] hover:bg-[#0070b8] text-white gap-1.5 text-xs"
+            onClick={() => {
+              setWizardStep(1);
+              setShowAddModal(true);
+            }}
+            className="bg-sky-600 hover:bg-sky-700 text-white gap-1.5 text-xs font-medium shadow-sm"
           >
-            <UserPlus className="h-3.5 w-3.5" /> Add Student
+            <UserPlus className="h-3.5 w-3.5" /> Complete Registration Wizard
           </Button>
           <Button
             size="sm"
             variant="outline"
             onClick={() => setShowImportModal(true)}
-            className="gap-1.5 text-xs"
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-medium"
           >
             <Upload className="h-3.5 w-3.5" /> Import CSV
           </Button>
@@ -263,20 +439,20 @@ function AdminStudentsPage() {
         {/* Statistics Pill Ribbons */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <span className="text-xs font-medium text-slate-500">Total Students</span>
+            <span className="text-xs font-medium text-slate-500">Total Enrolled</span>
             <div className="mt-1 text-2xl font-bold text-slate-900">{stats.total}</div>
           </div>
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-sm">
-            <span className="text-xs font-semibold text-emerald-700">Active Learners</span>
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-sm">
+            <span className="text-xs font-semibold text-emerald-800">Active Learners</span>
             <div className="mt-1 text-2xl font-bold text-emerald-700">{stats.active}</div>
           </div>
-          <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4 shadow-sm">
-            <span className="text-xs font-semibold text-amber-700">Paused / On Hold</span>
+          <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm">
+            <span className="text-xs font-semibold text-amber-800">Paused / On Hold</span>
             <div className="mt-1 text-2xl font-bold text-amber-700">{stats.paused}</div>
           </div>
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 shadow-sm">
-            <span className="text-xs font-semibold text-blue-700">Graduated</span>
-            <div className="mt-1 text-2xl font-bold text-blue-700">{stats.completed}</div>
+          <div className="rounded-xl border border-sky-200 bg-sky-50/60 p-4 shadow-sm">
+            <span className="text-xs font-semibold text-sky-800">Graduated</span>
+            <div className="mt-1 text-2xl font-bold text-sky-700">{stats.completed}</div>
           </div>
         </div>
 
@@ -289,7 +465,7 @@ function AdminStudentsPage() {
               placeholder="Search by name, ID, phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 text-xs"
+              className="pl-9 h-9 text-xs bg-white border-slate-300"
             />
           </div>
 
@@ -297,7 +473,7 @@ function AdminStudentsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#008DDA]"
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -314,7 +490,7 @@ function AdminStudentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50/75 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-semibold text-slate-700 uppercase tracking-wider">
                   <th className="py-3 px-4">Student ID</th>
                   <th className="py-3 px-4">Full Name</th>
                   <th className="py-3 px-4">Contact</th>
@@ -327,14 +503,14 @@ function AdminStudentsPage() {
               <tbody className="divide-y divide-slate-100">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-[#008DDA] mb-2" />
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto text-sky-600 mb-2" />
                       Loading students...
                     </td>
                   </tr>
                 ) : students.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       No students found matching current filters.
                     </td>
                   </tr>
@@ -347,27 +523,27 @@ function AdminStudentsPage() {
                       <td className="py-3 px-4">
                         <div className="font-semibold text-slate-900">{st.full_name}</div>
                         {st.guardian_name && (
-                          <div className="text-[11px] text-slate-400">Guardian: {st.guardian_name}</div>
+                          <div className="text-[11px] text-slate-500">Guardian: {st.guardian_name}</div>
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <div className="text-slate-700">{st.email}</div>
+                        <div className="text-slate-800">{st.email}</div>
                         <div className="text-slate-500 font-mono text-[11px]">{st.phone}</div>
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-700">
                         {st.city ? `${st.city}, ${st.country}` : st.country}
                       </td>
                       <td className="py-3 px-4">
                         <Badge
                           variant={st.status === "active" ? "default" : "secondary"}
-                          className={`text-[10px] uppercase font-mono ${
-                            st.status === "active" ? "bg-emerald-500/10 text-emerald-700 border-emerald-200" : ""
+                          className={`text-[10px] uppercase font-mono font-bold ${
+                            st.status === "active" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : ""
                           }`}
                         >
                           {st.status}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-600">
+                      <td className="py-3 px-4 font-mono text-slate-700">
                         Day {st.billing_day} of month
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -375,7 +551,7 @@ function AdminStudentsPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => loadStudentProfile(st.id)}
-                          className="h-7 px-2.5 text-xs text-[#008DDA] hover:text-[#0070b8] hover:bg-blue-50"
+                          className="h-7 px-2.5 text-xs text-sky-700 hover:text-sky-800 hover:bg-sky-50 font-medium"
                         >
                           <Eye className="h-3.5 w-3.5 mr-1" /> View Profile
                         </Button>
@@ -389,127 +565,562 @@ function AdminStudentsPage() {
         </div>
       </div>
 
-      {/* Add Student Modal */}
+      {/* Complete Multi-Section Student Wizard Modal (Section B) */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Add New Student</h3>
-              <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-sky-600" />
+                  New Student Registration Wizard
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Atomically register personal profile, enrollment, billing plan, and weekly class timetable.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddStudent} className="mt-4 space-y-3.5 text-xs">
-              <div>
-                <Label className="text-xs font-semibold">Full Name *</Label>
-                <Input
-                  required
-                  value={addForm.fullName}
-                  onChange={(e) => setAddForm({ ...addForm, fullName: e.target.value })}
-                  placeholder="e.g. Bilal Hassan"
-                  className="mt-1 h-9 text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Email *</Label>
-                  <Input
-                    required
-                    type="email"
-                    value={addForm.email}
-                    onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
-                    placeholder="student@example.com"
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Phone *</Label>
-                  <Input
-                    required
-                    value={addForm.phone}
-                    onChange={(e) => setAddForm({ ...addForm, phone: e.target.value })}
-                    placeholder="+92 300 1234567"
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Guardian Name (for minors)</Label>
-                  <Input
-                    value={addForm.guardianName}
-                    onChange={(e) => setAddForm({ ...addForm, guardianName: e.target.value })}
-                    placeholder="Parent name"
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Guardian Phone</Label>
-                  <Input
-                    value={addForm.guardianPhone}
-                    onChange={(e) => setAddForm({ ...addForm, guardianPhone: e.target.value })}
-                    placeholder="+92 321 0000000"
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Country</Label>
-                  <Input
-                    value={addForm.country}
-                    onChange={(e) => setAddForm({ ...addForm, country: e.target.value })}
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">City</Label>
-                  <Input
-                    value={addForm.city}
-                    onChange={(e) => setAddForm({ ...addForm, city: e.target.value })}
-                    placeholder="Lahore, Karachi..."
-                    className="mt-1 h-9 text-xs"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs font-semibold">Monthly Billing Day (1-28)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={28}
-                    value={addForm.billingDay}
-                    onChange={(e) => setAddForm({ ...addForm, billingDay: Number(e.target.value) })}
-                    className="mt-1 h-9 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs font-semibold">Status</Label>
-                  <select
-                    value={addForm.status}
-                    onChange={(e) => setAddForm({ ...addForm, status: e.target.value })}
-                    className="mt-1 w-full h-9 rounded-md border border-slate-200 px-3 text-xs"
+            {/* Stepper Progress Bar */}
+            <div className="py-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center justify-between">
+                {[
+                  { step: 1, label: "Personal Details" },
+                  { step: 2, label: "Program Enrollment" },
+                  { step: 3, label: "Fee & Billing Plan" },
+                  { step: 4, label: "Timetable Schedule" },
+                ].map((s) => (
+                  <button
+                    key={s.step}
+                    type="button"
+                    onClick={() => setWizardStep(s.step as any)}
+                    className="flex items-center gap-2 text-left group"
                   >
-                    <option value="active">Active</option>
-                    <option value="trial">Trial</option>
-                    <option value="paused">Paused</option>
-                  </select>
-                </div>
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                        wizardStep === s.step
+                          ? "bg-sky-600 text-white"
+                          : wizardStep > s.step
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {wizardStep > s.step ? <Check className="w-3.5 h-3.5" /> : s.step}
+                    </div>
+                    <span
+                      className={`text-xs font-medium hidden sm:inline ${
+                        wizardStep === s.step ? "text-slate-900 font-bold" : "text-slate-500"
+                      }`}
+                    >
+                      {s.label}
+                    </span>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setShowAddModal(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting} size="sm" className="bg-[#008DDA] text-white">
-                  {isSubmitting ? "Creating..." : "Save Student"}
-                </Button>
+            {/* Step Body */}
+            <form onSubmit={handleCreateStudentFull} className="flex-1 overflow-y-auto py-4 space-y-4 text-xs">
+              {/* STEP 1: Personal Details */}
+              {wizardStep === 1 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs font-semibold text-slate-700">Full Name *</Label>
+                      <Input
+                        required
+                        value={wizardData.fullName}
+                        onChange={(e) => setWizardData({ ...wizardData, fullName: e.target.value })}
+                        placeholder="e.g. Bilal Hassan"
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Email Address *</Label>
+                      <Input
+                        required
+                        type="email"
+                        value={wizardData.email}
+                        onChange={(e) => setWizardData({ ...wizardData, email: e.target.value })}
+                        placeholder="bilal@example.com"
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Phone Number *</Label>
+                      <Input
+                        required
+                        value={wizardData.phone}
+                        onChange={(e) => setWizardData({ ...wizardData, phone: e.target.value })}
+                        placeholder="+92 300 1234567"
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">WhatsApp (if different)</Label>
+                      <Input
+                        value={wizardData.whatsapp}
+                        onChange={(e) => setWizardData({ ...wizardData, whatsapp: e.target.value })}
+                        placeholder="+92 300 1234567"
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Emergency Contact</Label>
+                      <Input
+                        value={wizardData.emergencyContact}
+                        onChange={(e) => setWizardData({ ...wizardData, emergencyContact: e.target.value })}
+                        placeholder="Contact name and phone"
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3.5 space-y-3">
+                    <span className="font-semibold text-slate-800 block text-xs">Guardian Information (Minors & Dependents)</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <Label className="text-[11px] text-slate-600">Guardian Name</Label>
+                        <Input
+                          value={wizardData.guardianName}
+                          onChange={(e) => setWizardData({ ...wizardData, guardianName: e.target.value })}
+                          placeholder="e.g. Tariq Hassan"
+                          className="mt-1 h-8 text-xs bg-white border-slate-300"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-slate-600">Guardian Phone</Label>
+                        <Input
+                          value={wizardData.guardianPhone}
+                          onChange={(e) => setWizardData({ ...wizardData, guardianPhone: e.target.value })}
+                          placeholder="+92 321 9876543"
+                          className="mt-1 h-8 text-xs bg-white border-slate-300"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-slate-600">Relationship</Label>
+                        <select
+                          value={wizardData.guardianRelationship}
+                          onChange={(e) => setWizardData({ ...wizardData, guardianRelationship: e.target.value })}
+                          className="mt-1 w-full h-8 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-800"
+                        >
+                          <option value="Parent">Parent</option>
+                          <option value="Father">Father</option>
+                          <option value="Mother">Mother</option>
+                          <option value="Sibling">Sibling</option>
+                          <option value="Guardian">Guardian</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Country</Label>
+                      <Input
+                        value={wizardData.country}
+                        onChange={(e) => setWizardData({ ...wizardData, country: e.target.value })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">City</Label>
+                      <Input
+                        value={wizardData.city}
+                        onChange={(e) => setWizardData({ ...wizardData, city: e.target.value })}
+                        placeholder="Lahore, Karachi..."
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Timezone</Label>
+                      <select
+                        value={wizardData.timezone}
+                        onChange={(e) => setWizardData({ ...wizardData, timezone: e.target.value })}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-800"
+                      >
+                        <option value="Asia/Karachi">Asia/Karachi (PKT)</option>
+                        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                        <option value="Europe/London">Europe/London (GMT/BST)</option>
+                        <option value="America/New_York">America/New_York (EST)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 2: Program Enrollment */}
+              {wizardStep === 2 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Program Track</Label>
+                      <select
+                        value={wizardData.programType}
+                        onChange={(e) => setWizardData({ ...wizardData, programType: e.target.value as any })}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
+                      >
+                        <option value="live_batch">Live Group Batch</option>
+                        <option value="tutoring">1-on-1 Dedicated Tutoring</option>
+                        <option value="specialization">Career Specialization</option>
+                        <option value="course">Single Course</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Delivery Mode</Label>
+                      <select
+                        value={wizardData.mode}
+                        onChange={(e) => setWizardData({ ...wizardData, mode: e.target.value as any })}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
+                      >
+                        <option value="group">Group Cohort</option>
+                        <option value="one_on_one">1-on-1 Individual</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs font-semibold text-slate-700">Program / Course Title *</Label>
+                      <select
+                        value={wizardData.programTitle}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setWizardData({
+                            ...wizardData,
+                            programTitle: val,
+                            programSlug: val.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+                          });
+                        }}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 font-medium"
+                      >
+                        <option value="Complete Python Developer">100 Days Complete Python Developer</option>
+                        <option value="Full-Stack Web Development">Full-Stack Modern Web Development</option>
+                        <option value="Data Science & Machine Learning">Data Science & Applied AI</option>
+                        <option value="1-on-1 Python Tutoring">1-on-1 Python Tutoring Track</option>
+                        <option value="Custom Training Program">Custom Specialized Training</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <Label className="text-xs font-semibold text-slate-700">Assign to Cohort / Batch (Optional)</Label>
+                      <select
+                        value={wizardData.batchId}
+                        onChange={(e) => setWizardData({ ...wizardData, batchId: e.target.value })}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
+                      >
+                        <option value="">None / Standalone 1-on-1 Student</option>
+                        {batches.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name} {b.batch_code ? `(${b.batch_code})` : ""} - {b.program_type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Start Date</Label>
+                      <Input
+                        type="date"
+                        value={wizardData.startDate}
+                        onChange={(e) => setWizardData({ ...wizardData, startDate: e.target.value })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Expected End Date</Label>
+                      <Input
+                        type="date"
+                        value={wizardData.expectedEndDate}
+                        onChange={(e) => setWizardData({ ...wizardData, expectedEndDate: e.target.value })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3: Fee & Billing Plan */}
+              {wizardStep === 3 && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Plan Type</Label>
+                      <select
+                        value={wizardData.planType}
+                        onChange={(e) => setWizardData({ ...wizardData, planType: e.target.value as any })}
+                        className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
+                      >
+                        <option value="monthly">Monthly Recurring Dues</option>
+                        <option value="one_time">One-Time Full Payment</option>
+                        <option value="custom">Custom Milestone Plan</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Monthly Billing Day (1-28)</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={28}
+                        value={wizardData.billingDay}
+                        onChange={(e) => setWizardData({ ...wizardData, billingDay: Number(e.target.value) })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Base Fee (PKR) *</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={wizardData.baseFee}
+                        onChange={(e) => setWizardData({ ...wizardData, baseFee: Number(e.target.value) })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-semibold text-slate-700">Discount Amount (PKR)</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={wizardData.discount}
+                        onChange={(e) => setWizardData({ ...wizardData, discount: Number(e.target.value) })}
+                        className="mt-1 h-9 bg-white border-slate-300 text-slate-900 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Net Fee Highlight Card */}
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-semibold text-emerald-800">Net Agreed Fee (Charged to Student)</span>
+                      <p className="text-xs text-emerald-700 mt-0.5">Calculated as Base Fee minus Discount</p>
+                    </div>
+                    <div className="text-xl font-bold font-mono text-emerald-800">
+                      PKR {Math.max(0, wizardData.baseFee - wizardData.discount).toLocaleString()}
+                    </div>
+                  </div>
+
+                  {/* Initial Invoice Checkbox */}
+                  <div className="rounded-xl border border-slate-200 p-3.5 bg-slate-50/50 space-y-3">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={wizardData.createInitialInvoice}
+                        onChange={(e) => setWizardData({ ...wizardData, createInitialInvoice: e.target.checked })}
+                        className="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                      />
+                      <span className="text-xs font-semibold text-slate-800">
+                        Generate first fee invoice immediately upon creation
+                      </span>
+                    </label>
+
+                    {wizardData.createInitialInvoice && (
+                      <div className="pt-2 border-t border-slate-200 flex items-center justify-between gap-4">
+                        <Label className="text-xs text-slate-600 font-medium">Initial Invoice Due Date:</Label>
+                        <Input
+                          type="date"
+                          value={wizardData.dueDate}
+                          onChange={(e) => setWizardData({ ...wizardData, dueDate: e.target.value })}
+                          className="w-44 h-8 text-xs bg-white border-slate-300"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 4: Timetable & Recurring Class Schedule */}
+              {wizardStep === 4 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-slate-900">Weekly Recurring Class Slots</span>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        These slots define the student's recurring weekly timetable and generate live class sessions.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={handleAddSlot}
+                      className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add Slot
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {wizardData.schedules.length === 0 ? (
+                      <div className="p-4 border border-dashed border-slate-300 rounded-xl text-center text-slate-500">
+                        No recurring class slots configured. Click "Add Slot" above.
+                      </div>
+                    ) : (
+                      wizardData.schedules.map((slot, index) => (
+                        <div
+                          key={index}
+                          className="p-3 border border-slate-200 rounded-xl bg-slate-50/50 flex flex-wrap sm:flex-nowrap items-center gap-2.5"
+                        >
+                          <div className="w-full sm:w-36">
+                            <Label className="text-[10px] text-slate-500">Day of Week</Label>
+                            <select
+                              value={slot.dayOfWeek}
+                              onChange={(e) => {
+                                const newSchedules = [...wizardData.schedules];
+                                newSchedules[index].dayOfWeek = Number(e.target.value);
+                                setWizardData({ ...wizardData, schedules: newSchedules });
+                              }}
+                              className="mt-0.5 w-full h-8 text-xs rounded border border-slate-300 bg-white px-2 text-slate-800"
+                            >
+                              {DAY_NAMES.map((name, dIdx) => (
+                                <option key={dIdx} value={dIdx}>
+                                  {name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="w-28">
+                            <Label className="text-[10px] text-slate-500">Start Time</Label>
+                            <Input
+                              type="time"
+                              value={slot.startTime}
+                              onChange={(e) => {
+                                const newSchedules = [...wizardData.schedules];
+                                newSchedules[index].startTime = e.target.value;
+                                setWizardData({ ...wizardData, schedules: newSchedules });
+                              }}
+                              className="mt-0.5 h-8 text-xs bg-white border-slate-300"
+                            />
+                          </div>
+
+                          <div className="w-28">
+                            <Label className="text-[10px] text-slate-500">End Time</Label>
+                            <Input
+                              type="time"
+                              value={slot.endTime}
+                              onChange={(e) => {
+                                const newSchedules = [...wizardData.schedules];
+                                newSchedules[index].endTime = e.target.value;
+                                setWizardData({ ...wizardData, schedules: newSchedules });
+                              }}
+                              className="mt-0.5 h-8 text-xs bg-white border-slate-300"
+                            />
+                          </div>
+
+                          <div className="flex-1 min-w-[150px]">
+                            <Label className="text-[10px] text-slate-500">Live Meeting Link</Label>
+                            <Input
+                              type="url"
+                              value={slot.meetingUrl}
+                              onChange={(e) => {
+                                const newSchedules = [...wizardData.schedules];
+                                newSchedules[index].meetingUrl = e.target.value;
+                                setWizardData({ ...wizardData, schedules: newSchedules });
+                              }}
+                              placeholder="https://meet.google.com/..."
+                              className="mt-0.5 h-8 text-xs bg-white border-slate-300"
+                            />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSlot(index)}
+                            className="mt-4 p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Remove slot"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 p-3.5 bg-white flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-slate-800">Generate Upfront Sessions in Timetable</span>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        Creates dated class session occurrences on the timetable immediately.
+                      </p>
+                    </div>
+                    <select
+                      value={wizardData.generateWeeks}
+                      onChange={(e) => setWizardData({ ...wizardData, generateWeeks: Number(e.target.value) })}
+                      className="h-8 rounded border border-slate-300 bg-white px-2.5 text-xs text-slate-800 font-mono"
+                    >
+                      <option value={2}>2 weeks upfront</option>
+                      <option value={4}>4 weeks upfront</option>
+                      <option value={8}>8 weeks upfront</option>
+                      <option value={12}>12 weeks upfront</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Wizard Footer Controls */}
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-between shrink-0">
+                {wizardStep > 1 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setWizardStep((prev) => (prev - 1) as any)}
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-1 text-xs"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddModal(false)}
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs"
+                  >
+                    Cancel
+                  </Button>
+                )}
+
+                {wizardStep < 4 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      if (wizardStep === 1 && (!wizardData.fullName || !wizardData.email || !wizardData.phone)) {
+                        toast.error("Please fill in Full Name, Email, and Phone number.");
+                        return;
+                      }
+                      setWizardStep((prev) => (prev + 1) as any);
+                    }}
+                    className="bg-sky-600 hover:bg-sky-700 text-white gap-1 text-xs font-medium"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-semibold shadow-sm"
+                  >
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
+                    Complete Registration & Setup System
+                  </Button>
+                )}
               </div>
             </form>
           </div>
@@ -518,25 +1129,25 @@ function AdminStudentsPage() {
 
       {/* CSV Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
                 <h3 className="text-base font-bold text-slate-900">Bulk CSV Student Import</h3>
               </div>
-              <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowImportModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="mt-4 space-y-4 text-xs">
-              <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 flex items-center justify-between text-blue-900">
+              <div className="rounded-lg bg-sky-50 border border-sky-200 p-3 flex items-center justify-between text-sky-900">
                 <div>
                   <p className="font-semibold">Download CSV Template</p>
-                  <p className="text-[11px] text-blue-700">Includes verified columns: name, email, phone, billingDay...</p>
+                  <p className="text-[11px] text-sky-700">Includes verified columns: name, email, phone, billingDay...</p>
                 </div>
-                <Button size="sm" variant="outline" onClick={downloadCsvTemplate} className="gap-1 text-xs">
+                <Button size="sm" variant="outline" onClick={downloadCsvTemplate} className="gap-1 text-xs border-sky-300">
                   <Download className="h-3.5 w-3.5" /> Template
                 </Button>
               </div>
@@ -570,14 +1181,14 @@ function AdminStudentsPage() {
               )}
 
               <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowImportModal(false)}>
+                <Button variant="outline" size="sm" onClick={() => setShowImportModal(false)} className="border-slate-300">
                   Close
                 </Button>
                 <Button
                   size="sm"
                   disabled={csvRows.length === 0 || isImporting}
                   onClick={handleImportCsv}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
                 >
                   {isImporting ? "Processing..." : `Import ${csvRows.length} Students`}
                 </Button>
@@ -587,193 +1198,442 @@ function AdminStudentsPage() {
         </div>
       )}
 
-      {/* Student Profile Drawer */}
-      {selectedStudentId && studentDetail && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs">
+      {/* Comprehensive Student Profile Drawer (Section G) */}
+      {selectedStudentId && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/60 backdrop-blur-sm">
           <div className="w-full max-w-2xl bg-white h-full shadow-2xl flex flex-col overflow-hidden">
-            {/* Drawer Header */}
-            <div className="p-5 border-b border-slate-200 bg-[#0B192C] text-white flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs px-2 py-0.5 rounded bg-white/10 text-cyan-400 font-bold">
-                    {studentDetail.student?.student_id}
-                  </span>
-                  <Badge className="text-[10px] uppercase font-mono">{studentDetail.student?.status}</Badge>
-                </div>
-                <h2 className="text-lg font-bold text-white mt-1">{studentDetail.student?.full_name}</h2>
+            {isDetailLoading ? (
+              <div className="flex-1 flex items-center justify-center text-slate-500">
+                <Loader2 className="w-8 h-8 animate-spin text-sky-600 mr-2" />
+                Loading student records...
               </div>
-              <button onClick={() => setSelectedStudentId(null)} className="text-slate-400 hover:text-white p-1">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Profile Navigation Tabs */}
-            <div className="flex border-b border-slate-200 bg-slate-50 px-4 text-xs font-semibold">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`py-3 px-3 border-b-2 transition-colors ${
-                  activeTab === "overview" ? "border-[#008DDA] text-[#008DDA]" : "border-transparent text-slate-500"
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("enrollments")}
-                className={`py-3 px-3 border-b-2 transition-colors ${
-                  activeTab === "enrollments" ? "border-[#008DDA] text-[#008DDA]" : "border-transparent text-slate-500"
-                }`}
-              >
-                Enrollments ({studentDetail.enrollments?.length || 0})
-              </button>
-              <button
-                onClick={() => setActiveTab("fees")}
-                className={`py-3 px-3 border-b-2 transition-colors ${
-                  activeTab === "fees" ? "border-[#008DDA] text-[#008DDA]" : "border-transparent text-slate-500"
-                }`}
-              >
-                Fees & Dues ({studentDetail.invoices?.length || 0})
-              </button>
-              <button
-                onClick={() => setActiveTab("attendance")}
-                className={`py-3 px-3 border-b-2 transition-colors ${
-                  activeTab === "attendance" ? "border-[#008DDA] text-[#008DDA]" : "border-transparent text-slate-500"
-                }`}
-              >
-                Attendance ({studentDetail.attendance?.length || 0})
-              </button>
-            </div>
-
-            {/* Drawer Body */}
-            <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
-              {activeTab === "overview" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 p-4 bg-slate-50/50">
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Email</span>
-                      <span className="font-semibold text-slate-800">{studentDetail.student?.email}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Phone / WhatsApp</span>
-                      <span className="font-semibold text-slate-800 font-mono">{studentDetail.student?.phone}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Location</span>
-                      <span className="font-semibold text-slate-800">
-                        {studentDetail.student?.city || "—"}, {studentDetail.student?.country}
+            ) : !studentDetail?.student ? (
+              <div className="p-6 text-center text-slate-500">
+                <AlertCircle className="w-8 h-8 mx-auto text-rose-500 mb-2" />
+                Student record not found.
+                <div className="mt-4">
+                  <Button variant="outline" size="sm" onClick={() => setSelectedStudentId(null)}>
+                    Close
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Drawer Header */}
+                <div className="p-5 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs px-2 py-0.5 rounded bg-white/10 text-sky-300 font-bold">
+                        {studentDetail.student.student_id}
                       </span>
+                      <Badge className="text-[10px] uppercase font-mono font-bold bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                        {studentDetail.student.status}
+                      </Badge>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[11px]">Monthly Billing Day</span>
-                      <span className="font-semibold text-slate-800 font-mono">Day {studentDetail.student?.billing_day}</span>
-                    </div>
+                    <h2 className="text-lg font-bold text-white mt-1">{studentDetail.student.full_name}</h2>
                   </div>
+                  <button onClick={() => setSelectedStudentId(null)} className="text-slate-400 hover:text-white p-1">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-                  {studentDetail.student?.guardian_name && (
-                    <div className="rounded-xl border border-slate-200 p-4">
-                      <h4 className="font-bold text-slate-900 mb-2">Guardian Contact</h4>
-                      <div className="grid grid-cols-2 gap-3">
+                {/* Profile Navigation Tabs */}
+                <div className="flex border-b border-slate-200 bg-slate-50 px-4 text-xs font-semibold overflow-x-auto shrink-0">
+                  <button
+                    onClick={() => setActiveTab("overview")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "overview" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("enrollments")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "enrollments" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Enrollments ({studentDetail.enrollments?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("schedule")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "schedule" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Schedule & Classes ({studentDetail.sessions?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("fees")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "fees" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Fees & Ledger ({studentDetail.invoices?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("attendance")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "attendance" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Attendance ({studentDetail.attendance?.length || 0})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("tasks")}
+                    className={`py-3 px-3 border-b-2 transition-colors whitespace-nowrap ${
+                      activeTab === "tasks" ? "border-sky-600 text-sky-700" : "border-transparent text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    Tasks ({studentDetail.tasks?.length || 0})
+                  </button>
+                </div>
+
+                {/* Drawer Body */}
+                <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
+                  {/* TAB 1: OVERVIEW */}
+                  {activeTab === "overview" && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 p-4 bg-slate-50/70">
                         <div>
-                          <span className="text-slate-400 text-[11px] block">Guardian Name</span>
-                          <span className="font-medium text-slate-800">{studentDetail.student.guardian_name}</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Email</span>
+                          <span className="font-semibold text-slate-900">{studentDetail.student.email}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 text-[11px] block">Guardian Phone</span>
-                          <span className="font-mono text-slate-800">{studentDetail.student.guardian_phone || "—"}</span>
+                          <span className="text-slate-500 block text-[11px] font-medium">Phone / WhatsApp</span>
+                          <span className="font-semibold text-slate-900 font-mono">{studentDetail.student.phone}</span>
                         </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Location</span>
+                          <span className="font-semibold text-slate-900">
+                            {studentDetail.student.city ? `${studentDetail.student.city}, ` : ""}{studentDetail.student.country}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Timezone</span>
+                          <span className="font-semibold text-slate-900 font-mono">{studentDetail.student.timezone || "Asia/Karachi"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Monthly Billing Day</span>
+                          <span className="font-semibold text-slate-900 font-mono">Day {studentDetail.student.billing_day} of month</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Emergency Contact</span>
+                          <span className="font-semibold text-slate-900">{studentDetail.student.emergency_contact || "—"}</span>
+                        </div>
+                      </div>
+
+                      {studentDetail.student.guardian_name && (
+                        <div className="rounded-xl border border-slate-200 p-4 bg-white">
+                          <h4 className="font-bold text-slate-900 mb-2">Guardian Information</h4>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <span className="text-slate-500 text-[11px] block">Name</span>
+                              <span className="font-medium text-slate-800">{studentDetail.student.guardian_name}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 text-[11px] block">Relationship</span>
+                              <span className="font-medium text-slate-800">{studentDetail.student.guardian_relationship || "Parent"}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 text-[11px] block">Phone</span>
+                              <span className="font-mono text-slate-800">{studentDetail.student.guardian_phone || "—"}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Direct Contact Buttons */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2">
+                        <Button asChild size="sm" variant="outline" className="text-xs gap-1.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+                          <a
+                            href={`https://wa.me/${(studentDetail.student.whatsapp || studentDetail.student.phone || "").replace(/[^0-9]/g, "")}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp Student
+                          </a>
+                        </Button>
+                        <Button asChild size="sm" variant="outline" className="text-xs gap-1.5 text-sky-700 border-sky-300 hover:bg-sky-50">
+                          <a href={`mailto:${studentDetail.student.email}`}>
+                            <Mail className="h-4 w-4 text-sky-600" /> Send Email
+                          </a>
+                        </Button>
+                        <Button asChild size="sm" variant="outline" className="text-xs gap-1.5 text-slate-700 border-slate-300 hover:bg-slate-50">
+                          <a href={`tel:${studentDetail.student.phone}`}>
+                            <Phone className="h-4 w-4 text-slate-600" /> Call Phone
+                          </a>
+                        </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Direct Contact Buttons */}
-                  <div className="flex items-center gap-2 pt-2">
-                    <Button asChild size="sm" variant="outline" className="text-xs gap-1.5 text-emerald-700">
-                      <a
-                        href={`https://wa.me/${(studentDetail.student?.whatsapp || studentDetail.student?.phone || "").replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <MessageCircle className="h-4 w-4 text-emerald-600" /> WhatsApp Student
-                      </a>
-                    </Button>
-                    <Button asChild size="sm" variant="outline" className="text-xs gap-1.5">
-                      <a href={`mailto:${studentDetail.student?.email}`}>
-                        <Mail className="h-4 w-4 text-blue-600" /> Send Email
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              )}
+                  {/* TAB 2: ENROLLMENTS */}
+                  {activeTab === "enrollments" && (
+                    <div className="space-y-3">
+                      {studentDetail.enrollments?.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">No program enrollments recorded.</div>
+                      ) : (
+                        studentDetail.enrollments.map((enr: any) => (
+                          <div key={enr.id} className="rounded-xl border border-slate-200 p-4 bg-white shadow-xs">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-bold text-slate-900 text-sm">{enr.program_title}</h4>
+                              <Badge variant="outline" className="uppercase font-mono text-[10px] font-bold">
+                                {enr.status}
+                              </Badge>
+                            </div>
+                            <div className="mt-3 grid grid-cols-2 gap-2 text-slate-600">
+                              <div>Track: <span className="font-medium text-slate-800 capitalize">{enr.program_type?.replace("_", " ")}</span></div>
+                              <div>Agreed Fee: <span className="font-mono font-bold text-slate-900">PKR {Number(enr.agreed_fee).toLocaleString()}/month</span></div>
+                              <div>Start Date: <span className="font-medium text-slate-800">{enr.start_date || enr.enrollment_date}</span></div>
+                              <div>Batch: <span className="font-medium text-slate-800">{enr.batches?.name || "1-on-1 Dedicated"}</span></div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
 
-              {activeTab === "enrollments" && (
-                <div className="space-y-3">
-                  {studentDetail.enrollments?.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">No active program enrollments.</div>
-                  ) : (
-                    studentDetail.enrollments.map((enr: any) => (
-                      <div key={enr.id} className="rounded-xl border border-slate-200 p-4 bg-white shadow-xs">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-slate-900">{enr.program_title}</h4>
-                          <Badge variant="outline" className="uppercase font-mono text-[10px]">
-                            {enr.status}
-                          </Badge>
+                  {/* TAB 3: SCHEDULE & CLASSES */}
+                  {activeTab === "schedule" && (
+                    <div className="space-y-4">
+                      {/* Recurring Slots Card */}
+                      <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/70">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-bold text-slate-900">Weekly Recurring Schedule</span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleDownloadStudentIcs}
+                            className="h-7 text-xs border-slate-300 text-sky-700 hover:bg-sky-50 gap-1"
+                          >
+                            <Calendar className="w-3.5 h-3.5 text-sky-600" /> Export .ics
+                          </Button>
                         </div>
-                        <div className="mt-2 grid grid-cols-2 gap-2 text-slate-600">
-                          <div>Agreed Fee: PKR {Number(enr.agreed_fee).toLocaleString()}/month</div>
-                          <div>Enrolled: {enr.enrollment_date}</div>
-                        </div>
+                        {(!studentDetail.recurringSchedules || studentDetail.recurringSchedules.length === 0) ? (
+                          <p className="text-slate-500 text-xs">No recurring schedule slots registered.</p>
+                        ) : (
+                          <div className="space-y-1.5 mt-2">
+                            {studentDetail.recurringSchedules.map((rs: any) => (
+                              <div key={rs.id} className="flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200">
+                                <span className="font-semibold text-slate-800">
+                                  Every {DAY_NAMES[rs.day_of_week]}: {rs.start_time} - {rs.end_time}
+                                </span>
+                                {rs.meeting_url && (
+                                  <a
+                                    href={rs.meeting_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-sky-600 hover:text-sky-700 flex items-center gap-1 font-medium text-xs"
+                                  >
+                                    <Video className="w-3.5 h-3.5" /> Join Link
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))
+
+                      {/* Dated Class Sessions Table */}
+                      <div>
+                        <h4 className="font-bold text-slate-900 mb-2">Upcoming & Historical Class Sessions</h4>
+                        {(!studentDetail.sessions || studentDetail.sessions.length === 0) ? (
+                          <div className="text-center py-6 text-slate-400 border border-slate-200 rounded-xl">
+                            No class sessions recorded on timetable.
+                          </div>
+                        ) : (
+                          <div className="rounded-xl border border-slate-200 overflow-hidden">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[11px]">
+                                <tr>
+                                  <th className="p-2.5">Date</th>
+                                  <th className="p-2.5">Time</th>
+                                  <th className="p-2.5">Session Title</th>
+                                  <th className="p-2.5">Status</th>
+                                  <th className="p-2.5 text-right">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100">
+                                {studentDetail.sessions.map((sess: any) => (
+                                  <tr key={sess.id} className="hover:bg-slate-50/80">
+                                    <td className="p-2.5 font-medium text-slate-800">{sess.session_date}</td>
+                                    <td className="p-2.5 font-mono text-slate-600">{sess.start_time} - {sess.end_time}</td>
+                                    <td className="p-2.5 font-semibold text-slate-900">{sess.title}</td>
+                                    <td className="p-2.5">
+                                      <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                                        {sess.status}
+                                      </Badge>
+                                    </td>
+                                    <td className="p-2.5 text-right">
+                                      {sess.meeting_link ? (
+                                        <Button asChild size="sm" variant="ghost" className="h-6 px-2 text-xs text-sky-600">
+                                          <a href={sess.meeting_link} target="_blank" rel="noreferrer">
+                                            <ExternalLink className="w-3 h-3 mr-1" /> Meet
+                                          </a>
+                                        </Button>
+                                      ) : null}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 4: FEES & BILLING LEDGER */}
+                  {activeTab === "fees" && (
+                    <div className="space-y-4">
+                      {/* Active Billing Plan Banner */}
+                      {studentDetail.billingPlans && studentDetail.billingPlans.length > 0 && (
+                        <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-4">
+                          <span className="text-xs font-semibold text-sky-800 uppercase tracking-wider">Active Billing Plan</span>
+                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <div>
+                              <span className="text-slate-500 block text-[11px]">Plan Type</span>
+                              <span className="font-bold text-slate-900 capitalize">{studentDetail.billingPlans[0].plan_type}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[11px]">Net Amount</span>
+                              <span className="font-mono font-bold text-sky-800">PKR {Number(studentDetail.billingPlans[0].amount).toLocaleString()}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[11px]">Billing Day</span>
+                              <span className="font-mono font-semibold text-slate-900">Day {studentDetail.billingPlans[0].billing_day}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-500 block text-[11px]">Status</span>
+                              <Badge className="text-[10px] uppercase font-mono bg-emerald-600 text-white">Active</Badge>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Invoices List */}
+                      <div>
+                        <h4 className="font-bold text-slate-900 mb-2">Invoices & Dues</h4>
+                        {studentDetail.invoices?.length === 0 ? (
+                          <div className="text-center py-6 text-slate-400 border border-slate-200 rounded-xl">No invoices generated yet.</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {studentDetail.invoices.map((inv: any) => (
+                              <div key={inv.id} className="rounded-xl border border-slate-200 p-3.5 bg-white flex items-center justify-between">
+                                <div>
+                                  <div className="font-mono font-bold text-slate-900">{inv.invoice_number}</div>
+                                  <div className="text-[11px] text-slate-500">Month: {inv.billing_month} · Due: {inv.due_date}</div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="font-bold font-mono text-slate-900">PKR {Number(inv.amount_due).toLocaleString()}</div>
+                                  <Badge
+                                    variant={inv.status === "paid" ? "default" : "destructive"}
+                                    className={`text-[10px] uppercase font-mono ${
+                                      inv.status === "paid" ? "bg-emerald-600 text-white" : ""
+                                    }`}
+                                  >
+                                    {inv.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Payments List */}
+                      <div>
+                        <h4 className="font-bold text-slate-900 mb-2">Payment Receipts</h4>
+                        {studentDetail.payments?.length === 0 ? (
+                          <div className="text-center py-6 text-slate-400 border border-slate-200 rounded-xl">No payments recorded.</div>
+                        ) : (
+                          <div className="space-y-2">
+                            {studentDetail.payments.map((p: any) => (
+                              <div key={p.id} className="rounded-xl border border-slate-200 p-3 bg-slate-50/60 flex items-center justify-between">
+                                <div>
+                                  <span className="font-mono font-bold text-slate-900">{p.receipt_number}</span>
+                                  <div className="text-[11px] text-slate-500">{p.payment_date} via {p.payment_method}</div>
+                                </div>
+                                <div className="font-bold font-mono text-emerald-700">
+                                  +PKR {Number(p.amount).toLocaleString()}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 5: ATTENDANCE */}
+                  {activeTab === "attendance" && (
+                    <div className="space-y-3">
+                      {studentDetail.attendance?.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400">No attendance logs found.</div>
+                      ) : (
+                        studentDetail.attendance.map((att: any) => (
+                          <div key={att.id} className="rounded-lg border border-slate-200 p-3 flex items-center justify-between bg-white">
+                            <div>
+                              <div className="font-semibold text-slate-900">{att.class_sessions?.title || "Class Session"}</div>
+                              <div className="text-[11px] text-slate-500">{att.class_sessions?.session_date}</div>
+                            </div>
+                            <Badge variant={att.status === "present" ? "default" : "secondary"} className="uppercase text-[10px] font-mono">
+                              {att.status}
+                            </Badge>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+
+                  {/* TAB 6: TASKS & FOLLOW-UPS */}
+                  {activeTab === "tasks" && (
+                    <div className="space-y-4">
+                      {/* Inline Quick Task Creator */}
+                      <form onSubmit={handleAddQuickTask} className="flex gap-2">
+                        <Input
+                          value={quickTaskTitle}
+                          onChange={(e) => setQuickTaskTitle(e.target.value)}
+                          placeholder="Add quick follow-up or operational task..."
+                          className="text-xs h-9 bg-white border-slate-300"
+                        />
+                        <Button
+                          type="submit"
+                          disabled={isAddingTask || !quickTaskTitle.trim()}
+                          size="sm"
+                          className="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs whitespace-nowrap"
+                        >
+                          {isAddingTask ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Plus className="w-3.5 h-3.5 mr-1" />}
+                          Add Task
+                        </Button>
+                      </form>
+
+                      {studentDetail.tasks?.length === 0 ? (
+                        <div className="text-center py-8 text-slate-400 border border-slate-200 rounded-xl">
+                          No tasks recorded for this student.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {studentDetail.tasks.map((t: any) => (
+                            <div key={t.id} className="p-3 border border-slate-200 rounded-xl bg-white flex items-center justify-between">
+                              <div>
+                                <span className="font-semibold text-slate-900 block">{t.title}</span>
+                                {t.due_date && <span className="text-[11px] text-slate-500">Due: {t.due_date}</span>}
+                              </div>
+                              <Badge className="text-[10px] uppercase font-mono">{t.status}</Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-
-              {activeTab === "fees" && (
-                <div className="space-y-3">
-                  {studentDetail.invoices?.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">No invoices generated yet.</div>
-                  ) : (
-                    studentDetail.invoices.map((inv: any) => (
-                      <div key={inv.id} className="rounded-xl border border-slate-200 p-3.5 bg-white flex items-center justify-between">
-                        <div>
-                          <div className="font-mono font-bold text-slate-900">{inv.invoice_number}</div>
-                          <div className="text-[11px] text-slate-500">Month: {inv.billing_month} · Due: {inv.due_date}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-bold font-mono text-slate-900">PKR {Number(inv.amount_due).toLocaleString()}</div>
-                          <Badge variant={inv.status === "paid" ? "default" : "destructive"} className="text-[10px] uppercase font-mono">
-                            {inv.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {activeTab === "attendance" && (
-                <div className="space-y-3">
-                  {studentDetail.attendance?.length === 0 ? (
-                    <div className="text-center py-8 text-slate-400">No attendance logs found.</div>
-                  ) : (
-                    studentDetail.attendance.map((att: any) => (
-                      <div key={att.id} className="rounded-lg border border-slate-200 p-3 flex items-center justify-between bg-white">
-                        <div>
-                          <div className="font-semibold text-slate-900">{att.class_sessions?.title || "Class Session"}</div>
-                          <div className="text-[11px] text-slate-500">{att.class_sessions?.session_date}</div>
-                        </div>
-                        <Badge variant={att.status === "present" ? "default" : "secondary"} className="uppercase text-[10px]">
-                          {att.status}
-                        </Badge>
-                      </div>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}
     </AdminLayout>
   );
 }
-

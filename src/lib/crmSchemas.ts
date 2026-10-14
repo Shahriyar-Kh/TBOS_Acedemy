@@ -89,16 +89,34 @@ export type TaskPriority = (typeof TASK_PRIORITIES)[number];
 export const TASK_STATUSES = ["pending", "in_progress", "completed", "cancelled"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 
+// Helper: Safely normalize empty string or whitespace to null before UUID validation
+export const optionalUuid = z.preprocess(
+  (val) => (val === "" || val === undefined || (typeof val === "string" && !val.trim()) ? null : val),
+  z.string().uuid("Invalid UUID format").nullable().optional(),
+);
+
 // --- Zod Validation Schemas ---
+
+export const recurringScheduleItemSchema = z.object({
+  dayOfWeek: z.number().int().min(0).max(6),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be HH:mm"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time must be HH:mm"),
+  title: z.string().optional().nullable(),
+  meetingLink: z.string().url().optional().nullable().or(z.literal("")),
+  meetingUrl: z.string().url().optional().nullable().or(z.literal("")),
+  timezone: z.string().default("Asia/Karachi"),
+});
 
 export const createStudentSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters").max(120),
   email: z.string().email("Invalid email address"),
-  phone: z.string().min(8, "Phone number is too short").max(25),
+  phone: z.string().min(7, "Phone number is too short").max(25),
   whatsapp: z.string().max(25).optional().nullable(),
   guardianName: z.string().max(120).optional().nullable(),
   guardianPhone: z.string().max(25).optional().nullable(),
   guardianEmail: z.string().email().optional().nullable().or(z.literal("")),
+  guardianRelationship: z.string().max(50).optional().nullable(),
+  emergencyContact: z.string().max(100).optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
   age: z.number().int().min(4).max(120).optional().nullable(),
   country: z.string().default("Pakistan"),
@@ -108,16 +126,61 @@ export const createStudentSchema = z.object({
   enrollmentDate: z.string().default(() => new Date().toISOString().split("T")[0]),
   billingDay: z.number().int().min(1).max(28).default(1),
   notes: z.string().max(2000).optional().nullable(),
-  leadId: z.string().uuid().optional().nullable(),
+  leadId: optionalUuid,
 });
 
 export const updateStudentSchema = createStudentSchema.partial();
+
+// Multi-section Student Creation Wizard Schema (Section B)
+export const createStudentFullSchema = z.object({
+  // Personal Details
+  fullName: z.string().min(2, "Full name must be at least 2 characters").max(120),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(7, "Phone number is too short").max(25),
+  whatsapp: z.string().max(25).optional().nullable(),
+  guardianName: z.string().max(120).optional().nullable(),
+  guardianPhone: z.string().max(25).optional().nullable(),
+  guardianEmail: z.string().email().optional().nullable().or(z.literal("")),
+  guardianRelationship: z.string().max(50).optional().nullable(),
+  emergencyContact: z.string().max(100).optional().nullable(),
+  dateOfBirth: z.string().optional().nullable(),
+  age: z.number().int().min(4).max(120).optional().nullable(),
+  country: z.string().default("Pakistan"),
+  city: z.string().max(80).optional().nullable(),
+  timezone: z.string().default("Asia/Karachi"),
+  status: z.enum(STUDENT_STATUSES).default("active"),
+  notes: z.string().max(2000).optional().nullable(),
+  leadId: optionalUuid,
+
+  // Enrollment (Optional)
+  programSlug: z.string().optional().nullable(),
+  programTitle: z.string().optional().nullable(),
+  programType: z.enum(["live_batch", "specialization", "course", "tutoring"]).default("live_batch"),
+  mode: z.enum(["group", "one_on_one"]).default("group"),
+  batchId: optionalUuid,
+  instructorId: optionalUuid,
+  instructorName: z.string().optional().nullable(),
+  startDate: z.string().default(() => new Date().toISOString().split("T")[0]),
+  expectedEndDate: z.string().optional().nullable(),
+  agreedFee: z.number().min(0).default(0),
+  discount: z.number().min(0).default(0),
+
+  // Fee Plan
+  planType: z.enum(["monthly", "one_time", "custom"]).default("monthly"),
+  billingDay: z.number().int().min(1).max(28).default(1),
+  createInitialInvoice: z.boolean().default(true),
+  dueDate: z.string().optional().nullable(),
+
+  // Weekly Class Schedule
+  schedules: z.array(recurringScheduleItemSchema).default([]),
+  generateWeeks: z.number().int().min(0).max(12).default(4),
+});
 
 export const convertLeadToStudentSchema = z.object({
   leadId: z.string().uuid("Lead ID must be a valid UUID"),
   fullName: z.string().min(2),
   email: z.string().email(),
-  phone: z.string().min(8),
+  phone: z.string().min(7),
   whatsapp: z.string().optional().nullable(),
   guardianName: z.string().optional().nullable(),
   guardianPhone: z.string().optional().nullable(),
@@ -128,8 +191,8 @@ export const convertLeadToStudentSchema = z.object({
   programSlug: z.string().min(1),
   programTitle: z.string().min(1),
   programType: z.enum(["live_batch", "specialization", "course", "tutoring"]),
-  batchId: z.string().uuid().optional().nullable(),
-  instructorId: z.string().uuid().optional().nullable(),
+  batchId: optionalUuid,
+  instructorId: optionalUuid,
   instructorName: z.string().optional().nullable(),
   agreedFee: z.number().min(0),
   discount: z.number().min(0).default(0),
@@ -146,7 +209,7 @@ export const createBatchSchema = z.object({
   programTitle: z.string().min(1),
   programType: z.enum(["live_batch", "specialization", "course", "tutoring"]),
   mode: z.enum(["group", "one_on_one"]).default("group"),
-  instructorId: z.string().uuid().optional().nullable(),
+  instructorId: optionalUuid,
   instructorName: z.string().optional().nullable(),
   startDate: z.string().optional().nullable(),
   expectedEndDate: z.string().optional().nullable(),
@@ -173,10 +236,11 @@ export const recordPaymentSchema = z.object({
 });
 
 export const createClassSessionSchema = z.object({
-  batchId: z.string().uuid().optional().nullable(),
-  enrollmentId: z.string().uuid().optional().nullable(),
-  instructorId: z.string().uuid().optional().nullable(),
+  batchId: optionalUuid,
+  enrollmentId: optionalUuid,
+  instructorId: optionalUuid,
   instructorName: z.string().optional().nullable(),
+  studentId: optionalUuid,
   title: z.string().min(2).max(150),
   sessionDate: z.string(), // YYYY-MM-DD
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be HH:mm"),
@@ -187,6 +251,8 @@ export const createClassSessionSchema = z.object({
   topicCovered: z.string().max(2000).optional().nullable(),
   homework: z.string().max(2000).optional().nullable(),
   instructorNotes: z.string().max(2000).optional().nullable(),
+  override: z.boolean().default(false),
+  overrideReason: z.string().max(500).optional().nullable(),
 });
 
 export const updateClassSessionSchema = createClassSessionSchema.partial();
@@ -208,7 +274,7 @@ export const createCrmTaskSchema = z.object({
   dueDate: z.string(), // ISO string
   priority: z.enum(TASK_PRIORITIES).default("medium"),
   status: z.enum(TASK_STATUSES).default("pending"),
-  assignedTo: z.string().uuid().optional().nullable(),
+  assignedTo: optionalUuid,
   relatedType: z.enum(["lead", "student", "class", "payment", "other"]).optional().nullable(),
   relatedId: z.string().optional().nullable(),
 });
@@ -229,4 +295,3 @@ export const sendCommunicationSchema = z.object({
   content: z.string().min(1, "Message content is required"),
   templateCategory: z.string().optional(),
 });
-

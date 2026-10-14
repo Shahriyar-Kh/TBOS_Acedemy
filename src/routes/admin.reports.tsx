@@ -116,77 +116,71 @@ function AdminReportsPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Academy Reports & Intelligence"
+      description="Real-time conversion metrics, tuition cash flow, attendance statistics, and verified CSV exports."
+      onRefresh={fetchSummary}
+      isRefreshing={isLoading}
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-6 h-6 text-cyan-400" />
-            Academy Reports & Intelligence
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Real-time conversion metrics, tuition cash flow, attendance statistics, and verified CSV exports.
-          </p>
-        </div>
-
         {/* Analytics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lead Conversion</span>
-              <TrendingUp className="w-4 h-4 text-cyan-400" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Lead Conversion</span>
+              <TrendingUp className="w-4 h-4 text-sky-600" />
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{metrics.conversionRate}%</div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.conversionRate}%</div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
               <div
-                className="bg-cyan-500 h-full rounded-full transition-all"
+                className="bg-sky-600 h-full rounded-full transition-all"
                 style={{ width: `${Math.min(100, metrics.conversionRate)}%` }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-slate-500 mt-2">
               {metrics.totalStudents} enrolled from {metrics.totalLeads} total admissions leads
             </p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tuition Collection</span>
-              <CreditCard className="w-4 h-4 text-emerald-400" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tuition Collection</span>
+              <CreditCard className="w-4 h-4 text-emerald-600" />
             </div>
-            <div className="text-2xl font-bold text-emerald-400 mt-2">{metrics.collectionRate}%</div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="text-2xl font-bold text-emerald-700 mt-2">{metrics.collectionRate}%</div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
               <div
-                className="bg-emerald-500 h-full rounded-full transition-all"
+                className="bg-emerald-600 h-full rounded-full transition-all"
                 style={{ width: `${Math.min(100, metrics.collectionRate)}%` }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-2">
+            <p className="text-xs text-slate-500 mt-2">
               PKR {metrics.totalCollected.toLocaleString()} of PKR {metrics.totalInvoiced.toLocaleString()} collected
             </p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Attendance Rate</span>
-              <UserCheck className="w-4 h-4 text-blue-400" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Attendance Rate</span>
+              <UserCheck className="w-4 h-4 text-indigo-600" />
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{metrics.attendanceRate}%</div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.attendanceRate}%</div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
               <div
-                className="bg-blue-500 h-full rounded-full transition-all"
+                className="bg-indigo-600 h-full rounded-full transition-all"
                 style={{ width: `${Math.min(100, metrics.attendanceRate)}%` }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-2">Across {metrics.totalSessions} live batch class sessions</p>
+            <p className="text-xs text-slate-500 mt-2">Across {metrics.totalSessions} live batch class sessions</p>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5">
+          <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Enrollment</span>
-              <Users className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Enrollment</span>
+              <Users className="w-4 h-4 text-amber-600" />
             </div>
-            <div className="text-2xl font-bold text-white mt-2">{metrics.activeStudents}</div>
-            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+            <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.activeStudents}</div>
+            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-3 overflow-hidden">
               <div
                 className="bg-amber-500 h-full rounded-full transition-all"
                 style={{
@@ -194,104 +188,108 @@ function AdminReportsPage() {
                 }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-2">Currently participating in ongoing live cohorts</p>
+            <p className="text-xs text-slate-500 mt-2">Currently participating in ongoing live cohorts</p>
           </div>
         </div>
 
         {/* Export Center */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-sm">
-          <div className="flex items-center gap-2 mb-4">
-            <FileSpreadsheet className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-lg font-bold text-white">One-Click CSV Data Exports</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-2">
+            <FileSpreadsheet className="w-5 h-5 text-sky-600" />
+            <h2 className="text-base font-bold text-slate-900">One-Click CSV Data Exports</h2>
           </div>
-          <p className="text-xs text-slate-400 mb-6">
+          <p className="text-xs text-slate-500 mb-6">
             Export production datasets for official academy compliance, accounting reconciliation, and student roster records.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-semibold text-white text-sm">Full Student Roster</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="font-semibold text-slate-900 text-sm">Full Student Roster</h3>
+                <p className="text-xs text-slate-500 mt-1">
                   Complete database of all registered students with contact info, enrolled batches, and status.
                 </p>
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDownloadCsv("students")}
                 disabled={downloadingExport === "students"}
-                className="mt-4 border-slate-800 hover:border-cyan-500/40 text-slate-200"
+                className="mt-4 border-slate-300 hover:bg-slate-100 text-slate-700 text-xs"
               >
                 {downloadingExport === "students" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
-                  <Download className="w-4 h-4 mr-2 text-cyan-400" />
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
                 )}
                 Export Roster CSV
               </Button>
             </div>
 
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-semibold text-white text-sm">Tuition & Fee Ledger</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="font-semibold text-slate-900 text-sm">Tuition & Fee Ledger</h3>
+                <p className="text-xs text-slate-500 mt-1">
                   All billable invoices, recorded payments, remaining balances, and due dates in PKR.
                 </p>
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDownloadCsv("fees")}
                 disabled={downloadingExport === "fees"}
-                className="mt-4 border-slate-800 hover:border-cyan-500/40 text-slate-200"
+                className="mt-4 border-slate-300 hover:bg-slate-100 text-slate-700 text-xs"
               >
                 {downloadingExport === "fees" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
-                  <Download className="w-4 h-4 mr-2 text-emerald-400" />
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
                 )}
                 Export Fee Ledger CSV
               </Button>
             </div>
 
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-semibold text-white text-sm">Admissions Funnel</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="font-semibold text-slate-900 text-sm">Admissions Funnel</h3>
+                <p className="text-xs text-slate-500 mt-1">
                   All inbound admission inquiries, lead scores, marketing UTM sources, and pipeline status.
                 </p>
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDownloadCsv("admissions")}
                 disabled={downloadingExport === "admissions"}
-                className="mt-4 border-slate-800 hover:border-cyan-500/40 text-slate-200"
+                className="mt-4 border-slate-300 hover:bg-slate-100 text-slate-700 text-xs"
               >
                 {downloadingExport === "admissions" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
-                  <Download className="w-4 h-4 mr-2 text-blue-400" />
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-indigo-600" />
                 )}
                 Export Leads CSV
               </Button>
             </div>
 
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+            <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
               <div>
-                <h3 className="font-semibold text-white text-sm">Class Attendance Log</h3>
-                <p className="text-xs text-slate-400 mt-1">
+                <h3 className="font-semibold text-slate-900 text-sm">Class Attendance Log</h3>
+                <p className="text-xs text-slate-500 mt-1">
                   Session-by-session student presence, absence, and punctuality records across all batches.
                 </p>
               </div>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => handleDownloadCsv("attendance")}
                 disabled={downloadingExport === "attendance"}
-                className="mt-4 border-slate-800 hover:border-cyan-500/40 text-slate-200"
+                className="mt-4 border-slate-300 hover:bg-slate-100 text-slate-700 text-xs"
               >
                 {downloadingExport === "attendance" ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
                 ) : (
-                  <Download className="w-4 h-4 mr-2 text-amber-400" />
+                  <Download className="w-3.5 h-3.5 mr-1.5 text-amber-600" />
                 )}
                 Export Attendance CSV
               </Button>

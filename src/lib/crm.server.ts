@@ -1068,3 +1068,69 @@ export async function recordPaymentTx(params: RecordPaymentParams) {
 
   return { payment: newPayment, invoice: updatedInvoice, is_duplicate: false };
 }
+
+// ==========================================
+// 8. PHASE 17 RPC HELPERS (FULL STUDENT, RECURRING SESSIONS, DUES)
+// ==========================================
+
+export async function createStudentFullTx(params: Record<string, any>) {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("create_student_full_tx", {
+    p_params: params,
+  });
+
+  if (error) {
+    if (error.message.includes("STUDENT_EMAIL_EXISTS")) {
+      throw new Error("A student with this email address already exists.");
+    }
+    if (error.message.includes("INVALID_FULL_NAME")) {
+      throw new Error("Full name must be at least 2 characters.");
+    }
+    if (error.message.includes("INVALID_EMAIL")) {
+      throw new Error("Valid email address is required.");
+    }
+    if (error.message.includes("INVALID_PHONE")) {
+      throw new Error("Valid phone number is required.");
+    }
+    throw new Error(error.message || "Failed to create student in transaction");
+  }
+
+  return data;
+}
+
+export async function generateRecurringSessionsBatch(weeks: number = 8): Promise<number> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("generate_recurring_sessions_batch", {
+    p_weeks: weeks,
+  });
+
+  if (error) {
+    throw new Error(`Failed to generate recurring sessions: ${error.message}`);
+  }
+
+  return Number(data) || 0;
+}
+
+export async function generateMonthlyDuesBatch(
+  billingMonth: string,
+  dueDay: number = 10,
+): Promise<number> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("generate_monthly_dues_batch", {
+    p_billing_month: billingMonth,
+    p_due_day: dueDay,
+  });
+
+  if (error) {
+    throw new Error(`Failed to generate monthly dues: ${error.message}`);
+  }
+
+  return Number(data) || 0;
+}
+
