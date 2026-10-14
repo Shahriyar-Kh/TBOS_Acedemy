@@ -20,6 +20,14 @@ The Worker utilizes runtime environment variable bindings provided securely via 
 | `SUPABASE_SECRET_KEY` | Elevated Supabase Secret Key (replaces legacy service_role) | Encrypted Secret |
 | `VITE_SUPABASE_URL` | Client-accessible Supabase project URL | Public / Client Env |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | Public Supabase anonymous API key | Public / Client Env |
+| `CRON_SECRET` | Secret bearer token for `/api/admin/reminders/process` (min 32 chars) | Encrypted Secret |
+
+### Cloudflare Secret Binding for CRON_SECRET
+To configure the reminder processor secret in Cloudflare Workers:
+```powershell
+npx wrangler secret put CRON_SECRET
+```
+*Enter a cryptographically generated string of at least 32 characters (e.g., generated with `openssl rand -base64 32`).*
 
 ### Optional Secondary Integrations (Phase 7)
 - `GOOGLE_SCRIPT_URL` — Secondary Google Sheets webhook mirror (best-effort)

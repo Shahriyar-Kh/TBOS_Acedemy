@@ -6,73 +6,92 @@ import { getServerConfig } from "@/lib/config.server";
 import nodemailer from "nodemailer";
 import { escapeHtml, logCrmAction, checkRateLimit } from "@/lib/crm.server";
 
-export const Route = createFileRoute("/api/admin/reminders/process")({
-  server: {
-    handlers: {
-      POST: async ({ request }: { request: Request }) => {
-        const { client } = getSupabaseServerClient();
-        if (!client) {
-          return new Response(JSON.stringify({ ok: false, error: "Database unavailable" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+export async function handleRemindersProcessRequest(request: Request): Promise<Response> {
+  // 1. Prohibit secret transmission in URL query parameters
+  const url = new URL(request.url);
+  if (url.searchParams.has("secret") || url.searchParams.has("cron_secret") || url.searchParams.has("key")) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "Query parameter authentication forbidden. Use Authorization header." }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
-        // 1. Prohibit secret transmission in URL query parameters
-        const url = new URL(request.url);
-        if (url.searchParams.has("secret") || url.searchParams.has("cron_secret") || url.searchParams.has("key")) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Query parameter authentication forbidden. Use Authorization header." }),
-            { status: 400, headers: { "Content-Type": "application/json" } },
-          );
-        }
+  // 2. Authentication: Require dedicated server-side CRON_SECRET or Admin Session
+  // CRON_SECRET must be configured server-side and be at least 32 characters long.
+  const rawCronSecret = process.env.CRON_SECRET?.trim();
+  const isCronConfigured = Boolean(rawCronSecret && rawCronSecret.length >= 32);
 
-        // 2. Authentication: Require dedicated CRON_SECRET or Admin Session
-        const authHeader = request.headers.get("authorization") || request.headers.get("Authorization") || "";
-        const expectedSecret = process.env.CRON_SECRET || "tbos-crm-cron-secret-2026";
+  const authHeader = request.headers.get("authorization") || request.headers.get("Authorization") || "";
+  let isAuthorized = false;
+  let actorEmail = "system_cron";
+  let adminUserId: string | null = null;
 
-        let isAuthorized = false;
-        let actorEmail = "system_cron";
-        let adminUserId: string | null = null;
+  if (authHeader.startsWith("Bearer ")) {
+    if (!isCronConfigured) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Reminder processor is not configured." }),
+        { status: 503, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
-        if (authHeader.startsWith("Bearer ")) {
-          const providedToken = authHeader.replace(/^Bearer\s+/i, "").trim();
-          if (providedToken) {
-            const bufA = Buffer.from(providedToken);
-            const bufB = Buffer.from(expectedSecret);
-            if (bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)) {
-              isAuthorized = true;
-            }
-          }
-        }
+    const providedToken = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (providedToken) {
+      const hashProvided = crypto.createHash("sha256").update(providedToken).digest();
+      const hashExpected = crypto.createHash("sha256").update(rawCronSecret!).digest();
+      if (crypto.timingSafeEqual(hashProvided, hashExpected)) {
+        isAuthorized = true;
+      }
+    }
 
-        if (!isAuthorized) {
-          const auth = await verifyAdminRequest(request, ["owner", "admin"]);
-          if (auth.ok) {
-            isAuthorized = true;
-            actorEmail = auth.admin.user.email || "admin@techbuiltos.online";
-            adminUserId = auth.admin.user.id;
-          }
-        }
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Unauthorized: Invalid CRON_SECRET Bearer token." }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  } else {
+    // Check if authenticated admin session exists
+    const auth = await verifyAdminRequest(request, ["owner", "admin"]);
+    if (auth.ok) {
+      isAuthorized = true;
+      actorEmail = auth.admin.user.email || "admin@techbuiltos.online";
+      adminUserId = auth.admin.user.id;
+    } else {
+      // Neither Bearer token nor valid admin session provided.
+      // If server-side cron secret is unconfigured/weak, fail closed with 503:
+      if (!isCronConfigured) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Reminder processor is not configured." }),
+          { status: 503, headers: { "Content-Type": "application/json" } },
+        );
+      }
+      return new Response(
+        JSON.stringify({ ok: false, error: "Unauthorized: Valid admin credentials or CRON_SECRET Bearer token required." }),
+        { status: 401, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }
 
-        if (!isAuthorized) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Unauthorized: Valid admin credentials or CRON_SECRET Bearer token required." }),
-            { status: 401, headers: { "Content-Type": "application/json" } },
-          );
-        }
+  // 3. Rate-limit execution to protect against replay / denial-of-service
+  const rateLimit = await checkRateLimit("reminders_process_cron", 15, 60);
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "Too many processing requests. Please retry in a few moments." }),
+      { status: 429, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
-        // 3. Rate-limit execution to protect against replay / denial-of-service
-        const rateLimit = await checkRateLimit("reminders_process_cron", 15, 60);
-        if (!rateLimit.allowed) {
-          return new Response(
-            JSON.stringify({ ok: false, error: "Too many processing requests. Please retry in a few moments." }),
-            { status: 429, headers: { "Content-Type": "application/json" } },
-          );
-        }
+  // 4. Verify Database Availability
+  const { client } = getSupabaseServerClient();
+  if (!client) {
+    return new Response(JSON.stringify({ ok: false, error: "Database unavailable" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
-        const now = new Date();
-        const nowIso = now.toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
 
         // ==============================================================================
         // 1. Queue Generation: Scan and materialize scheduled reminders
@@ -377,16 +396,23 @@ export const Route = createFileRoute("/api/admin/reminders/process")({
           },
         });
 
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            dueFound: dueReminders.length,
-            sentCount,
-            failedCount,
-            timestamp: new Date().toISOString(),
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+  return new Response(
+    JSON.stringify({
+      ok: true,
+      dueFound: dueReminders.length,
+      sentCount,
+      failedCount,
+      timestamp: new Date().toISOString(),
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+export const Route = createFileRoute("/api/admin/reminders/process")({
+  server: {
+    handlers: {
+      POST: async ({ request }: { request: Request }) => {
+        return handleRemindersProcessRequest(request);
       },
     },
   },

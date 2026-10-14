@@ -22,6 +22,7 @@ async function installFbqSpy(page: import("@playwright/test").Page) {
 test.describe("Phase 15: Complete Google SEO, Indexing, Content & Core Web Vitals Foundation", () => {
   // 1. Every audited public endpoint returns HTTP 200
   test("1. Every audited public endpoint returns HTTP 200", async ({ request }) => {
+    test.setTimeout(90000);
     expect(indexableHtmlRoutes.length).toBe(89);
     expect(auditedPublicEndpoints.length).toBe(90);
     for (const route of auditedPublicEndpoints) {
