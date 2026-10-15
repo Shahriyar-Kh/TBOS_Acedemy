@@ -285,7 +285,7 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
       },
     ],
     "Build, test, document, and deploy a production-style Django application with PostgreSQL, authentication, role-based workflows, a REST API, and a maintainable Python codebase.",
-  )
+  ),
 
   "database-developer": specialization(
     [
