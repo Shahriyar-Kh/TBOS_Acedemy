@@ -23,27 +23,27 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Bun runtime
+      - name: Setup Bun script runtime
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
       - name: Install dependencies from lockfile
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Install Playwright Chromium
-        run: bunx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Validate TypeScript
-        run: bun run typecheck
+        run: npm run typecheck
 
       - name: Build production application
-        run: bun run build
+        run: npm run build
 
       - name: Start local production preview
         run: |
           node scripts/prepare-preview.cjs
-          bunx vite preview --host 127.0.0.1 --port 4173 > /tmp/tbos-preview.log 2>&1 &
+          npx vite preview --host 127.0.0.1 --port 4173 > /tmp/tbos-preview.log 2>&1 &
           echo $! > /tmp/tbos-preview.pid
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
@@ -58,27 +58,27 @@ jobs:
         env:
           TEST_URL: http://127.0.0.1:4173
         run: |
-          bun run seo:audit
-          bun run seo:links
-          bun run seo:metadata
-          bun run seo:structured-data
-          bun run seo:performance
+          npm run seo:audit
+          npm run seo:links
+          npm run seo:metadata
+          npm run seo:structured-data
+          npm run seo:performance
 
       - name: Run Phase 15 acceptance suite
         env:
           TEST_URL: http://127.0.0.1:4173
-        run: bunx playwright test tests/e2e/phase15-complete-seo.spec.ts --reporter=list
+        run: npx playwright test tests/e2e/phase15-complete-seo.spec.ts --reporter=list
 
       - name: Audit live production SEO
         if: github.event_name != 'pull_request'
         env:
           TEST_URL: https://techbuiltos.online
         run: |
-          bun run seo:audit
-          bun run seo:links
-          bun run seo:metadata
-          bun run seo:structured-data
-          bun run seo:performance
+          npm run seo:audit
+          npm run seo:links
+          npm run seo:metadata
+          npm run seo:structured-data
+          npm run seo:performance
 
       - name: Run real Lighthouse CI against production
         if: github.event_name != 'pull_request'

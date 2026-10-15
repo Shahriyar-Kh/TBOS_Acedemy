@@ -49,7 +49,7 @@ export function SpecializationCatalogCard({
         {roadmap && (
           <span className="glass absolute left-4 top-4 inline-flex items-center gap-1 rounded-full border border-gold/40 bg-navy-deep/80 px-2.5 py-1 font-mono text-[11px] font-bold text-gold shadow-sm">
             <Sparkles className="h-3 w-3" aria-hidden="true" />
-            {roadmap.oneToOneFee}
+            {roadmap.groupDiscount} · {roadmap.groupFee}
           </span>
         )}
 
@@ -98,9 +98,17 @@ export function SpecializationCatalogCard({
         )}
 
         {roadmap && (
-          <div className="mt-4 flex flex-col gap-1 rounded-xl border border-border/70 bg-muted/40 px-3 py-2 text-[11px] sm:flex-row sm:items-center sm:justify-between">
-            <span className="font-mono font-semibold text-foreground">{roadmap.oneToOneFee}</span>
-            <span className="text-muted-foreground">4 live classes/week · 1-to-1 · recordings</span>
+          <div className="mt-4 rounded-xl border border-border/70 bg-muted/40 px-3 py-2 text-[11px]">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono font-bold text-gold-foreground">
+                Group: {roadmap.groupFee}
+              </span>
+              <span className="font-mono font-bold text-success">{roadmap.groupDiscount}</span>
+            </div>
+            <div className="mt-1 flex items-center justify-between gap-2 text-muted-foreground">
+              <span>One-to-one: {roadmap.oneToOneFee}</span>
+              <span>{roadmap.groupSize} · 4 classes/week</span>
+            </div>
           </div>
         )}
 

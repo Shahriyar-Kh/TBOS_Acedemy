@@ -198,7 +198,11 @@ test.describe("Mobile CTA & Program-Specific WhatsApp Context", () => {
     const floatingBtn = page.locator('[data-testid="floating-whatsapp-btn"]');
     await expect(floatingBtn).toBeVisible();
     const href = await floatingBtn.getAttribute("href");
-    expect(href).toContain(encodeURIComponent("Full-Stack Developer Specialization Track (PKR 20,000/month)"));
+    expect(href).toContain(
+      encodeURIComponent(
+        "Full-Stack Developer Specialization Track (Group: PKR 8,000/month, 60% OFF, 5–10 students; One-to-one: PKR 20,000/month)",
+      ),
+    );
     expect(href).toContain(encodeURIComponent("duration, class schedule, admission process, and demo details"));
   });
 });

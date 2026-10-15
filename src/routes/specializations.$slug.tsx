@@ -138,7 +138,7 @@ function SpecializationDetail() {
                   </span>
                   {structuredRoadmap && (
                     <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/15 px-3 py-1 font-mono text-xs font-semibold text-gold">
-                      Fixed Tuition: {structuredRoadmap.oneToOneFee}
+                      Group Offer: {structuredRoadmap.groupFee} · {structuredRoadmap.groupDiscount}
                     </span>
                   )}
                 </div>
@@ -342,14 +342,38 @@ function SpecializationDetail() {
                   Join {spec.title}
                 </h3>
                 {structuredRoadmap && (
-                  <div className="mt-4 rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/10 to-transparent p-4">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Fixed One-to-One Tuition
-                    </span>
-                    <p className="mt-1 font-display text-2xl font-extrabold text-foreground sm:text-3xl">
-                      {structuredRoadmap.oneToOneFee}
-                    </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/15 to-transparent p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-gold-foreground">
+                          Live Group Batch
+                        </span>
+                        <span className="rounded-full bg-success/15 px-2.5 py-1 font-mono text-[10px] font-bold text-success">
+                          {structuredRoadmap.groupDiscount}
+                        </span>
+                      </div>
+                      <p className="mt-1 font-display text-2xl font-extrabold text-foreground sm:text-3xl">
+                        {structuredRoadmap.groupFee}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                        {structuredRoadmap.groupSize} · Fixed shared timetable · 4 live classes/week
+                      </p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                        {structuredRoadmap.groupDescription}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-border/80 bg-muted/35 p-4">
+                      <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                        Dedicated One-to-One
+                      </span>
+                      <p className="mt-1 font-display text-xl font-bold text-foreground">
+                        {structuredRoadmap.oneToOneFee}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                        {structuredRoadmap.oneToOneDescription}
+                      </p>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
                       {structuredRoadmap.pricingNote}
                     </p>
                   </div>
@@ -384,7 +408,7 @@ function SpecializationDetail() {
                     <Users className="h-4 w-4 text-cyan" />
                     <span>
                       Format:{" "}
-                      <strong className="text-foreground">One-to-one live online classes</strong>
+                      <strong className="text-foreground">One-to-one or 5–10 student group batch</strong>
                     </span>
                   </li>
                   <li className="flex items-center gap-2.5">

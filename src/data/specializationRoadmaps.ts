@@ -12,6 +12,11 @@ export interface SpecializationCoursePlan {
 export interface SpecializationRoadmap {
   classesPerWeek: string;
   oneToOneFee: string;
+  groupFee: string;
+  groupDiscount: string;
+  groupSize: string;
+  oneToOneDescription: string;
+  groupDescription: string;
   pricingNote: string;
   courses: SpecializationCoursePlan[];
   capstoneProject: string;
@@ -29,8 +34,15 @@ type CourseReference =
 const commonDelivery = {
   classesPerWeek: "4 live online classes/week",
   oneToOneFee: "PKR 15,000/month",
+  groupFee: "PKR 6,000/month",
+  groupDiscount: "60% OFF",
+  groupSize: "5–10 students",
+  oneToOneDescription:
+    "Dedicated live classes at an agreed schedule, with individual pacing, direct instructor attention, recordings, and project feedback.",
+  groupDescription:
+    "Live online cohort for 5–10 students on a fixed shared timetable, with recordings, guided practice, and the same verified project roadmap.",
   pricingNote:
-    "Fixed one-to-one monthly fee. Recorded lectures, guided practice, and multiple portfolio projects are included.",
+    "Choose dedicated one-to-one mentoring or a 5–10 student live group batch with 60% off. Both formats include recorded lectures, guided practice, multiple portfolio projects, and a final capstone.",
 };
 
 function resolveCourse(reference: CourseReference): SpecializationCoursePlan {
@@ -59,6 +71,7 @@ function specialization(
   return {
     ...commonDelivery,
     oneToOneFee,
+    groupFee: oneToOneFee === "PKR 20,000/month" ? "PKR 8,000/month" : "PKR 6,000/month",
     courses: references.map(resolveCourse),
     capstoneProject,
   };
@@ -103,11 +116,12 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Website SEO, Performance & Deployment",
         duration: "30 days",
         chapters: [
-          "Technical SEO & metadata",
-          "Image, font & asset optimization",
-          "Domains, DNS, SSL & hosting",
-          "Accessibility & responsive QA",
-          "Analytics & launch checklist",
+          "Technical SEO, metadata, structured data & crawlability",
+          "Core Web Vitals, images, fonts & asset optimization",
+          "Accessible forms, validation & conversion tracking",
+          "Domains, DNS, SSL, hosting & deployment workflows",
+          "Cross-device accessibility & responsive QA",
+          "Analytics, Search Console & post-launch monitoring",
         ],
         project: "Audit, optimize, deploy, and document a client-ready website release.",
       },
@@ -132,12 +146,14 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Django & Django REST Framework",
         duration: "60 days",
         chapters: [
-          "Django project architecture & settings",
-          "Models, migrations & ORM queries",
-          "DRF serializers, views & routers",
-          "JWT authentication & permissions",
-          "Filtering, pagination & API documentation",
-          "Testing, logging & production deployment",
+          "Django project architecture, settings & environment management",
+          "Models, migrations, ORM queries & transactions",
+          "DRF serializers, validation, views & routers",
+          "JWT/session authentication, permissions & role-based access",
+          "Filtering, pagination, throttling & OpenAPI documentation",
+          "Background tasks, caching & email workflows",
+          "Automated testing, security review & observability",
+          "ASGI/WSGI production deployment & release checklist",
         ],
         project: "Build and deploy an authenticated Django REST API with PostgreSQL.",
       },
@@ -145,11 +161,13 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "FastAPI Backend Services",
         duration: "45 days",
         chapters: [
-          "FastAPI routing & dependency injection",
-          "Pydantic validation",
-          "Database sessions & service layers",
-          "Authentication & authorization",
-          "Testing, OpenAPI & deployment",
+          "FastAPI routing, async foundations & dependency injection",
+          "Pydantic models, validation & settings",
+          "SQL database sessions, repositories & service layers",
+          "OAuth2/JWT authentication & authorization",
+          "Error handling, background tasks & middleware",
+          "Testing, OpenAPI contracts & API clients",
+          "Logging, containerization & production deployment",
         ],
         project: "Build a tested FastAPI service with authentication and relational persistence.",
       },
@@ -198,12 +216,13 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Python Automation & Data Processing",
         duration: "45 days",
         chapters: [
-          "OS, pathlib & file automation",
-          "CSV, JSON & data validation",
-          "Web requests & API clients",
-          "Web scraping boundaries & parsing",
-          "Scheduling, logging & configuration",
-          "Testing automation workflows",
+          "OS, pathlib, command-line tools & file automation",
+          "CSV, JSON, spreadsheets & schema validation",
+          "HTTP requests, REST API clients & authentication",
+          "Responsible web scraping, parsing & rate limits",
+          "Email, browser and repetitive workflow automation",
+          "Scheduling, logging, configuration & secrets",
+          "Testing, retries and idempotent automation workflows",
         ],
         project: "Build a reliable scheduled automation tool with logs and structured outputs.",
       },
@@ -235,11 +254,12 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Database Performance & Operations",
         duration: "45 days",
         chapters: [
-          "Workload and query-plan analysis",
-          "Index strategy & anti-patterns",
-          "Transactions, locks & concurrency",
-          "Roles, auditing & data protection",
-          "Backup, restore & migration planning",
+          "Workload baselines, EXPLAIN & query-plan analysis",
+          "B-tree, composite, partial and document index strategy",
+          "Transactions, isolation, locks & concurrency",
+          "Roles, auditing, encryption & data protection",
+          "Connection pooling, monitoring & capacity signals",
+          "Backup, restore, migrations & disaster-recovery drills",
         ],
         project: "Tune and document a database using measured before/after query evidence.",
       },
@@ -259,12 +279,14 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "React Native Application Development",
         duration: "60 days",
         chapters: [
-          "React Native components & styling",
-          "Stack, tab & drawer navigation",
-          "Forms, validation & device-safe layouts",
-          "REST APIs, authentication & network states",
-          "Local storage, caching & offline awareness",
-          "Camera, location & notification concepts",
+          "Expo setup, React Native components & platform-aware styling",
+          "File-based, stack, tab & modal navigation",
+          "Forms, validation, keyboard handling & safe-area layouts",
+          "State management, REST APIs, authentication & network states",
+          "Secure local storage, caching & offline synchronization",
+          "Camera, media, location & push-notification workflows",
+          "Accessibility, lists, images & performance profiling",
+          "Error handling, analytics and production configuration",
         ],
         project: "Build a multi-screen mobile application connected to a live API.",
       },
@@ -272,10 +294,12 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Mobile Testing & Release",
         duration: "30 days",
         chapters: [
-          "Component and integration testing",
-          "Performance & accessibility review",
-          "Environment configuration",
-          "Android/iOS build and store-readiness concepts",
+          "Static analysis, component and integration testing",
+          "End-to-end device testing and release QA",
+          "Performance, accessibility & crash review",
+          "Environment variables, signing & secure configuration",
+          "EAS/native Android and iOS release builds",
+          "Store assets, privacy declarations & submission readiness",
         ],
         project: "Prepare, test, and package a release-candidate mobile build.",
       },
@@ -300,12 +324,14 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Power BI & Executive Reporting",
         duration: "45 days",
         chapters: [
-          "Power Query cleaning",
-          "Data modeling & star schema",
-          "Relationships & date tables",
-          "DAX measures & calculated columns",
-          "KPIs, filters & interactive dashboards",
-          "Validation, publishing & stakeholder storytelling",
+          "Power Query connection, profiling, cleaning & transformation",
+          "Dimensional modeling, star schema & grain",
+          "Relationships, date tables & semantic model design",
+          "DAX measures, calculated columns & variables",
+          "Filter context, time intelligence & KPI validation",
+          "Accessible visuals, drillthrough, tooltips & dashboard UX",
+          "Performance Analyzer, refresh & row-level security",
+          "Publishing, sharing & stakeholder storytelling",
         ],
         project: "Build a validated executive Power BI dashboard with documented KPIs.",
       },
@@ -345,10 +371,12 @@ export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
         title: "Responsible AI & Applied Integration",
         duration: "30 days",
         chapters: [
-          "Bias, fairness & limitations",
-          "Model cards & experiment tracking",
-          "AI API integration patterns",
-          "Monitoring & human review boundaries",
+          "Problem framing, baseline selection & responsible data use",
+          "Bias, fairness, privacy & documented limitations",
+          "Model cards, reproducible experiments & evaluation evidence",
+          "AI/ML API integration, validation & failure handling",
+          "Drift, quality and operational monitoring",
+          "Human review, escalation & safe-use boundaries",
         ],
         project: "Publish a model card and responsible-use review for the capstone system.",
       },

@@ -28,7 +28,9 @@ export function getLiveBatchWhatsAppMessage(offer: LiveOffer): string {
 
 export function getSpecializationWhatsAppMessage(spec: Specialization): string {
   const roadmap = specializationRoadmaps[spec.slug];
-  const feeStr = roadmap?.oneToOneFee ? ` (${roadmap.oneToOneFee})` : "";
+  const feeStr = roadmap
+    ? ` (Group: ${roadmap.groupFee}, ${roadmap.groupDiscount}, ${roadmap.groupSize}; One-to-one: ${roadmap.oneToOneFee})`
+    : "";
   const titleLower = spec.title.toLowerCase();
   const programPhrase = titleLower.includes("specialization")
     ? `the ${spec.title}`
