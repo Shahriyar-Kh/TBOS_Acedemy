@@ -243,6 +243,11 @@ begin
   -- 2. Generate Next Sequential Student ID
   v_student_id_str := public.get_next_student_id(extract(year from v_now)::int);
   
+  v_billing_day := coalesce((p_params->>'billingDay')::int, 1);
+  if v_billing_day < 1 or v_billing_day > 28 then
+    v_billing_day := 1;
+  end if;
+
   -- 3. Insert student record
   insert into public.students (
     student_id,
@@ -262,7 +267,8 @@ begin
     timezone,
     status,
     notes,
-    lead_id
+    lead_id,
+    billing_day
   ) values (
     v_student_id_str,
     v_full_name,
@@ -281,7 +287,8 @@ begin
     v_timezone,
     v_status,
     v_notes,
-    v_lead_id
+    v_lead_id,
+    v_billing_day
   ) returning id into v_student_id;
   
   select * into v_student_row from public.students where id = v_student_id;
@@ -303,10 +310,6 @@ begin
   v_instructor_name := nullif(trim(p_params->>'instructorName'), '');
   v_agreed_fee := coalesce((p_params->>'agreedFee')::numeric, 0);
   v_discount := coalesce((p_params->>'discount')::numeric, 0);
-  v_billing_day := coalesce((p_params->>'billingDay')::int, 1);
-  if v_billing_day < 1 or v_billing_day > 28 then
-    v_billing_day := 1;
-  end if;
   
   if nullif(p_params->>'startDate', '') is not null then
     v_start_date := (p_params->>'startDate')::date;

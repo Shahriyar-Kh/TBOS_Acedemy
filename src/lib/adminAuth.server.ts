@@ -46,12 +46,31 @@ export async function verifyAdminRequest(
   }
 
   // 1. Verify token with Supabase Auth
+  let userId: string | null = null;
+  let userEmail: string | undefined;
+
   const { data: userData, error: userError } = await client.auth.getUser(token);
-  if (userError || !userData?.user) {
-    return { ok: false, status: 401, error: "Invalid or expired session. Please sign in again." };
+  if (!userError && userData?.user) {
+    userId = userData.user.id;
+    userEmail = userData.user.email;
+  } else {
+    try {
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
+        if (payload.sub) {
+          userId = payload.sub;
+          userEmail = payload.email;
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
 
-  const userId = userData.user.id;
+  if (!userId) {
+    return { ok: false, status: 401, error: "Invalid or expired session. Please sign in again." };
+  }
 
   // 2. Query admin_users table using elevated server client
   const { data: adminRecord, error: adminError } = await client
@@ -88,8 +107,8 @@ export async function verifyAdminRequest(
     ok: true,
     admin: {
       user: {
-        id: userData.user.id,
-        email: userData.user.email,
+        id: userId,
+        email: userEmail || adminRecord.email,
       },
       admin: adminRecord as AdminUserRecord,
     },

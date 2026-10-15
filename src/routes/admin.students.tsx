@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { generateIcsCalendar, downloadIcsFile } from "@/lib/icalendar";
 import { liveOffers } from "@/data/liveOffers";
-import { specializations } from "@/data/specializations";
+import { specializations, getSpecializationMonthlyFee } from "@/data/specializations";
 import { courses } from "@/data/courses";
 import { tutoringSubjects } from "@/data/tutoring";
 import {
@@ -99,8 +99,8 @@ export function AdminStudentsPage() {
     notes: "",
 
     // Step 2: Program Enrollment
-    programSlug: "100-days-complete-python",
-    programTitle: "Complete Python Developer",
+    programSlug: liveOffers[0]?.slug || "python-young-developers",
+    programTitle: liveOffers[0]?.title || "Python Young Developers",
     programType: "live_batch" as "live_batch" | "specialization" | "course" | "tutoring",
     mode: "group" as "group" | "one_on_one",
     batchId: "",
@@ -111,7 +111,7 @@ export function AdminStudentsPage() {
 
     // Step 3: Fee Plan
     planType: "monthly" as "monthly" | "one_time" | "custom",
-    baseFee: 5000,
+    baseFee: liveOffers[0]?.offerFee || liveOffers[0]?.regularFee || 5000,
     discount: 0,
     billingDay: 1,
     createInitialInvoice: true,
@@ -130,37 +130,45 @@ export function AdminStudentsPage() {
   const [isCustomProgram, setIsCustomProgram] = useState(false);
 
   // Dynamic Canonical Program Catalog derived from website sources
-  const programCatalog = useMemo(() => {
-    if (wizardData.programType === "live_batch") {
-      return liveOffers.map((o) => ({
-        slug: o.slug,
-        title: o.title,
-        fee: o.offerFee || o.regularFee || 5000,
-      }));
-    }
-    if (wizardData.programType === "specialization") {
-      return specializations.map((s) => ({
-        slug: s.slug,
-        title: s.title,
-        fee: 20000,
-      }));
-    }
-    if (wizardData.programType === "course") {
-      return courses.map((c) => ({
-        slug: c.slug,
-        title: `${c.title} (${c.category})`,
-        fee: 10000,
-      }));
-    }
-    if (wizardData.programType === "tutoring") {
-      return tutoringSubjects.map((t) => ({
-        slug: t.slug,
-        title: `${t.title} (${t.category})`,
-        fee: 15000,
-      }));
-    }
-    return [];
-  }, [wizardData.programType]);
+  const getCatalogForType = useCallback(
+    (type: "live_batch" | "specialization" | "course" | "tutoring") => {
+      if (type === "live_batch") {
+        return liveOffers.map((o) => ({
+          slug: o.slug,
+          title: o.title,
+          fee: o.offerFee || o.regularFee || 0,
+        }));
+      }
+      if (type === "specialization") {
+        return specializations.map((s) => ({
+          slug: s.slug,
+          title: s.title,
+          fee: getSpecializationMonthlyFee(s.slug),
+        }));
+      }
+      if (type === "course") {
+        return courses.map((c) => ({
+          slug: c.slug,
+          title: `${c.title} (${c.category})`,
+          fee: 0, // Single course fees not fixed/decided
+        }));
+      }
+      if (type === "tutoring") {
+        return tutoringSubjects.map((t) => ({
+          slug: t.slug,
+          title: `${t.title} (${t.category})`,
+          fee: 0, // Manual fee entry
+        }));
+      }
+      return [];
+    },
+    []
+  );
+
+  const programCatalog = useMemo(
+    () => getCatalogForType(wizardData.programType),
+    [wizardData.programType, getCatalogForType]
+  );
 
   const handleBatchSelect = (batchId: string) => {
     if (!batchId) {
@@ -175,7 +183,7 @@ export function AdminStudentsPage() {
         programSlug: b.program_slug || prev.programSlug,
         programTitle: b.program_title || b.name,
         programType: (b.program_type as any) || "live_batch",
-        mode: (b.mode as any) || "group",
+        mode: "group",
         instructorId: b.instructor_id || prev.instructorId,
         instructorName: b.instructor_name || prev.instructorName,
         startDate: b.start_date ? b.start_date.split("T")[0] : prev.startDate,
@@ -249,6 +257,9 @@ export function AdminStudentsPage() {
 
   const handleCreateStudentFull = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (wizardStep < 4) {
+      return;
+    }
     if (!wizardData.fullName || !wizardData.email || !wizardData.phone) {
       toast.error("Full name, email, and phone number are required.");
       setWizardStep(1);
@@ -829,7 +840,19 @@ export function AdminStudentsPage() {
                       <Label className="text-xs font-semibold text-slate-700">Program Track</Label>
                       <select
                         value={wizardData.programType}
-                        onChange={(e) => setWizardData({ ...wizardData, programType: e.target.value as any })}
+                        onChange={(e) => {
+                          const newType = e.target.value as "live_batch" | "specialization" | "course" | "tutoring";
+                          const newCatalog = getCatalogForType(newType);
+                          const first = newCatalog[0];
+                          setIsCustomProgram(false);
+                          setWizardData((prev) => ({
+                            ...prev,
+                            programType: newType,
+                            programTitle: first ? first.title : "",
+                            programSlug: first ? first.slug : "",
+                            baseFee: first ? first.fee : 0,
+                          }));
+                        }}
                         className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800"
                       >
                         <option value="live_batch">Live Group Batch</option>
@@ -871,7 +894,7 @@ export function AdminStudentsPage() {
                               ...wizardData,
                               programTitle: val,
                               programSlug: found ? found.slug : val.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-                              baseFee: found?.fee || wizardData.baseFee,
+                              baseFee: found ? found.fee : wizardData.baseFee,
                             });
                           }
                         }}
@@ -879,7 +902,7 @@ export function AdminStudentsPage() {
                       >
                         {programCatalog.map((p) => (
                           <option key={p.slug} value={p.title}>
-                            {p.title} (PKR {p.fee.toLocaleString()})
+                            {p.fee > 0 ? `${p.title} (PKR ${p.fee.toLocaleString()})` : `${p.title} (Fee TBD / Manual)`}
                           </option>
                         ))}
                         <option value="custom">-- Custom Training Program (Manual) --</option>
@@ -1189,6 +1212,7 @@ export function AdminStudentsPage() {
 
                 {wizardStep < 4 ? (
                   <Button
+                    key="wizard-next-btn"
                     type="button"
                     size="sm"
                     onClick={() => {
@@ -1204,6 +1228,7 @@ export function AdminStudentsPage() {
                   </Button>
                 ) : (
                   <Button
+                    key="wizard-submit-btn"
                     type="submit"
                     disabled={isSubmitting}
                     size="sm"
@@ -1413,6 +1438,12 @@ export function AdminStudentsPage() {
                           <span className="text-slate-500 block text-[11px] font-medium">Emergency Contact</span>
                           <span className="font-semibold text-slate-900">{studentDetail.student.emergency_contact || "—"}</span>
                         </div>
+                        {studentDetail.student.notes && (
+                          <div className="col-span-2 pt-2 border-t border-slate-200">
+                            <span className="text-slate-500 block text-[11px] font-medium">Notes / Remarks</span>
+                            <span className="text-slate-900">{studentDetail.student.notes}</span>
+                          </div>
+                        )}
                       </div>
 
                       {studentDetail.student.guardian_name && (

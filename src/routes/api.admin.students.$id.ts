@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/admin/students/$id")({
           client.from("billing_plans").select("*").eq("student_id", studentId),
           client.from("recurring_class_schedules").select("*").eq("student_id", studentId),
           client.from("class_sessions").select("*, batches(*)").eq("student_id", studentId).order("session_date", { ascending: true }),
-          client.from("crm_tasks").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
+          client.from("crm_tasks").select("*").eq("related_id", studentId).order("created_at", { ascending: false }),
           student.lead_id ? client.from("admissions_requests").select("*").eq("id", student.lead_id).maybeSingle() : Promise.resolve({ data: null }),
         ]);
 
