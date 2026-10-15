@@ -1,0 +1,47 @@
+name: Academy Automated Operations Schedules
+
+on:
+  schedule:
+    # 1. Phase 16 CRM Reminders: Every 15 mins between 00:00 and 18:00 UTC (05:00 to 23:00 PKT)
+    - cron: "*/15 0-18 * * *"
+    # 2. Phase 17 Recurring Sessions Generation: 20:15 UTC (01:15 PKT)
+    - cron: "15 20 * * *"
+    # 3. Phase 17 Monthly Dues Generation: 20:30 UTC (01:30 PKT)
+    - cron: "30 20 * * *"
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Operation to run"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - reminders
+          - recurring-sessions
+          - monthly-dues
+
+jobs:
+  run-scheduled-operations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Process CRM Reminders
+        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'reminders'
+        run: |
+          curl -s -X POST https://techbuiltos.online/api/admin/reminders/process \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+      - name: Generate Recurring Class Sessions
+        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'recurring-sessions'
+        run: |
+          curl -s -X POST https://techbuiltos.online/api/admin/automation/generate-recurring-sessions \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
+
+      - name: Generate Monthly Invoices
+        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'monthly-dues'
+        run: |
+          curl -s -X POST https://techbuiltos.online/api/admin/automation/generate-monthly-dues \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json"
