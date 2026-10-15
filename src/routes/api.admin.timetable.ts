@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { createClassSessionSchema } from "@/lib/crmSchemas";
-import { checkClassScheduleConflicts, logCrmAction } from "@/lib/crm.server";
+import { checkClassScheduleConflicts, logCrmAction, createClassSessionsTx } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/timetable")({
   server: {
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
 
         let query = client
           .from("class_sessions")
-          .select("*, batches(id, name, program_title), class_attendance(*, students(id, full_name, email, phone))")
+          .select("*, batches(id, name, program_title), students(id, full_name, student_id, email), class_attendance(*, students(id, full_name, email, phone))")
           .order("session_date", { ascending: true })
           .order("start_time", { ascending: true });
 
@@ -63,6 +63,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
         return new Response(
           JSON.stringify({
             ok: true,
+            success: true,
             sessions: allSessions,
             todaySessions,
             upcomingSessions,
@@ -112,13 +113,13 @@ export const Route = createFileRoute("/api/admin/timetable")({
             sessionDate,
             startTime,
             endTime,
-            instructorId,
-            batchId,
-            studentId,
-            excludeSessionId,
+            instructorId: instructorId || null,
+            batchId: batchId || null,
+            studentId: studentId || null,
+            excludeSessionId: excludeSessionId || null,
           });
 
-          return new Response(JSON.stringify({ ok: true, ...conflictResult }), {
+          return new Response(JSON.stringify({ ok: true, success: true, ...conflictResult }), {
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
@@ -135,20 +136,22 @@ export const Route = createFileRoute("/api/admin/timetable")({
 
         const d = parsed.data;
 
-        // Perform hard conflict check before inserting
+        // Perform conflict check before inserting
         const conflictCheck = await checkClassScheduleConflicts({
           sessionDate: d.sessionDate,
           startTime: d.startTime,
           endTime: d.endTime,
-          instructorId: d.instructorId,
-          batchId: d.batchId,
-          studentId: body.studentId || null,
+          instructorId: d.instructorId || null,
+          batchId: d.batchId || null,
+          studentId: d.studentId || null,
         });
 
-        if (conflictCheck.hasConflict && !body.ignoreWarnings) {
+        const isOverrideAllowed = Boolean(d.override || body.ignoreWarnings);
+        if (conflictCheck.hasConflict && !isOverrideAllowed) {
           return new Response(
             JSON.stringify({
               ok: false,
+              hasConflict: true,
               error: `Schedule clash detected: ${conflictCheck.conflicts[0]?.message}`,
               conflicts: conflictCheck.conflicts,
             }),
@@ -156,78 +159,70 @@ export const Route = createFileRoute("/api/admin/timetable")({
           );
         }
 
-        // Support recurring class generation (e.g., repeat weekly for N weeks)
+        // Atomic transactional creation of single or recurring sessions
         const repeatWeeks = Math.min(12, Math.max(1, Number(body.repeatWeeks) || 1));
-        const createdSessions: any[] = [];
+        const overrideReason = d.overrideReason || body.overrideReason || null;
 
-        for (let week = 0; week < repeatWeeks; week++) {
-          const sessionDateObj = new Date(d.sessionDate);
-          sessionDateObj.setDate(sessionDateObj.getDate() + week * 7);
-          const computedDate = sessionDateObj.toISOString().split("T")[0];
+        try {
+          const txResult = await createClassSessionsTx({
+            batchId: d.batchId || null,
+            enrollmentId: d.enrollmentId || null,
+            studentId: d.studentId || null,
+            instructorId: d.instructorId || null,
+            instructorName: d.instructorName || null,
+            title: d.title,
+            sessionDate: d.sessionDate,
+            startTime: d.startTime,
+            endTime: d.endTime,
+            timezone: d.timezone || "Asia/Karachi",
+            meetingLink: d.meetingLink || null,
+            status: d.status || "scheduled",
+            topicCovered: d.topicCovered || null,
+            homework: d.homework || null,
+            instructorNotes: d.instructorNotes || null,
+            repeatWeeks,
+            override: isOverrideAllowed,
+            overrideReason,
+            adminUserId: auth.admin.user.id,
+            adminEmail: auth.admin.user.email,
+          });
 
-          if (week > 0 && !body.ignoreWarnings) {
-            const weekConflict = await checkClassScheduleConflicts({
-              sessionDate: computedDate,
-              startTime: d.startTime,
-              endTime: d.endTime,
-              instructorId: d.instructorId,
-              batchId: d.batchId,
-              studentId: body.studentId || null,
-            });
-            if (weekConflict.hasConflict) {
-              return new Response(
-                JSON.stringify({
-                  ok: false,
-                  error: `Schedule clash in recurring week ${week + 1}: ${weekConflict.conflicts[0]?.message}`,
-                  conflicts: weekConflict.conflicts,
-                }),
-                { status: 409, headers: { "Content-Type": "application/json" } },
-              );
-            }
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              success: true,
+              count: txResult.created_count,
+              sessionIds: txResult.session_ids,
+              isOverride: txResult.is_override,
+            }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        } catch (err: any) {
+          const errMsg = err?.message || String(err);
+          if (errMsg.includes("SCHEDULE_CLASH_DETECTED")) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                hasConflict: true,
+                error: errMsg.replace(/^.*SCHEDULE_CLASH_DETECTED:\s*/, ""),
+              }),
+              { status: 409, headers: { "Content-Type": "application/json" } },
+            );
           }
-
-          const { data: newSession, error: insErr } = await client
-            .from("class_sessions")
-            .insert({
-              batch_id: d.batchId || null,
-              enrollment_id: d.enrollmentId || null,
-              instructor_id: d.instructorId || null,
-              instructor_name: d.instructorName || null,
-              title: repeatWeeks > 1 ? `${d.title} (Week ${week + 1})` : d.title,
-              session_date: computedDate,
-              start_time: d.startTime,
-              end_time: d.endTime,
-              timezone: d.timezone || "Asia/Karachi",
-              meeting_link: d.meetingLink || null,
-              status: d.status || "scheduled",
-              topic_covered: d.topicCovered || null,
-              homework: d.homework || null,
-              instructor_notes: d.instructorNotes || null,
-            })
-            .select()
-            .single();
-
-          if (!insErr && newSession) {
-            createdSessions.push(newSession);
+          if (errMsg.includes("MANDATORY_OVERRIDE_REASON_REQUIRED")) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: "An administrative override reason is mandatory when resolving schedule clashes.",
+              }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
           }
+          return new Response(
+            JSON.stringify({ ok: false, error: errMsg || "Failed to schedule class session" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
         }
-
-        await logCrmAction({
-          adminUserId: auth.admin.user.id,
-          actorEmail: auth.admin.user.email,
-          action: "create_class_session",
-          entity: "class_sessions",
-          details: { title: d.title, sessionDate: d.sessionDate, count: createdSessions.length },
-        });
-
-        return new Response(
-          JSON.stringify({
-            ok: true,
-            createdSessions,
-            count: createdSessions.length,
-          }),
-          { status: 201, headers: { "Content-Type": "application/json" } },
-        );
       },
     },
   },

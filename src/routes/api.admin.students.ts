@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
-import { createStudentSchema } from "@/lib/crmSchemas";
-import { generateStudentId, logCrmAction } from "@/lib/crm.server";
+import { createStudentSchema, createStudentFullSchema } from "@/lib/crmSchemas";
+import { generateStudentId, logCrmAction, createStudentFullTx } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/students")({
   server: {
@@ -217,6 +217,49 @@ export const Route = createFileRoute("/api/admin/students")({
           );
         }
 
+        // Multi-section Complete Student Wizard Action (Section B)
+        if (body.action === "create-student-full") {
+          const parsed = createStudentFullSchema.safeParse(body);
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                success: false,
+                error: parsed.error.errors[0]?.message || "Validation failed",
+                details: parsed.error.errors,
+              }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          try {
+            const result = await createStudentFullTx({
+              ...parsed.data,
+              actorId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email,
+            });
+
+            return new Response(
+              JSON.stringify({
+                ok: true,
+                success: true,
+                ...result,
+              }),
+              { status: 201, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            const status = err.message.includes("already exists") ? 409 : 400;
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                success: false,
+                error: err.message || "Failed to create student",
+              }),
+              { status, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
         // Single student creation
         const parsed = createStudentSchema.safeParse(body);
         if (!parsed.success) {
@@ -290,7 +333,7 @@ export const Route = createFileRoute("/api/admin/students")({
         });
 
         return new Response(
-          JSON.stringify({ ok: true, student: newStudent }),
+          JSON.stringify({ ok: true, success: true, student: newStudent }),
           { status: 201, headers: { "Content-Type": "application/json" } },
         );
       },

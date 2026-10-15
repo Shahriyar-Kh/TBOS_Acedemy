@@ -78,37 +78,31 @@ function AdminAuditPage() {
   });
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Security & System Audit Trail"
+      description="Immutable log of all administrative actions, student enrollments, fee adjustments, and security events."
+      onRefresh={fetchLogs}
+      isRefreshing={isLoading}
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-            <FileText className="w-6 h-6 text-cyan-400" />
-            Security & System Audit Trail
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Immutable log of all administrative actions, student enrollments, fee adjustments, and security events.
-          </p>
-        </div>
-
         {/* Filter Bar */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by actor, action, or ID..."
-              className="pl-9 bg-slate-950 border-slate-800 text-white placeholder:text-slate-400"
+              className="pl-9 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 text-xs"
             />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs text-slate-400">Entity:</span>
+            <span className="text-xs font-semibold text-slate-500">Entity:</span>
             <select
               value={filterEntity}
               onChange={(e) => setFilterEntity(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-xs text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              className="bg-white border border-slate-300 text-xs text-slate-800 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
             >
               <option value="all">All Entities</option>
               <option value="student">Student</option>
@@ -124,21 +118,21 @@ function AdminAuditPage() {
         </div>
 
         {/* Logs Table */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           {isLoading ? (
-            <div className="flex items-center justify-center p-12 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            <div className="flex items-center justify-center p-12 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin text-sky-600 mr-2" />
               Loading audit logs...
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="text-center p-12 text-slate-400">
-              <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-base font-medium text-slate-300">No audit records found</p>
+              <Clock className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-semibold text-slate-700">No audit records found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-slate-950/60 text-xs uppercase font-medium text-slate-400 border-b border-slate-800">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 text-[11px] uppercase font-semibold text-slate-600 border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">Timestamp</th>
                     <th className="py-3 px-4">Actor</th>
@@ -148,26 +142,26 @@ function AdminAuditPage() {
                     <th className="py-3 px-4 text-right">Details</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {filteredLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3 px-4 text-xs font-mono text-slate-400 whitespace-nowrap">
+                    <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-4 text-xs font-mono text-slate-500 whitespace-nowrap">
                         {new Date(log.created_at).toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 font-medium text-white">{log.actor_email || "System"}</td>
+                      <td className="py-3 px-4 font-semibold text-slate-900">{log.actor_email || "System"}</td>
                       <td className="py-3 px-4">
-                        <Badge className="bg-slate-800 text-slate-300 border-slate-700 font-mono text-[11px]">
+                        <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-mono text-[11px] font-semibold">
                           {log.action}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 capitalize text-slate-300">{log.entity_type}</td>
-                      <td className="py-3 px-4 text-xs font-mono text-cyan-400">{log.entity_id || "—"}</td>
+                      <td className="py-3 px-4 capitalize text-slate-800">{log.entity_type}</td>
+                      <td className="py-3 px-4 text-xs font-mono text-sky-700">{log.entity_id || "—"}</td>
                       <td className="py-3 px-4 text-right">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => setSelectedLog(log)}
-                          className="h-7 text-xs text-slate-400 hover:text-white"
+                          className="h-7 text-xs text-sky-700 hover:text-sky-800 hover:bg-sky-50 font-medium"
                         >
                           <Eye className="w-3.5 h-3.5 mr-1" />
                           View
@@ -184,51 +178,52 @@ function AdminAuditPage() {
 
       {/* Detail Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-sky-600" />
                 Audit Record Details
               </h3>
-              <button onClick={() => setSelectedLog(null)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setSelectedLog(null)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-3 mt-4 text-xs">
-              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-950/60 rounded-lg border border-slate-800">
+              <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-lg border border-slate-200">
                 <div>
-                  <span className="text-slate-400 block">Actor:</span>
-                  <span className="text-white font-medium">{selectedLog.actor_email || "System"}</span>
+                  <span className="text-slate-500 block text-[11px]">Actor:</span>
+                  <span className="text-slate-900 font-semibold">{selectedLog.actor_email || "System"}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Action:</span>
-                  <span className="text-cyan-400 font-mono">{selectedLog.action}</span>
+                  <span className="text-slate-500 block text-[11px]">Action:</span>
+                  <span className="text-sky-700 font-mono font-semibold">{selectedLog.action}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Entity Type:</span>
-                  <span className="text-white capitalize">{selectedLog.entity_type}</span>
+                  <span className="text-slate-500 block text-[11px]">Entity Type:</span>
+                  <span className="text-slate-800 capitalize">{selectedLog.entity_type}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Timestamp:</span>
-                  <span className="text-slate-300">{new Date(selectedLog.created_at).toLocaleString()}</span>
+                  <span className="text-slate-500 block text-[11px]">Timestamp:</span>
+                  <span className="text-slate-600">{new Date(selectedLog.created_at).toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-400 block mb-1">State Mutation Payload:</span>
-                <pre className="p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] font-mono text-cyan-300 max-h-60 overflow-y-auto">
+                <span className="text-slate-700 font-semibold block mb-1">State Mutation Payload:</span>
+                <pre className="p-3 bg-slate-900 rounded-lg border border-slate-800 text-[11px] font-mono text-cyan-300 max-h-60 overflow-y-auto">
                   {JSON.stringify(selectedLog.details, null, 2)}
                 </pre>
               </div>
             </div>
 
-            <div className="flex justify-end pt-4 mt-4 border-t border-slate-800">
+            <div className="flex justify-end pt-4 mt-4 border-t border-slate-100">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setSelectedLog(null)}
-                className="border-slate-800 text-slate-300"
+                className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs"
               >
                 Close
               </Button>

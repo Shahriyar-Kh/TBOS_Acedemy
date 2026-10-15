@@ -65,9 +65,15 @@ export const Route = createFileRoute("/api/admin/fees")({
         return new Response(
           JSON.stringify({
             ok: true,
+            success: true,
             invoices: allInvoices,
             payments: payments || [],
+            totalCount: allInvoices.length,
             stats: {
+              totalInvoiced: expectedRevenue,
+              totalCollected: collectedRevenue,
+              totalPending: outstandingBalance,
+              totalOverdue: overdueCount,
               expectedRevenue,
               collectedRevenue,
               outstandingBalance,
@@ -136,6 +142,7 @@ export const Route = createFileRoute("/api/admin/fees")({
             return new Response(
               JSON.stringify({
                 ok: true,
+                success: true,
                 payment: result.payment,
                 invoice: result.invoice,
                 is_duplicate: result.is_duplicate || false,
@@ -252,8 +259,10 @@ export const Route = createFileRoute("/api/admin/fees")({
           return new Response(
             JSON.stringify({
               ok: true,
+              success: true,
               billingMonth: targetMonth,
               createdCount,
+              generatedCount: createdCount,
               skippedCount,
             }),
             { status: 200, headers: { "Content-Type": "application/json" } },

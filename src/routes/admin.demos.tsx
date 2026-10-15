@@ -200,20 +200,35 @@ function AdminDemosPage() {
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Free Trial Demo Requests"
+      description="Manage 1-on-1 trial bookings, schedule times, and share meeting links."
+      onRefresh={fetchDemos}
+      isRefreshing={isLoading}
+      actions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchDemos()}
+            disabled={isLoading}
+            className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-medium"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
+      }
+    >
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Free Trial Demo Requests</h1>
-            <p className="text-xs text-slate-500">Manage 1-on-1 trial bookings, schedule times, and share meeting links.</p>
-          </div>
-
-          {/* Quick status filter */}
+        {/* Quick status filter */}
+        <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm flex items-center justify-between">
+          <span className="text-xs font-semibold text-slate-700">Filter Inquiries:</span>
           <div className="flex items-center gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs focus:outline-none"
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
             >
               <option value="all">All Demo Inquiries</option>
               <option value="demo_requested">Pending Scheduling (demo_requested)</option>

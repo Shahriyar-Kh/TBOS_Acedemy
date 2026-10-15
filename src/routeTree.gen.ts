@@ -81,6 +81,8 @@ import { Route as ApiAdminStudentsIdRouteImport } from './routes/api.admin.stude
 import { Route as ApiAdminRemindersProcessRouteImport } from './routes/api.admin.reminders.process'
 import { Route as ApiAdminContentKindRouteImport } from './routes/api.admin.content.$kind'
 import { Route as ApiAdminBatchesIdRouteImport } from './routes/api.admin.batches.$id'
+import { Route as ApiAdminAutomationGenerateRecurringSessionsRouteImport } from './routes/api.admin.automation.generate-recurring-sessions'
+import { Route as ApiAdminAutomationGenerateMonthlyDuesRouteImport } from './routes/api.admin.automation.generate-monthly-dues'
 import { Route as ApiAdminAuthPasswordResetRouteImport } from './routes/api.admin.auth.password-reset'
 import { Route as ApiAdminAdmissionsIdRouteImport } from './routes/api.admin.admissions.$id'
 import { Route as ApiAdminContentKindIdRouteImport } from './routes/api.admin.content.$kind.$id'
@@ -451,6 +453,18 @@ const ApiAdminBatchesIdRoute = ApiAdminBatchesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminBatchesRoute,
 } as any)
+const ApiAdminAutomationGenerateRecurringSessionsRoute =
+  ApiAdminAutomationGenerateRecurringSessionsRouteImport.update({
+    id: '/api/admin/automation/generate-recurring-sessions',
+    path: '/api/admin/automation/generate-recurring-sessions',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAdminAutomationGenerateMonthlyDuesRoute =
+  ApiAdminAutomationGenerateMonthlyDuesRouteImport.update({
+    id: '/api/admin/automation/generate-monthly-dues',
+    path: '/api/admin/automation/generate-monthly-dues',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminAuthPasswordResetRoute =
   ApiAdminAuthPasswordResetRouteImport.update({
     id: '/api/admin/auth/password-reset',
@@ -537,6 +551,8 @@ export interface FileRoutesByFullPath {
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/automation/generate-monthly-dues': typeof ApiAdminAutomationGenerateMonthlyDuesRoute
+  '/api/admin/automation/generate-recurring-sessions': typeof ApiAdminAutomationGenerateRecurringSessionsRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
   '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
@@ -614,6 +630,8 @@ export interface FileRoutesByTo {
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/automation/generate-monthly-dues': typeof ApiAdminAutomationGenerateMonthlyDuesRoute
+  '/api/admin/automation/generate-recurring-sessions': typeof ApiAdminAutomationGenerateRecurringSessionsRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
   '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
@@ -692,6 +710,8 @@ export interface FileRoutesById {
   '/api/content/$kind': typeof ApiContentKindRoute
   '/api/admin/admissions/$id': typeof ApiAdminAdmissionsIdRoute
   '/api/admin/auth/password-reset': typeof ApiAdminAuthPasswordResetRoute
+  '/api/admin/automation/generate-monthly-dues': typeof ApiAdminAutomationGenerateMonthlyDuesRoute
+  '/api/admin/automation/generate-recurring-sessions': typeof ApiAdminAutomationGenerateRecurringSessionsRoute
   '/api/admin/batches/$id': typeof ApiAdminBatchesIdRoute
   '/api/admin/content/$kind': typeof ApiAdminContentKindRouteWithChildren
   '/api/admin/reminders/process': typeof ApiAdminRemindersProcessRoute
@@ -771,6 +791,8 @@ export interface FileRouteTypes {
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
     | '/api/admin/auth/password-reset'
+    | '/api/admin/automation/generate-monthly-dues'
+    | '/api/admin/automation/generate-recurring-sessions'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
     | '/api/admin/reminders/process'
@@ -848,6 +870,8 @@ export interface FileRouteTypes {
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
     | '/api/admin/auth/password-reset'
+    | '/api/admin/automation/generate-monthly-dues'
+    | '/api/admin/automation/generate-recurring-sessions'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
     | '/api/admin/reminders/process'
@@ -925,6 +949,8 @@ export interface FileRouteTypes {
     | '/api/content/$kind'
     | '/api/admin/admissions/$id'
     | '/api/admin/auth/password-reset'
+    | '/api/admin/automation/generate-monthly-dues'
+    | '/api/admin/automation/generate-recurring-sessions'
     | '/api/admin/batches/$id'
     | '/api/admin/content/$kind'
     | '/api/admin/reminders/process'
@@ -1002,6 +1028,8 @@ export interface RootRouteChildren {
   ApiAdminUsersRoute: typeof ApiAdminUsersRoute
   ApiContentKindRoute: typeof ApiContentKindRoute
   ApiAdminAuthPasswordResetRoute: typeof ApiAdminAuthPasswordResetRoute
+  ApiAdminAutomationGenerateMonthlyDuesRoute: typeof ApiAdminAutomationGenerateMonthlyDuesRoute
+  ApiAdminAutomationGenerateRecurringSessionsRoute: typeof ApiAdminAutomationGenerateRecurringSessionsRoute
   ApiAdminContentKindRoute: typeof ApiAdminContentKindRouteWithChildren
 }
 
@@ -1511,6 +1539,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminBatchesIdRouteImport
       parentRoute: typeof ApiAdminBatchesRoute
     }
+    '/api/admin/automation/generate-recurring-sessions': {
+      id: '/api/admin/automation/generate-recurring-sessions'
+      path: '/api/admin/automation/generate-recurring-sessions'
+      fullPath: '/api/admin/automation/generate-recurring-sessions'
+      preLoaderRoute: typeof ApiAdminAutomationGenerateRecurringSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/automation/generate-monthly-dues': {
+      id: '/api/admin/automation/generate-monthly-dues'
+      path: '/api/admin/automation/generate-monthly-dues'
+      fullPath: '/api/admin/automation/generate-monthly-dues'
+      preLoaderRoute: typeof ApiAdminAutomationGenerateMonthlyDuesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/auth/password-reset': {
       id: '/api/admin/auth/password-reset'
       path: '/api/admin/auth/password-reset'
@@ -1682,6 +1724,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminUsersRoute: ApiAdminUsersRoute,
   ApiContentKindRoute: ApiContentKindRoute,
   ApiAdminAuthPasswordResetRoute: ApiAdminAuthPasswordResetRoute,
+  ApiAdminAutomationGenerateMonthlyDuesRoute:
+    ApiAdminAutomationGenerateMonthlyDuesRoute,
+  ApiAdminAutomationGenerateRecurringSessionsRoute:
+    ApiAdminAutomationGenerateRecurringSessionsRoute,
   ApiAdminContentKindRoute: ApiAdminContentKindRouteWithChildren,
 }
 export const routeTree = rootRouteImport

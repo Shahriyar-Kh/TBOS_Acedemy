@@ -115,7 +115,7 @@ function AdminDashboardPage() {
         setRecentPayments(data.payments?.slice(0, 5) || []);
         setStats((prev) => ({
           ...prev,
-          feesDue: data.stats?.expectedRevenue || 0,
+          feesDue: data.stats?.totalInvoiced ?? data.stats?.expectedRevenue ?? 0,
           overduePayments: data.stats?.overdueCount || 0,
         }));
       }
@@ -163,14 +163,19 @@ function AdminDashboardPage() {
       isRefreshing={isLoading}
       actions={
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="bg-[#008DDA] hover:bg-[#0070b8] text-white gap-1.5 text-xs">
-            <Link to="/admin/admissions">
-              <Plus className="h-3.5 w-3.5" /> Review Leads
+          <Button asChild size="sm" className="bg-sky-600 hover:bg-sky-700 text-white gap-1.5 text-xs font-medium shadow-sm">
+            <Link to="/admin/students">
+              <UserPlus className="h-3.5 w-3.5" /> Add Student
             </Link>
           </Button>
-          <Button asChild size="sm" variant="outline" className="text-xs">
+          <Button asChild size="sm" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-medium">
             <Link to="/admin/timetable">
               <Calendar className="h-3.5 w-3.5" /> Schedule Class
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-50 gap-1.5 text-xs font-medium">
+            <Link to="/admin/fees">
+              <CreditCard className="h-3.5 w-3.5" /> Record Payment
             </Link>
           </Button>
         </div>
@@ -267,7 +272,7 @@ function AdminDashboardPage() {
                   </div>
                   <h2 className="font-bold text-sm text-slate-900">Today's Class Schedule</h2>
                 </div>
-                <Link to="/admin/timetable" className="text-xs text-[#008DDA] hover:underline flex items-center gap-1 font-medium">
+                <Link to="/admin/timetable" className="text-xs text-sky-600 hover:underline flex items-center gap-1 font-medium">
                   Full timetable <ArrowRight className="h-3 w-3" />
                 </Link>
               </div>
@@ -279,16 +284,25 @@ function AdminDashboardPage() {
               ) : (
                 <div className="divide-y divide-slate-100">
                   {todayClasses.map((cls) => (
-                    <div key={cls.id} className="py-3 flex items-center justify-between">
-                      <div>
-                        <div className="font-semibold text-xs text-slate-900">{cls.title}</div>
+                    <div key={cls.id} className="py-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-xs text-slate-900 truncate">{cls.title}</div>
                         <div className="text-[11px] text-slate-500 mt-0.5">
-                          {cls.start_time} - {cls.end_time} · {cls.instructor_name || "Instructor assigned"}
+                          {cls.start_time} - {cls.end_time} · {cls.instructor_name || "TBOS Mentor"}
                         </div>
                       </div>
-                      <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                        {cls.status}
-                      </Badge>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {cls.meeting_link && (
+                          <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+                            <a href={cls.meeting_link} target="_blank" rel="noreferrer">
+                              <Video className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Join Meet
+                            </a>
+                          </Button>
+                        )}
+                        <Badge variant="outline" className="text-[10px] uppercase font-mono">
+                          {cls.status}
+                        </Badge>
+                      </div>
                     </div>
                   ))}
                 </div>

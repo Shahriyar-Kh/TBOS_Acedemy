@@ -14,15 +14,18 @@ import {
   UserCheck,
   AlertTriangle,
   PlusCircle,
-  Search,
   CheckCircle2,
   XCircle,
   ExternalLink,
   Loader2,
   X,
   Users,
+  Download,
+  RefreshCw,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateIcsCalendar, downloadIcsFile } from "@/lib/icalendar";
 
 export const Route = createFileRoute("/admin/timetable")({
   head: () => ({ meta: adminNoIndexMeta("TBOS Timetable & Classes") }),
@@ -42,6 +45,7 @@ function AdminTimetablePage() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [batches, setBatches] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [filterBatch, setFilterBatch] = useState("all");
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
@@ -59,8 +63,11 @@ function AdminTimetablePage() {
     notes: "",
     recurringWeeks: 1,
   });
-  const [conflictWarning, setConflictWarning] = useState<string | null>(null);
-  const [isCheckingConflict, setIsCheckingConflict] = useState(false);
+
+  // Clash Override State
+  const [showClashModal, setShowClashModal] = useState(false);
+  const [clashData, setClashData] = useState<{ error: string; conflicts: any[] } | null>(null);
+  const [overrideReason, setOverrideReason] = useState("Admin approved schedule adjustment");
   const [isScheduling, setIsScheduling] = useState(false);
 
   // Attendance Modal State
@@ -84,9 +91,10 @@ function AdminTimetablePage() {
 
   const fetchSessions = useCallback(async () => {
     setIsLoading(true);
+    setFetchError(null);
     try {
       const params = new URLSearchParams();
-      if (filterBatch !== "all") params.set("batch_id", filterBatch);
+      if (filterBatch !== "all") params.set("batchId", filterBatch);
       params.set("limit", "100");
 
       const res = await fetch(`/api/admin/timetable?${params.toString()}`, {
@@ -96,10 +104,15 @@ function AdminTimetablePage() {
         const data = await res.json();
         setSessions(data.sessions || []);
       } else {
-        toast.error("Failed to load timetable sessions");
+        const errJson = await res.json().catch(() => ({}));
+        const msg = errJson.error || "Failed to load timetable sessions";
+        setFetchError(msg);
+        toast.error(msg);
       }
-    } catch {
-      toast.error("Network error loading timetable");
+    } catch (err: any) {
+      const msg = err?.message || "Network error loading timetable";
+      setFetchError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -112,66 +125,61 @@ function AdminTimetablePage() {
     }
   }, [fetchBatches, fetchSessions, admin]);
 
-  // Check Schedule Conflicts
-  const checkConflicts = async () => {
-    if (!scheduleForm.batchId || !scheduleForm.sessionDate || !scheduleForm.startTime || !scheduleForm.endTime) {
-      return;
-    }
-    setIsCheckingConflict(true);
-    setConflictWarning(null);
-    try {
-      const res = await fetch("/api/admin/timetable", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...getAuthHeader() },
-        body: JSON.stringify({
-          action: "check-conflicts",
-          batchId: scheduleForm.batchId,
-          instructorId: scheduleForm.instructorId || scheduleForm.instructorName,
-          sessionDate: scheduleForm.sessionDate,
-          startTime: scheduleForm.startTime,
-          endTime: scheduleForm.endTime,
-        }),
-      });
-      const data = await res.json();
-      if (data.hasConflict) {
-        setConflictWarning(data.conflicts[0] || "Schedule conflict detected with another class!");
-      }
-    } catch {
-      // ignore
-    } finally {
-      setIsCheckingConflict(false);
-    }
-  };
-
-  const handleCreateSession = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateSession = async (e?: React.FormEvent, isOverride: boolean = false) => {
+    if (e) e.preventDefault();
     setIsScheduling(true);
     try {
+      const payload: Record<string, any> = {
+        action: "create-session",
+        title: scheduleForm.title.trim(),
+        sessionDate: scheduleForm.sessionDate,
+        startTime: scheduleForm.startTime,
+        endTime: scheduleForm.endTime,
+        meetingLink: scheduleForm.meetingUrl.trim() || null,
+        instructorName: scheduleForm.instructorName.trim() || null,
+        notes: scheduleForm.notes.trim() || null,
+        repeatWeeks: Number(scheduleForm.recurringWeeks) || 1,
+      };
+
+      if (scheduleForm.batchId && scheduleForm.batchId.trim() !== "") {
+        payload.batchId = scheduleForm.batchId.trim();
+      }
+
+      if (scheduleForm.instructorId && scheduleForm.instructorId.trim() !== "") {
+        payload.instructorId = scheduleForm.instructorId.trim();
+      }
+
+      if (isOverride) {
+        payload.override = true;
+        payload.overrideReason = overrideReason.trim() || "Administrative override";
+      }
+
       const res = await fetch("/api/admin/timetable", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
-        body: JSON.stringify({
-          action: "create-session",
-          batchId: scheduleForm.batchId,
-          instructorId: scheduleForm.instructorId || scheduleForm.instructorName,
-          instructorName: scheduleForm.instructorName,
-          title: scheduleForm.title,
-          sessionDate: scheduleForm.sessionDate,
-          startTime: scheduleForm.startTime,
-          endTime: scheduleForm.endTime,
-          meetingUrl: scheduleForm.meetingUrl,
-          notes: scheduleForm.notes,
-          recurringWeeks: Number(scheduleForm.recurringWeeks) || 1,
-        }),
+        body: JSON.stringify(payload),
       });
+
       const data = await res.json();
-      if (res.ok && data.success) {
+
+      if (res.status === 409) {
+        // Schedule Clash Detected!
+        setClashData({
+          error: data.error || "Schedule clash detected with existing classes.",
+          conflicts: data.conflicts || [],
+        });
+        setShowClashModal(true);
+        return;
+      }
+
+      if (res.ok && (data.ok || data.success)) {
         toast.success(
           data.recurringCount > 1
             ? `Successfully scheduled ${data.recurringCount} weekly classes!`
             : "Class session scheduled successfully!"
         );
         setShowScheduleModal(false);
+        setShowClashModal(false);
         fetchSessions();
       } else {
         toast.error(data.error || "Failed to schedule session");
@@ -183,28 +191,77 @@ function AdminTimetablePage() {
     }
   };
 
+  const handleExportSingleIcs = (sess: any) => {
+    const icsContent = generateIcsCalendar({
+      id: sess.id,
+      title: sess.title,
+      sessionDate: sess.session_date,
+      startTime: sess.start_time,
+      endTime: sess.end_time,
+      timezone: sess.timezone || "Asia/Karachi",
+      meetingLink: sess.meeting_link || sess.meeting_url,
+      instructorName: sess.instructor_name,
+      batchOrStudentName: sess.batches?.name || sess.students?.full_name || "TBOS Class",
+    });
+    const filename = `tbos-class-${sess.session_date}-${sess.title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.ics`;
+    downloadIcsFile(filename, icsContent);
+    toast.success("Calendar invite (.ics) downloaded!");
+  };
+
+  const handleExportAllIcs = () => {
+    if (sessions.length === 0) {
+      toast.error("No sessions available to export");
+      return;
+    }
+    const calendarEvents = sessions.map((s) => ({
+      id: s.id,
+      title: s.title,
+      sessionDate: s.session_date,
+      startTime: s.start_time,
+      endTime: s.end_time,
+      timezone: s.timezone || "Asia/Karachi",
+      meetingLink: s.meeting_link || s.meeting_url,
+      instructorName: s.instructor_name,
+      batchOrStudentName: s.batches?.name || s.students?.full_name || "TBOS Class",
+    }));
+    const icsContent = generateIcsCalendar(calendarEvents);
+    downloadIcsFile("tbos-academy-timetable.ics", icsContent);
+    toast.success(`Exported ${sessions.length} sessions to iCalendar!`);
+  };
+
   const openAttendanceModal = async (session: any) => {
     setActiveSession(session);
     setShowAttendanceModal(true);
     setIsAttendanceLoading(true);
     try {
-      // Fetch batch enrollments to populate student list
-      const res = await fetch(`/api/admin/batches/${session.batch_id}`, {
-        headers: getAuthHeader(),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const enrollments = data.batch?.enrollments || [];
-        // Map students with default 'present'
-        setAttendanceRoster(
-          enrollments.map((enr: any) => ({
-            studentId: enr.students?.id,
-            studentName: enr.students?.full_name,
-            studentNumber: enr.students?.student_id,
+      if (session.batch_id) {
+        const res = await fetch(`/api/admin/batches/${session.batch_id}`, {
+          headers: getAuthHeader(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const enrollments = data.batch?.enrollments || [];
+          setAttendanceRoster(
+            enrollments.map((enr: any) => ({
+              studentId: enr.students?.id,
+              studentName: enr.students?.full_name,
+              studentNumber: enr.students?.student_id,
+              status: "present",
+              notes: "",
+            }))
+          );
+        }
+      } else if (session.student_id) {
+        // 1-on-1 Student session
+        setAttendanceRoster([
+          {
+            studentId: session.student_id,
+            studentName: session.students?.full_name || "Assigned Student",
+            studentNumber: session.students?.student_id || "1-on-1",
             status: "present",
             notes: "",
-          }))
-        );
+          },
+        ]);
       }
     } catch {
       toast.error("Error loading student roster for attendance");
@@ -230,7 +287,7 @@ function AdminTimetablePage() {
         }),
       });
       const data = await res.json();
-      if (res.ok && data.success) {
+      if (res.ok && (data.ok || data.success)) {
         toast.success(`Attendance saved for ${attendanceRoster.length} students!`);
         setShowAttendanceModal(false);
         fetchSessions();
@@ -245,46 +302,51 @@ function AdminTimetablePage() {
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <CalendarIcon className="w-6 h-6 text-cyan-400" />
-              Timetable & Class Schedule
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Manage live sessions, automated recurrence, Google Meet / Zoom links, and student attendance.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => {
-                setConflictWarning(null);
-                setShowScheduleModal(true);
-              }}
-              className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
-            >
-              <PlusCircle className="w-4 h-4 mr-2" />
-              Schedule Class
-            </Button>
-          </div>
+    <AdminLayout
+      title="Timetable & Class Schedule"
+      description="Live schedule of group batch sessions, one-on-one classes, attendance tracking, and Google Calendar export."
+      onRefresh={fetchSessions}
+      isRefreshing={isLoading}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportAllIcs}
+            className="text-xs"
+            title="Download iCalendar format (.ics) for Google/Outlook"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5 text-slate-600" />
+            Export Timetable (.ics)
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              setClashData(null);
+              setShowScheduleModal(true);
+            }}
+            className="bg-[#008DDA] hover:bg-[#0070b8] text-white text-xs font-medium"
+          >
+            <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
+            Schedule Class
+          </Button>
         </div>
-
+      }
+    >
+      <div className="space-y-6">
         {/* Filter Bar */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row gap-3 items-center justify-between">
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Label className="text-xs text-slate-400 whitespace-nowrap">Filter Cohort:</Label>
+            <Label className="text-xs font-medium text-slate-700 whitespace-nowrap">Filter Cohort / Batch:</Label>
             <select
               value={filterBatch}
               onChange={(e) => setFilterBatch(e.target.value)}
-              className="bg-slate-950 border border-slate-800 text-sm text-white rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+              className="bg-white border border-slate-200 text-xs text-slate-800 rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#008DDA]"
             >
-              <option value="all">All Live Batches</option>
+              <option value="all">All Cohorts & Batches</option>
               {batches.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name} ({b.batch_code})
+                  {b.batch_code ? `${b.name} (${b.batch_code})` : b.name}
                 </option>
               ))}
             </select>
@@ -295,7 +357,7 @@ function AdminTimetablePage() {
               size="sm"
               variant={viewMode === "list" ? "default" : "outline"}
               onClick={() => setViewMode("list")}
-              className={viewMode === "list" ? "bg-cyan-500 text-slate-950 font-medium" : "border-slate-800 text-slate-300"}
+              className={`text-xs h-8 ${viewMode === "list" ? "bg-[#008DDA] text-white" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
             >
               List View
             </Button>
@@ -303,98 +365,142 @@ function AdminTimetablePage() {
               size="sm"
               variant={viewMode === "calendar" ? "default" : "outline"}
               onClick={() => setViewMode("calendar")}
-              className={viewMode === "calendar" ? "bg-cyan-500 text-slate-950 font-medium" : "border-slate-800 text-slate-300"}
+              className={`text-xs h-8 ${viewMode === "calendar" ? "bg-[#008DDA] text-white" : "border-slate-200 text-slate-700 hover:bg-slate-50"}`}
             >
               Calendar View
             </Button>
           </div>
         </div>
 
-        {/* Sessions List */}
-        <div className="space-y-3">
+        {/* Sessions Grid */}
+        <div>
           {isLoading ? (
-            <div className="flex items-center justify-center p-12 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              Loading schedule...
+            <div className="flex flex-col items-center justify-center p-12 text-slate-500 bg-white border border-slate-200 rounded-xl">
+              <Loader2 className="w-7 h-7 animate-spin text-[#008DDA] mb-2" />
+              <span className="text-xs">Loading live schedule...</span>
+            </div>
+          ) : fetchError ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500 bg-white border border-slate-200 rounded-xl">
+              <AlertTriangle className="w-10 h-10 text-rose-500 mb-2 opacity-80" />
+              <p className="text-sm font-semibold text-slate-800">Failed to load timetable</p>
+              <p className="text-xs text-slate-500 mt-1 max-w-md">{fetchError}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchSessions()}
+                className="mt-4 text-xs gap-1.5"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Retry
+              </Button>
             </div>
           ) : sessions.length === 0 ? (
-            <div className="text-center p-12 bg-slate-900/60 border border-slate-800 rounded-xl text-slate-400">
-              <CalendarIcon className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-base font-medium text-slate-300">No scheduled classes found</p>
-              <p className="text-xs text-slate-400 mt-1">Click "Schedule Class" above to set up upcoming lectures.</p>
+            <div className="text-center p-12 bg-white border border-slate-200 rounded-xl text-slate-500">
+              <CalendarIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+              <p className="text-sm font-semibold text-slate-800">No scheduled classes found</p>
+              <p className="text-xs text-slate-500 mt-1">Click "Schedule Class" above to set up upcoming lectures.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {sessions.map((sess) => (
-                <div
-                  key={sess.id}
-                  className="bg-slate-900/70 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="text-xs font-mono font-medium text-cyan-400 bg-cyan-950/40 border border-cyan-800/40 px-2 py-0.5 rounded">
-                        {sess.batches?.name || "Batch Session"}
-                      </span>
-                      <Badge
-                        className={
-                          sess.status === "completed"
-                            ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                            : sess.status === "cancelled"
-                            ? "bg-rose-500/15 text-rose-400 border-rose-500/30"
-                            : "bg-blue-500/15 text-blue-400 border-blue-500/30"
-                        }
-                      >
-                        {sess.status}
-                      </Badge>
-                    </div>
+              {sessions.map((sess) => {
+                const isOneOnOne = !sess.batch_id && sess.student_id;
+                const batchOrStudentLabel = sess.batches?.name || (sess.students?.full_name ? `1-on-1: ${sess.students.full_name}` : "Special Session");
 
-                    <h3 className="font-semibold text-white text-base line-clamp-1">{sess.title}</h3>
-
-                    <div className="space-y-1.5 mt-3 text-xs text-slate-300">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{new Date(sess.session_date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        <span>
-                          {sess.start_time} - {sess.end_time} PKT
+                return (
+                  <div
+                    key={sess.id}
+                    className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <span className="text-[11px] font-mono font-semibold text-[#008DDA] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded truncate max-w-[200px]">
+                          {batchOrStudentLabel}
                         </span>
+                        <div className="flex items-center gap-1">
+                          {sess.is_override && (
+                            <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]" title={sess.override_reason || "Clash Override"}>
+                              Override
+                            </Badge>
+                          )}
+                          <Badge
+                            className={`text-[10px] ${
+                              sess.status === "completed"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : sess.status === "cancelled"
+                                ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : "bg-blue-50 text-blue-700 border-blue-200"
+                            }`}
+                          >
+                            {sess.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="w-3.5 h-3.5 text-slate-400" />
-                        <span>Instructor: {sess.instructor_name || "Assigned Faculty"}</span>
+
+                      <h3 className="font-semibold text-slate-900 text-sm line-clamp-1">{sess.title}</h3>
+
+                      <div className="space-y-1.5 mt-3 text-xs text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                          <span>
+                            {new Date(sess.session_date).toLocaleDateString(undefined, {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>
+                            {sess.start_time} - {sess.end_time} PKT
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Instructor: {sess.instructor_name || "Assigned Faculty"}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between gap-2">
-                    {sess.meeting_url ? (
-                      <a
-                        href={sess.meeting_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 font-medium"
+                    <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        {(sess.meeting_link || sess.meeting_url) ? (
+                          <a
+                            href={sess.meeting_link || sess.meeting_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-[#008DDA] hover:underline font-medium"
+                          >
+                            <Video className="w-3.5 h-3.5" />
+                            Join
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-400">No URL</span>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleExportSingleIcs(sess)}
+                          className="h-7 px-1.5 text-xs text-slate-500 hover:text-slate-800"
+                          title="Download Calendar .ics"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openAttendanceModal(sess)}
+                        className="h-7 text-xs border-slate-200 text-slate-700 hover:bg-slate-50"
                       >
-                        <Video className="w-3.5 h-3.5" />
-                        Join Class
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-400">No meeting URL</span>
-                    )}
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => openAttendanceModal(sess)}
-                      className="h-7 text-xs border-slate-700 text-slate-200 hover:bg-slate-800"
-                    >
-                      <UserCheck className="w-3 h-3 mr-1 text-emerald-400" />
-                      Attendance
-                    </Button>
+                        <UserCheck className="w-3 h-3 mr-1 text-emerald-600" />
+                        Attendance
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -402,131 +508,108 @@ function AdminTimetablePage() {
 
       {/* Schedule Class Modal */}
       {showScheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <CalendarIcon className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-[#008DDA]" />
                 Schedule Class Session
               </h3>
-              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowScheduleModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSession} className="space-y-4 mt-4">
+            <form onSubmit={(e) => handleCreateSession(e, false)} className="space-y-4 mt-4 text-xs">
               <div>
-                <Label className="text-xs text-slate-300">Select Cohort / Batch *</Label>
+                <Label className="text-xs text-slate-700 font-medium">Select Cohort / Batch (Optional for 1-on-1)</Label>
                 <select
-                  required
                   value={scheduleForm.batchId}
-                  onChange={(e) => {
-                    setScheduleForm({ ...scheduleForm, batchId: e.target.value });
-                    checkConflicts();
-                  }}
-                  className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  onChange={(e) => setScheduleForm({ ...scheduleForm, batchId: e.target.value })}
+                  className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#008DDA]"
                 >
-                  <option value="">Select a batch...</option>
+                  <option value="">Select a batch (or leave blank for 1-on-1)...</option>
                   {batches.map((b) => (
                     <option key={b.id} value={b.id}>
-                      {b.name} ({b.batch_code})
+                      {b.batch_code ? `${b.name} (${b.batch_code})` : b.name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <Label className="text-xs text-slate-300">Session Topic / Title *</Label>
+                <Label className="text-xs text-slate-700 font-medium">Session Topic / Title *</Label>
                 <Input
                   required
                   value={scheduleForm.title}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, title: e.target.value })}
                   placeholder="e.g. Week 2: Python Object-Oriented Programming"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 text-xs"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-300">Instructor Name *</Label>
+                  <Label className="text-xs text-slate-700 font-medium">Instructor Name *</Label>
                   <Input
                     required
                     value={scheduleForm.instructorName}
                     onChange={(e) => setScheduleForm({ ...scheduleForm, instructorName: e.target.value })}
-                    className="mt-1 bg-slate-950 border-slate-800 text-white"
+                    className="mt-1 text-xs"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-300">Session Date *</Label>
+                  <Label className="text-xs text-slate-700 font-medium">Session Date *</Label>
                   <Input
                     type="date"
                     required
                     value={scheduleForm.sessionDate}
-                    onChange={(e) => {
-                      setScheduleForm({ ...scheduleForm, sessionDate: e.target.value });
-                      checkConflicts();
-                    }}
-                    className="mt-1 bg-slate-950 border-slate-800 text-white"
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, sessionDate: e.target.value })}
+                    className="mt-1 text-xs"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-xs text-slate-300">Start Time (PKT) *</Label>
+                  <Label className="text-xs text-slate-700 font-medium">Start Time (PKT) *</Label>
                   <Input
                     type="time"
                     required
                     value={scheduleForm.startTime}
-                    onChange={(e) => {
-                      setScheduleForm({ ...scheduleForm, startTime: e.target.value });
-                      checkConflicts();
-                    }}
-                    className="mt-1 bg-slate-950 border-slate-800 text-white"
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, startTime: e.target.value })}
+                    className="mt-1 text-xs"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-slate-300">End Time (PKT) *</Label>
+                  <Label className="text-xs text-slate-700 font-medium">End Time (PKT) *</Label>
                   <Input
                     type="time"
                     required
                     value={scheduleForm.endTime}
-                    onChange={(e) => {
-                      setScheduleForm({ ...scheduleForm, endTime: e.target.value });
-                      checkConflicts();
-                    }}
-                    className="mt-1 bg-slate-950 border-slate-800 text-white"
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, endTime: e.target.value })}
+                    className="mt-1 text-xs"
                   />
                 </div>
               </div>
 
-              {/* Conflict warning banner */}
-              {conflictWarning && (
-                <div className="p-3 bg-amber-500/15 border border-amber-500/40 rounded-lg flex items-start gap-2 text-xs text-amber-300">
-                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold">Schedule Clash Warning:</span> {conflictWarning}
-                  </div>
-                </div>
-              )}
-
               <div>
-                <Label className="text-xs text-slate-300">Meeting URL (Google Meet / Zoom)</Label>
+                <Label className="text-xs text-slate-700 font-medium">Meeting URL (Google Meet / Zoom)</Label>
                 <Input
                   type="url"
                   value={scheduleForm.meetingUrl}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, meetingUrl: e.target.value })}
                   placeholder="https://meet.google.com/xyz-abcd-efg"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 text-xs"
                 />
               </div>
 
               <div>
-                <Label className="text-xs text-slate-300">Weekly Recurrence</Label>
+                <Label className="text-xs text-slate-700 font-medium">Weekly Recurrence</Label>
                 <select
                   value={scheduleForm.recurringWeeks}
                   onChange={(e) => setScheduleForm({ ...scheduleForm, recurringWeeks: Number(e.target.value) })}
-                  className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#008DDA]"
                 >
                   <option value={1}>Single Session Only (No recurrence)</option>
                   <option value={4}>Repeat weekly for 4 weeks (1 month)</option>
@@ -535,21 +618,21 @@ function AdminTimetablePage() {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setShowScheduleModal(false)}
-                  className="border-slate-800 text-slate-300"
+                  className="text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isScheduling}
-                  className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
+                  className="bg-[#008DDA] hover:bg-[#0070b8] text-white text-xs font-medium"
                 >
-                  {isScheduling ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
                   Schedule Session
                 </Button>
               </div>
@@ -558,45 +641,108 @@ function AdminTimetablePage() {
         </div>
       )}
 
+      {/* Clash Detection & Override Confirmation Modal (Section E) */}
+      {showClashModal && clashData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-amber-300 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-amber-200 text-amber-700">
+              <ShieldAlert className="w-6 h-6 text-amber-600" />
+              <h3 className="text-base font-bold">Schedule Clash Detected</h3>
+            </div>
+
+            <div className="my-4 space-y-3 text-xs">
+              <p className="text-slate-700 font-medium">
+                The requested session conflicts with an existing commitment:
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900 space-y-1">
+                <div className="font-semibold">{clashData.error}</div>
+                {clashData.conflicts.map((c, i) => (
+                  <div key={i} className="text-slate-600 mt-1 pl-2 border-l-2 border-amber-400">
+                    &bull; {c.message || c}
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-700 font-medium">
+                  Override Justification / Reason *
+                </Label>
+                <Input
+                  type="text"
+                  required
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  placeholder="e.g. Combined special session approved by Dean"
+                  className="mt-1 text-xs"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  This override will be permanently logged in the academy CRM audit ledger.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowClashModal(false)}
+                className="text-xs"
+              >
+                Cancel & Reschedule
+              </Button>
+              <Button
+                type="button"
+                disabled={isScheduling || !overrideReason.trim()}
+                onClick={() => handleCreateSession(undefined, true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold"
+              >
+                {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                Confirm & Schedule Anyway
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Attendance Modal */}
       {showAttendanceModal && activeSession && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-xl w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <div>
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <UserCheck className="w-5 h-5 text-emerald-400" />
-                  Mark Attendance
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-emerald-600" />
+                  Mark Session Attendance
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   {activeSession.title} &bull; {new Date(activeSession.session_date).toLocaleDateString()}
                 </p>
               </div>
-              <button onClick={() => setShowAttendanceModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowAttendanceModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="my-4 max-h-96 overflow-y-auto">
+            <div className="my-4 max-h-80 overflow-y-auto">
               {isAttendanceLoading ? (
-                <div className="p-8 text-center text-slate-400">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                <div className="p-8 text-center text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-[#008DDA]" />
                   Loading enrolled students...
                 </div>
               ) : attendanceRoster.length === 0 ? (
-                <div className="p-8 text-center text-slate-400">
-                  No active students enrolled in this batch yet.
+                <div className="p-8 text-center text-slate-500 text-xs">
+                  No active students enrolled in this session yet.
                 </div>
               ) : (
-                <div className="divide-y divide-slate-800/60">
+                <div className="divide-y divide-slate-100 text-xs">
                   {attendanceRoster.map((item, idx) => (
-                    <div key={item.studentId || idx} className="py-3 flex items-center justify-between gap-3">
+                    <div key={item.studentId || idx} className="py-2.5 flex items-center justify-between gap-3">
                       <div>
-                        <div className="font-medium text-white text-sm">{item.studentName}</div>
-                        <div className="text-xs font-mono text-cyan-400">{item.studentNumber}</div>
+                        <div className="font-semibold text-slate-900">{item.studentName}</div>
+                        <div className="text-[11px] font-mono text-[#008DDA]">{item.studentNumber}</div>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1">
                         {["present", "absent", "late", "excused"].map((st) => (
                           <button
                             key={st}
@@ -606,16 +752,14 @@ function AdminTimetablePage() {
                               updated[idx].status = st;
                               setAttendanceRoster(updated);
                             }}
-                            className={`px-2.5 py-1 text-xs rounded font-medium capitalize transition-colors ${
+                            className={`px-2 py-1 rounded text-[11px] font-medium capitalize transition-colors ${
                               item.status === st
                                 ? st === "present"
-                                  ? "bg-emerald-500 text-slate-950 font-bold"
+                                  ? "bg-emerald-600 text-white font-bold"
                                   : st === "absent"
-                                  ? "bg-rose-500 text-white font-bold"
-                                  : st === "late"
-                                  ? "bg-amber-500 text-slate-950 font-bold"
-                                  : "bg-blue-500 text-white font-bold"
-                                : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                                  ? "bg-rose-600 text-white font-bold"
+                                  : "bg-amber-600 text-white font-bold"
+                                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                             }`}
                           >
                             {st}
@@ -628,25 +772,24 @@ function AdminTimetablePage() {
               )}
             </div>
 
-            <div className="flex justify-between items-center pt-3 border-t border-slate-800">
-              <span className="text-xs text-slate-400">{attendanceRoster.length} students on roster</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAttendanceModal(false)}
-                  className="border-slate-800 text-slate-300"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveAttendance}
-                  disabled={isSavingAttendance || attendanceRoster.length === 0}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-medium"
-                >
-                  {isSavingAttendance ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Save Attendance
-                </Button>
-              </div>
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAttendanceModal(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isSavingAttendance || attendanceRoster.length === 0}
+                onClick={handleSaveAttendance}
+                className="bg-[#008DDA] hover:bg-[#0070b8] text-white text-xs font-medium"
+              >
+                {isSavingAttendance ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                Save Attendance
+              </Button>
             </div>
           </div>
         </div>
@@ -654,4 +797,3 @@ function AdminTimetablePage() {
     </AdminLayout>
   );
 }
-

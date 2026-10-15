@@ -151,59 +151,52 @@ function AdminUsersPage() {
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout
+      title="Staff & Role-Based Access Control"
+      description="Manage authorized administrative operators, instructors, finance accountants, and ownership transitions."
+      onRefresh={fetchUsers}
+      isRefreshing={isLoading}
+      actions={
+        <Button
+          onClick={() => setShowInviteModal(true)}
+          className="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs shadow-sm"
+        >
+          <UserPlus className="w-3.5 h-3.5 mr-1.5" />
+          Provision Staff User
+        </Button>
+      }
+    >
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
-              <Shield className="w-6 h-6 text-cyan-400" />
-              Staff & Role-Based Access Control
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">
-              Manage authorized administrative operators, instructors, finance accountants, and ownership transitions.
-            </p>
-          </div>
-
-          <Button
-            onClick={() => setShowInviteModal(true)}
-            className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
-          >
-            <UserPlus className="w-4 h-4 mr-2" />
-            Provision Staff User
-          </Button>
-        </div>
-
         {/* Ownership Transition Banner */}
-        <div className="bg-purple-950/20 border border-purple-800/40 rounded-xl p-4 flex items-start gap-3">
-          <Crown className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
-          <div className="text-xs text-purple-200">
-            <span className="font-bold text-white">Owner Account Transition Policy (Section 15):</span>
-            <p className="mt-1">
+        <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 flex items-start gap-3 shadow-sm">
+          <Crown className="w-5 h-5 text-purple-600 shrink-0 mt-0.5" />
+          <div className="text-xs text-purple-900">
+            <span className="font-bold text-purple-950">Owner Account Transition Policy (Section 15):</span>
+            <p className="mt-1 text-purple-800">
               TBOS operates a zero-lockout dual-owner protocol. The primary owner{" "}
-              <strong className="text-white">shahriyarkhanpk1@gmail.com</strong> and official academy owner{" "}
-              <strong className="text-white">techbuiltopenschool@gmail.com</strong> are preserved side-by-side. Existing
+              <strong className="text-purple-950">shahriyarkhanpk1@gmail.com</strong> and official academy owner{" "}
+              <strong className="text-purple-950">techbuiltopenschool@gmail.com</strong> are preserved side-by-side. Existing
               owners are never auto-demoted or deleted.
             </p>
           </div>
         </div>
 
         {/* Users Table */}
-        <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           {isLoading ? (
-            <div className="flex items-center justify-center p-12 text-slate-400">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+            <div className="flex items-center justify-center p-12 text-slate-500">
+              <Loader2 className="w-6 h-6 animate-spin text-sky-600 mr-2" />
               Loading staff accounts...
             </div>
           ) : users.length === 0 ? (
             <div className="text-center p-12 text-slate-400">
-              <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="text-base font-medium text-slate-300">No admin users found</p>
+              <Shield className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+              <p className="text-base font-semibold text-slate-700">No admin users found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-slate-950/60 text-xs uppercase font-medium text-slate-400 border-b border-slate-800">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 text-[11px] uppercase font-semibold text-slate-600 border-b border-slate-200">
                   <tr>
                     <th className="py-3 px-4">User</th>
                     <th className="py-3 px-4">Role</th>
@@ -212,26 +205,26 @@ function AdminUsersPage() {
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-slate-100">
                   {users.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                    <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3 px-4">
-                        <div className="font-medium text-white">{u.full_name || "Staff Member"}</div>
-                        <div className="text-xs text-slate-400 font-mono">{u.email}</div>
+                        <div className="font-semibold text-slate-900">{u.full_name || "Staff Member"}</div>
+                        <div className="text-[11px] text-slate-500 font-mono">{u.email}</div>
                       </td>
                       <td className="py-3 px-4">{getRoleBadge(u.role)}</td>
                       <td className="py-3 px-4">
                         <Badge
-                          className={
+                          className={`font-semibold ${
                             u.is_active !== false
-                              ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-                              : "bg-slate-700 text-slate-400"
-                          }
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              : "bg-slate-100 text-slate-500 border-slate-200"
+                          }`}
                         >
                           {u.is_active !== false ? "Active" : "Disabled"}
                         </Badge>
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-400">
+                      <td className="py-3 px-4 text-xs text-slate-500">
                         {u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "Never"}
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -240,7 +233,7 @@ function AdminUsersPage() {
                             value={u.role}
                             onChange={(e) => handleUpdateRole(u.id, e.target.value)}
                             disabled={u.email === admin.email && u.role === "owner"}
-                            className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                            className="bg-white border border-slate-300 text-xs text-slate-800 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500"
                           >
                             <option value="owner">Owner</option>
                             <option value="admin">Admin</option>
@@ -261,53 +254,53 @@ function AdminUsersPage() {
 
       {/* Invite Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <UserPlus className="w-5 h-5 text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-sky-600" />
                 Provision Staff Account
               </h3>
-              <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowInviteModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleInviteUser} className="space-y-4 mt-4">
               <div>
-                <Label className="text-xs text-slate-300">Staff Full Name *</Label>
+                <Label className="text-xs font-semibold text-slate-700">Staff Full Name *</Label>
                 <Input
                   required
                   value={inviteForm.fullName}
                   onChange={(e) => setInviteForm({ ...inviteForm, fullName: e.target.value })}
                   placeholder="e.g. Academy Operations Manager"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 bg-white border-slate-300 text-slate-900 text-xs"
                 />
               </div>
 
               <div>
-                <Label className="text-xs text-slate-300">Email Address *</Label>
+                <Label className="text-xs font-semibold text-slate-700">Email Address *</Label>
                 <Input
                   type="email"
                   required
                   value={inviteForm.email}
                   onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
                   placeholder="e.g. techbuiltopenschool@gmail.com"
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 bg-white border-slate-300 text-slate-900 text-xs"
                 />
                 {inviteForm.email.toLowerCase().includes("techbuiltopenschool") && (
-                  <p className="text-[11px] text-cyan-400 mt-1">
+                  <p className="text-[11px] text-sky-600 mt-1 font-medium">
                     Designated official academy account. Select "Owner" role below to enable co-ownership.
                   </p>
                 )}
               </div>
 
               <div>
-                <Label className="text-xs text-slate-300">Access Role *</Label>
+                <Label className="text-xs font-semibold text-slate-700">Access Role *</Label>
                 <select
                   value={inviteForm.role}
                   onChange={(e) => setInviteForm({ ...inviteForm, role: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                  className="w-full mt-1 px-3 py-2 bg-white border border-slate-300 rounded-md text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 font-medium"
                 >
                   <option value="owner">Owner (Full Superuser & System Transition)</option>
                   <option value="admin">Admin (All Modules except Owner Management)</option>
@@ -317,31 +310,33 @@ function AdminUsersPage() {
                 </select>
               </div>
 
-              <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-xs text-slate-400 flex items-start gap-2.5">
-                <KeyRound className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+              <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs text-sky-900 flex items-start gap-2.5">
+                <KeyRound className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-medium text-slate-200">Secure Token Invitation:</span>
-                  <p className="mt-0.5 text-slate-400">
+                  <span className="font-semibold text-sky-950">Secure Token Invitation:</span>
+                  <p className="mt-0.5 text-sky-800 text-[11px]">
                     A cryptographic invitation token (valid for 48 hours) will be generated and dispatched. The recipient will securely establish their own administrative password.
                   </p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => setShowInviteModal(false)}
-                  className="border-slate-800 text-slate-300"
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 text-xs"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-medium"
+                  size="sm"
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs shadow-sm"
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                  {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
                   Provision User
                 </Button>
               </div>

@@ -40,18 +40,26 @@ export const Route = createFileRoute("/api/admin/students/$id")({
           });
         }
 
-        // Fetch enrollments, invoices, payments, and attendance
+        // Fetch enrollments, invoices, payments, attendance, billing plans, recurring schedules, and class sessions
         const [
           { data: enrollments },
           { data: invoices },
           { data: payments },
           { data: attendance },
+          { data: billingPlans },
+          { data: recurringSchedules },
+          { data: sessions },
+          { data: tasks },
           { data: lead },
         ] = await Promise.all([
           client.from("enrollments").select("*, batches(*)").eq("student_id", studentId),
           client.from("fee_invoices").select("*").eq("student_id", studentId).order("due_date", { ascending: false }),
           client.from("fee_payments").select("*").eq("student_id", studentId).order("payment_date", { ascending: false }),
           client.from("class_attendance").select("*, class_sessions(*)").eq("student_id", studentId),
+          client.from("billing_plans").select("*").eq("student_id", studentId),
+          client.from("recurring_class_schedules").select("*").eq("student_id", studentId),
+          client.from("class_sessions").select("*, batches(*)").eq("student_id", studentId).order("session_date", { ascending: true }),
+          client.from("crm_tasks").select("*").eq("related_id", studentId).order("created_at", { ascending: false }),
           student.lead_id ? client.from("admissions_requests").select("*").eq("id", student.lead_id).maybeSingle() : Promise.resolve({ data: null }),
         ]);
 
@@ -63,6 +71,10 @@ export const Route = createFileRoute("/api/admin/students/$id")({
             invoices: invoices || [],
             payments: payments || [],
             attendance: attendance || [],
+            billingPlans: billingPlans || [],
+            recurringSchedules: recurringSchedules || [],
+            sessions: sessions || [],
+            tasks: tasks || [],
             lead: lead || null,
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },

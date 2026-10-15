@@ -6,14 +6,19 @@ const ARTIFACT_DIR = "C:/Users/Shary/.gemini/antigravity/brain/155067ad-e51d-473
 const viewports = [
   { name: "mobile_390", width: 390, height: 844 },
   { name: "tablet_768", width: 768, height: 1024 },
+  { name: "desktop_1024", width: 1024, height: 768 },
   { name: "desktop_1440", width: 1440, height: 900 },
 ];
 
 const pagesToCapture = [
   { slug: "admin_dashboard", route: "/admin/dashboard" },
+  { slug: "admin_admissions", route: "/admin/admissions" },
   { slug: "admin_students", route: "/admin/students" },
   { slug: "admin_fees", route: "/admin/fees" },
   { slug: "admin_timetable", route: "/admin/timetable" },
+  { slug: "admin_tasks", route: "/admin/tasks" },
+  { slug: "admin_communications", route: "/admin/communications" },
+  { slug: "admin_reports", route: "/admin/reports" },
   { slug: "admin_users", route: "/admin/users" },
   { slug: "admin_settings", route: "/admin/settings" },
 ];
@@ -370,6 +375,73 @@ test.describe("Capture Phase 16 Admin Screenshots", () => {
                   last_sign_in_at: "2026-10-14T06:45:00Z",
                 },
               ],
+            }),
+          });
+        });
+
+        await page.route("**/api/admin/communications*", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              ok: true,
+              logs: [
+                {
+                  id: "comm-1",
+                  recipient_email: "hamza.dev@gmail.com",
+                  channel: "email",
+                  template_name: "Fee Reminder - Monthly Due",
+                  status: "sent",
+                  subject: "Monthly Tuition Fee Reminder - TBOS Academy",
+                  created_at: "2026-10-14T09:00:00Z",
+                  metadata: { student_id: "s-1", invoice_id: "inv-1" },
+                },
+                {
+                  id: "comm-2",
+                  recipient_email: "ayesha.t@gmail.com",
+                  channel: "whatsapp",
+                  template_name: "Class Schedule Link",
+                  status: "delivered",
+                  subject: "Live Python Class Meeting Link",
+                  created_at: "2026-10-14T10:15:00Z",
+                  metadata: { session_id: "sess-1" },
+                },
+              ],
+              templates: [
+                {
+                  id: "tmpl-1",
+                  name: "Fee Reminder",
+                  subject: "Reminder: Academy Fee Due",
+                  body: "Dear Student, your monthly fee is due.",
+                },
+                {
+                  id: "tmpl-2",
+                  name: "Welcome Onboarding",
+                  subject: "Welcome to TBOS Academy!",
+                  body: "Welcome to your new cohort!",
+                },
+              ],
+            }),
+          });
+        });
+
+        await page.route("**/api/admin/reports*", async (route) => {
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              ok: true,
+              metrics: {
+                totalStudents: 32,
+                activeStudents: 28,
+                totalLeads: 86,
+                conversionRate: 37.2,
+                totalInvoiced: 640000,
+                totalCollected: 580000,
+                collectionRate: 90.6,
+                totalSessions: 142,
+                attendanceRate: 94.5,
+              },
             }),
           });
         });

@@ -167,10 +167,10 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
   };
 
-  const getAuthHeader = (): Record<string, string> => {
+  const getAuthHeader = useCallback((): Record<string, string> => {
     if (!token) return {};
     return { Authorization: `Bearer ${token}` };
-  };
+  }, [token]);
 
   return (
     <AdminAuthContext.Provider
