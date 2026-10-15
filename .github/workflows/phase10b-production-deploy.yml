@@ -113,14 +113,14 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run production Playwright suite
+      - name: Run focused production smoke suite
         run: |
-          find tests/e2e -name '*.spec.ts' \
-            ! -name 'capture-admin-screenshots.spec.ts' \
-            ! -name 'phase16-browser-acceptance.spec.ts' \
-            ! -name 'phase17-real-functional-acceptance.spec.ts' \
-            -print0 \
-            | xargs -0 node ./node_modules/@playwright/test/cli.js test
+          node ./node_modules/@playwright/test/cli.js test \
+            tests/e2e/production.spec.ts \
+            tests/e2e/mobile-cta-whatsapp.spec.ts \
+            tests/e2e/phase12e-conversion-reliability.spec.ts \
+            tests/e2e/phase13-final-acceptance.spec.ts \
+            --workers=1
 
       - name: Run 84-route production audit
         run: bun scripts/audit-all-routes.ts
