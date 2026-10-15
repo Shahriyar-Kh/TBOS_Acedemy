@@ -42,8 +42,15 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
       expect(roadmap.oneToOneFee).toBe(
         premiumSpecializations.has(slug) ? "PKR 20,000/month" : "PKR 15,000/month",
       );
+      expect(roadmap.groupFee).toBe(
+        premiumSpecializations.has(slug) ? "PKR 8,000/month" : "PKR 6,000/month",
+      );
+      expect(roadmap.groupDiscount).toBe("60% OFF");
+      expect(roadmap.groupSize).toBe("5–10 students");
       expect(roadmap.classesPerWeek).toBe("4 live online classes/week");
-      expect(roadmap.pricingNote).toMatch(/recorded lectures.*multiple portfolio projects/i);
+      expect(roadmap.oneToOneDescription).toMatch(/dedicated live classes.*individual pacing/i);
+      expect(roadmap.groupDescription).toMatch(/fixed shared timetable/i);
+      expect(roadmap.pricingNote).toMatch(/60% off.*recorded lectures.*multiple portfolio projects/i);
       expect(roadmap.courses.length).toBeGreaterThanOrEqual(5);
       expect(roadmap.capstoneProject.length).toBeGreaterThan(30);
       for (const course of roadmap.courses) {
@@ -123,7 +130,7 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
     await expect(roadmap.getByText(/Python \+ MySQL \+ Power BI workflow/i)).toBeVisible();
   });
 
-  test("5. Specializations expose included courses, projects, capstone and fixed one-to-one pricing", async ({
+  test("5. Specializations expose verified courses, projects, capstone and both pricing formats", async ({
     page,
   }) => {
     await page.goto("/specializations/data-analyst", { waitUntil: "domcontentloaded" });
@@ -137,8 +144,11 @@ test.describe("Phase 13B Verified Curriculum Roadmaps", () => {
     await expect(roadmap.getByText("Course project", { exact: true }).first()).toBeVisible();
     await expect(roadmap.locator("[data-program-capstone]")).toBeVisible();
     await expect(page.getByText("PKR 20,000/month", { exact: true })).toBeVisible();
+    await expect(page.getByText("PKR 8,000/month", { exact: true })).toBeVisible();
+    await expect(page.getByText("60% OFF", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/5–10 students.*fixed shared timetable/i)).toBeVisible();
     await expect(page.getByText(/4 live online classes\/week/i).first()).toBeVisible();
-    await expect(page.getByText(/recorded lectures.*multiple portfolio projects/i)).toBeVisible();
+    await expect(page.getByText(/60% off.*recorded lectures.*multiple portfolio projects/i)).toBeVisible();
   });
 
   test("6. Deep curriculum pages remain responsive at 375px", async ({ page }) => {
