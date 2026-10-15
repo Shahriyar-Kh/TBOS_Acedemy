@@ -4,6 +4,8 @@ import { auditedPublicEndpoints } from "./seo-route-inventory";
 const BASE_URL = (process.env.TEST_URL || "https://techbuiltos.online").trim();
 
 const allRoutes = auditedPublicEndpoints;
+const MAX_NAVIGATION_ATTEMPTS = 5;
+const ROUTE_PACING_MS = 750;
 
 console.log(`Starting real-browser Chromium audit against ${BASE_URL}`);
 console.log(`Total routes to audit: ${allRoutes.length}`);
@@ -39,17 +41,31 @@ async function runAudit() {
     let crashDetected = false;
 
     try {
-      const response = await page.goto(fullUrl, {
-        waitUntil: "domcontentloaded",
-        timeout: 45000,
-      });
+      for (let attempt = 1; attempt <= MAX_NAVIGATION_ATTEMPTS; attempt++) {
+        const response = await page.goto(fullUrl, {
+          waitUntil: "domcontentloaded",
+          timeout: 45000,
+        });
 
-      status = response ? response.status() : null;
+        status = response ? response.status() : null;
 
-      // Allow 1.5 seconds for hydration and client-side effects
+        if (status !== 429 && status !== 503) {
+          break;
+        }
+
+        if (attempt < MAX_NAVIGATION_ATTEMPTS) {
+          const retryDelayMs = Math.min(30000, 3000 * 2 ** (attempt - 1));
+          console.log(
+            `⏳ [${i + 1}/${allRoutes.length}] ${route} returned ${status}; retrying in ${retryDelayMs / 1000}s (attempt ${attempt + 1}/${MAX_NAVIGATION_ATTEMPTS})`,
+          );
+          await page.waitForTimeout(retryDelayMs);
+        }
+      }
+
+      // Allow 1.5 seconds for hydration and client-side effects.
       await page.waitForTimeout(1500);
 
-      // Check for TanStack root ErrorComponent text
+      // Check for TanStack root ErrorComponent text.
       const bodyText = await page.innerText("body");
       if (
         bodyText.includes("This page didn't load") ||
@@ -72,6 +88,10 @@ async function runAudit() {
       crashDetected,
       success,
     });
+
+    if (i < allRoutes.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, ROUTE_PACING_MS));
+    }
 
     if (!success) {
       failures++;
