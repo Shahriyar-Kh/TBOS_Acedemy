@@ -57,7 +57,7 @@ test.describe("Phase 13C Premium UI/UX Refinement Suite", () => {
     await expect(page.locator("h1")).toContainText(/Full-Stack Developer/i);
 
     // Check fixed pricing in hero badge and sticky card
-    const heroPricingBadge = page.getByText(/Fixed Tuition: PKR 20,000\/month/i);
+    const heroPricingBadge = page.getByText(/Group Offer: PKR 8,000\/month · 60% OFF/i);
     await expect(heroPricingBadge).toBeVisible();
 
     const stickyPricing = page.getByText(/PKR 20,000\/month/i).first();
@@ -74,19 +74,19 @@ test.describe("Phase 13C Premium UI/UX Refinement Suite", () => {
 
     // 2. Data Analyst (Must be PKR 20,000/month)
     await page.goto("/specializations/data-analyst", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Fixed Tuition: PKR 20,000\/month/i)).toBeVisible();
+    await expect(page.getByText(/Group Offer: PKR 8,000\/month · 60% OFF/i)).toBeVisible();
 
     // 3. Data Science (Must be PKR 20,000/month)
     await page.goto("/specializations/data-science", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Fixed Tuition: PKR 20,000\/month/i)).toBeVisible();
+    await expect(page.getByText(/Group Offer: PKR 8,000\/month · 60% OFF/i)).toBeVisible();
 
     // 4. Frontend Developer (Must be PKR 15,000/month)
     await page.goto("/specializations/frontend-developer", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Fixed Tuition: PKR 15,000\/month/i)).toBeVisible();
+    await expect(page.getByText(/Group Offer: PKR 6,000\/month · 60% OFF/i)).toBeVisible();
 
     // 5. Backend Developer (Must be PKR 15,000/month)
     await page.goto("/specializations/backend-developer", { waitUntil: "domcontentloaded" });
-    await expect(page.getByText(/Fixed Tuition: PKR 15,000\/month/i)).toBeVisible();
+    await expect(page.getByText(/Group Offer: PKR 6,000\/month · 60% OFF/i)).toBeVisible();
 
     expect(pageErrors).toHaveLength(0);
   });
@@ -100,14 +100,18 @@ test.describe("Phase 13C Premium UI/UX Refinement Suite", () => {
     const specCards = page.locator("[data-specialization-card]");
     expect(await specCards.count()).toBe(specializations.length);
 
-    // Verify Full-Stack card shows PKR 20,000
+    // Verify Full-Stack card shows the 60%-off group price and one-to-one price
     const fullStackCard = page.locator('[data-specialization-card="full-stack-developer"]');
+    await expect(fullStackCard).toContainText(/PKR 8,000\/month/i);
     await expect(fullStackCard).toContainText(/PKR 20,000\/month/i);
+    await expect(fullStackCard).toContainText(/60% OFF/i);
     await expect(fullStackCard).toContainText(/4 live classes\/week/i);
 
-    // Verify Frontend Developer card shows PKR 15,000
+    // Verify Frontend Developer card shows the 60%-off group price and one-to-one price
     const frontendCard = page.locator('[data-specialization-card="frontend-developer"]');
+    await expect(frontendCard).toContainText(/PKR 6,000\/month/i);
     await expect(frontendCard).toContainText(/PKR 15,000\/month/i);
+    await expect(frontendCard).toContainText(/60% OFF/i);
     await expect(frontendCard).toContainText(/4 live classes\/week/i);
   });
 
