@@ -15,6 +15,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: production-deploy-main
+  cancel-in-progress: true
+
 jobs:
   deploy-and-verify:
     runs-on: ubuntu-latest
