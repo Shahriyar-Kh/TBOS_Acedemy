@@ -45,32 +45,14 @@ export async function verifyAdminRequest(
     return { ok: false, status: 500, error: "Server database configuration unavailable." };
   }
 
-  // 1. Verify token with Supabase Auth
-  let userId: string | null = null;
-  let userEmail: string | undefined;
-
+  // 1. Verify token with Supabase Auth (mandatory signature and validity verification)
   const { data: userData, error: userError } = await client.auth.getUser(token);
-  if (!userError && userData?.user) {
-    userId = userData.user.id;
-    userEmail = userData.user.email;
-  } else {
-    try {
-      const parts = token.split(".");
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
-        if (payload.sub) {
-          userId = payload.sub;
-          userEmail = payload.email;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  if (!userId) {
+  if (userError || !userData?.user) {
     return { ok: false, status: 401, error: "Invalid or expired session. Please sign in again." };
   }
+
+  const userId = userData.user.id;
+  const userEmail = userData.user.email;
 
   // 2. Query admin_users table using elevated server client
   const { data: adminRecord, error: adminError } = await client

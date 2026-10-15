@@ -1,47 +1,37 @@
 import { test, expect, Page } from "@playwright/test";
 import { Client } from "pg";
-
-const TEST_DB_URL = "postgresql://postgres@127.0.0.1:5433/tbos_test_a";
+import {
+  createSignedTestToken,
+  createSupabaseTestServer,
+  type SupabaseTestServerInstance,
+  TEST_DB_URL,
+} from "../helpers/supabaseTestServer";
 
 // Helpers for authenticating admin session in browser localStorage without mocking APIs
-function makeMockJwt(userId: string, email: string, role = "authenticated") {
-  const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-  const payload = Buffer.from(
-    JSON.stringify({
-      sub: userId,
-      email,
-      role,
-      exp: Math.floor(Date.now() / 1000) + 7200,
-      iat: Math.floor(Date.now() / 1000),
-    })
-  ).toString("base64url");
-  return `${header}.${payload}.mock-signature`;
-}
-
 async function authenticateAs(page: Page, user: { id: string; email: string }) {
-  const jwt = makeMockJwt(user.id, user.email);
+  const jwt = createSignedTestToken({ sub: user.id, email: user.email, role: "authenticated" });
 
   await page.addInitScript(
     ({ userData, token }) => {
-      window.localStorage.setItem(
-        "sb-ygueodtgrxymtzebromp-auth-token",
-        JSON.stringify({
-          access_token: token,
-          token_type: "bearer",
-          expires_in: 7200,
-          expires_at: Math.floor(Date.now() / 1000) + 7200,
-          refresh_token: "mock-refresh-token",
-          user: {
-            id: userData.id,
-            email: userData.email,
-            role: "authenticated",
-            aud: "authenticated",
-            app_metadata: { provider: "email" },
-            user_metadata: {},
-            created_at: new Date().toISOString(),
-          },
-        })
-      );
+      const authData = JSON.stringify({
+        access_token: token,
+        token_type: "bearer",
+        expires_in: 7200,
+        expires_at: Math.floor(Date.now() / 1000) + 7200,
+        refresh_token: "test-refresh-token",
+        user: {
+          id: userData.id,
+          email: userData.email,
+          role: "authenticated",
+          aud: "authenticated",
+          app_metadata: { provider: "email" },
+          user_metadata: {},
+          created_at: new Date().toISOString(),
+        },
+      });
+      window.localStorage.setItem("sb-ygueodtgrxymtzebromp-auth-token", authData);
+      window.localStorage.setItem("sb-127-auth-token", authData);
+      window.localStorage.setItem("sb-localhost-auth-token", authData);
     },
     { userData: user, token: jwt }
   );
@@ -51,6 +41,7 @@ test.describe("Phase 17 — Real Academy Operations Functional Acceptance Suite"
   test.describe.configure({ mode: "serial" });
 
   let pgClient: Client;
+  let testServer: SupabaseTestServerInstance | null = null;
   const uniqueId = Date.now();
   const testEmail = `e2e-reg-${uniqueId}@test.local`;
   const testStudentName = `E2E-Real Student ${uniqueId}`;
@@ -70,8 +61,29 @@ test.describe("Phase 17 — Real Academy Operations Functional Acceptance Suite"
   };
 
   test.beforeAll(async () => {
+    try {
+      await fetch("http://127.0.0.1:54321/auth/v1/user");
+    } catch {
+      testServer = createSupabaseTestServer({ port: 54321 });
+      await testServer.start();
+    }
+
     pgClient = new Client({ connectionString: TEST_DB_URL });
     await pgClient.connect();
+
+    // Ensure ownerUser is seeded in auth.users and public.admin_users
+    await pgClient.query(
+      `insert into auth.users (id, email)
+       values ($1, $2)
+       on conflict (id) do update set email = excluded.email`,
+      [ownerUser.id, ownerUser.email]
+    );
+    await pgClient.query(
+      `insert into public.admin_users (id, email, role, is_active)
+       values ($1, $2, $3, true)
+       on conflict (id) do update set email = excluded.email, role = excluded.role, is_active = true`,
+      [ownerUser.id, ownerUser.email, ownerUser.role]
+    );
 
     // Seed a test batch in batches table
     const batchRes = await pgClient.query(
@@ -106,6 +118,9 @@ test.describe("Phase 17 — Real Academy Operations Functional Acceptance Suite"
       }
       await pgClient.query("delete from public.crm_tasks where title like 'E2E Follow-up Task%'");
       await pgClient.end();
+    }
+    if (testServer) {
+      await testServer.stop();
     }
   });
 

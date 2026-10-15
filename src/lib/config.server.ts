@@ -35,6 +35,5 @@ export function getServerConfig() {
     smtpUser: process.env.SMTP_USER?.trim(),
     smtpAppPassword: process.env.SMTP_APP_PASSWORD?.trim(),
     admissionsNotificationEmail: process.env.ADMISSIONS_NOTIFICATION_EMAIL?.trim(),
-    testDbUrl: process.env.TEST_DB_URL?.trim(),
   };
 }
