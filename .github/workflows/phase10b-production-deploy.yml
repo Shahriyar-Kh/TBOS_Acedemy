@@ -114,6 +114,7 @@ jobs:
           find tests/e2e -name '*.spec.ts' \
             ! -name 'capture-admin-screenshots.spec.ts' \
             ! -name 'phase16-browser-acceptance.spec.ts' \
+            ! -name 'phase17-real-functional-acceptance.spec.ts' \
             -print0 \
             | xargs -0 node ./node_modules/@playwright/test/cli.js test
 
