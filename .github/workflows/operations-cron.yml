@@ -2,11 +2,11 @@ name: Academy Automated Operations Schedules
 
 on:
   schedule:
-    # 1. Phase 16 CRM Reminders: Every 15 mins between 00:00 and 18:00 UTC (05:00 to 23:00 PKT)
+    # Phase 16 CRM reminders: every 15 minutes, 05:00-23:00 PKT
     - cron: "*/15 0-18 * * *"
-    # 2. Phase 17 Recurring Sessions Generation: 20:15 UTC (01:15 PKT)
+    # Phase 17 recurring sessions: 01:15 PKT daily
     - cron: "15 20 * * *"
-    # 3. Phase 17 Monthly Dues Generation: 20:30 UTC (01:30 PKT)
+    # Phase 17 monthly dues: 01:30 PKT daily
     - cron: "30 20 * * *"
   workflow_dispatch:
     inputs:
@@ -24,24 +24,34 @@ on:
 jobs:
   run-scheduled-operations:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Process CRM Reminders
-        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'reminders'
+        if: ${{ (github.event_name == 'schedule' && github.event.schedule == '*/15 0-18 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'reminders')) }}
         run: |
-          curl -s -X POST https://techbuiltos.online/api/admin/reminders/process \
+          echo "Running CRM reminders"
+          curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --connect-timeout 10 --max-time 60 \
+            -X POST https://techbuiltos.online/api/admin/reminders/process \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
+          echo
 
       - name: Generate Recurring Class Sessions
-        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'recurring-sessions'
+        if: ${{ (github.event_name == 'schedule' && github.event.schedule == '15 20 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'recurring-sessions')) }}
         run: |
-          curl -s -X POST https://techbuiltos.online/api/admin/automation/generate-recurring-sessions \
+          echo "Generating recurring class sessions"
+          curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --connect-timeout 10 --max-time 60 \
+            -X POST https://techbuiltos.online/api/admin/automation/generate-recurring-sessions \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
+          echo
 
       - name: Generate Monthly Invoices
-        if: github.event_name == 'schedule' || inputs.job == 'all' || inputs.job == 'monthly-dues'
+        if: ${{ (github.event_name == 'schedule' && github.event.schedule == '30 20 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'monthly-dues')) }}
         run: |
-          curl -s -X POST https://techbuiltos.online/api/admin/automation/generate-monthly-dues \
+          echo "Generating monthly invoices"
+          curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --connect-timeout 10 --max-time 60 \
+            -X POST https://techbuiltos.online/api/admin/automation/generate-monthly-dues \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json"
+          echo
