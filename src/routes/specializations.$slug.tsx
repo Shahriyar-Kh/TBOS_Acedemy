@@ -362,11 +362,16 @@ function SpecializationDetail() {
                         {structuredRoadmap.groupDescription}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-border/80 bg-muted/35 p-4">
-                      <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                        Dedicated One-to-One
-                      </span>
-                      <p className="mt-1 font-display text-xl font-bold text-foreground">
+                    <div className="rounded-2xl border border-cyan/40 bg-gradient-to-br from-cyan/15 via-blue-500/10 to-transparent p-4 shadow-sm shadow-cyan/10">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-cyan">
+                          Dedicated One-to-One
+                        </span>
+                        <span className="rounded-full border border-cyan/25 bg-cyan/15 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wide text-cyan">
+                          Personalized
+                        </span>
+                      </div>
+                      <p className="mt-1 font-display text-2xl font-extrabold text-foreground sm:text-3xl">
                         {structuredRoadmap.oneToOneFee}
                       </p>
                       <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
