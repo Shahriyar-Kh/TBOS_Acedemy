@@ -41,6 +41,11 @@ import {
   FileText,
   DollarSign,
   BookOpen,
+  Edit3,
+  Archive,
+  RotateCcw,
+  ShieldAlert,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -92,6 +97,7 @@ export function AdminStudentsPage() {
     guardianPhone: "",
     guardianRelationship: "Parent",
     emergencyContact: "",
+    address: "",
     country: "Pakistan",
     city: "Lahore",
     timezone: "Asia/Karachi",
@@ -128,6 +134,270 @@ export function AdminStudentsPage() {
   const [wizardData, setWizardData] = useState(initialWizardData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCustomProgram, setIsCustomProgram] = useState(false);
+
+  // Edit Student Modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>({
+    id: "",
+    fullName: "",
+    email: "",
+    phone: "",
+    whatsapp: "",
+    address: "",
+    city: "",
+    country: "Pakistan",
+    timezone: "Asia/Karachi",
+    dateOfBirth: "",
+    age: "",
+    guardianName: "",
+    guardianPhone: "",
+    guardianRelationship: "",
+    emergencyContact: "",
+    billingDay: 1,
+    status: "active",
+    notes: "",
+  });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editDuplicateWarning, setEditDuplicateWarning] = useState<string | null>(null);
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  // Delete Safety Modal state
+  const [showDeleteSafetyModal, setShowDeleteSafetyModal] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<any | null>(null);
+  const [deleteBlockReason, setDeleteBlockReason] = useState<string | null>(null);
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
+
+  // Archive / Restore Modal state
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [studentToArchive, setStudentToArchive] = useState<any | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
+
+  // Proactive duplicate detection when editing email/phone
+  useEffect(() => {
+    if (!showEditModal || !editFormData.id) return;
+    if (!editFormData.email?.trim() && !editFormData.phone?.trim()) {
+      setEditDuplicateWarning(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsCheckingDuplicate(true);
+      try {
+        const params = new URLSearchParams();
+        params.set("action", "check-duplicate");
+        if (editFormData.email?.trim()) params.set("email", editFormData.email.trim());
+        if (editFormData.phone?.trim()) params.set("phone", editFormData.phone.trim());
+        params.set("excludeStudentId", editFormData.id);
+
+        const res = await fetch(`/api/admin/students?${params.toString()}`, {
+          headers: getAuthHeader(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.isDuplicate) {
+            setEditDuplicateWarning(
+              `Duplicate alert: matches student ${data.existingStudent?.student_id || ""} (${data.existingStudent?.full_name || ""}) by ${data.matchedBy}.`
+            );
+          } else {
+            setEditDuplicateWarning(null);
+          }
+        }
+      } catch {
+        // ignore network error
+      } finally {
+        setIsCheckingDuplicate(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [editFormData.email, editFormData.phone, editFormData.id, showEditModal, getAuthHeader]);
+
+  const handleOpenEditModal = (student: any) => {
+    setEditFormData({
+      id: student.id,
+      fullName: student.full_name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      whatsapp: student.whatsapp || "",
+      address: student.address || "",
+      city: student.city || "",
+      country: student.country || "Pakistan",
+      timezone: student.timezone || "Asia/Karachi",
+      dateOfBirth: student.date_of_birth ? student.date_of_birth.split("T")[0] : "",
+      age: student.age ? String(student.age) : "",
+      guardianName: student.guardian_name || "",
+      guardianPhone: student.guardian_phone || "",
+      guardianRelationship: student.guardian_relationship || "",
+      emergencyContact: student.emergency_contact || "",
+      billingDay: student.billing_day || 1,
+      status: student.status || "active",
+      notes: student.notes || "",
+    });
+    setEditDuplicateWarning(null);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData.id) return;
+    setIsSavingEdit(true);
+    try {
+      const payload: Record<string, any> = {
+        fullName: editFormData.fullName.trim(),
+        email: editFormData.email.trim(),
+        phone: editFormData.phone.trim(),
+        whatsapp: editFormData.whatsapp ? editFormData.whatsapp.trim() : null,
+        address: editFormData.address ? editFormData.address.trim() : null,
+        city: editFormData.city ? editFormData.city.trim() : null,
+        country: editFormData.country || "Pakistan",
+        timezone: editFormData.timezone || "Asia/Karachi",
+        dateOfBirth: editFormData.dateOfBirth || null,
+        age: editFormData.age ? Number(editFormData.age) : null,
+        guardianName: editFormData.guardianName ? editFormData.guardianName.trim() : null,
+        guardianPhone: editFormData.guardianPhone ? editFormData.guardianPhone.trim() : null,
+        guardianRelationship: editFormData.guardianRelationship || null,
+        emergencyContact: editFormData.emergencyContact ? editFormData.emergencyContact.trim() : null,
+        billingDay: Number(editFormData.billingDay),
+        status: editFormData.status,
+        notes: editFormData.notes ? editFormData.notes.trim() : null,
+      };
+
+      const res = await fetch(`/api/admin/students/${editFormData.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        toast.success(`Student ${data.student?.full_name || ""} updated successfully!`);
+        setShowEditModal(false);
+        fetchStudents();
+        if (selectedStudentId === editFormData.id) {
+          loadStudentProfile(editFormData.id);
+        }
+      } else {
+        toast.error(data.error || "Failed to update student");
+      }
+    } catch {
+      toast.error("Network error while updating student");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleQuickStatusChange = async (studentId: string, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ action: "update-status", status: newStatus }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        toast.success(`Student status updated to ${newStatus}`);
+        fetchStudents();
+        if (selectedStudentId === studentId) {
+          loadStudentProfile(studentId);
+        }
+      } else {
+        toast.error(data.error || "Failed to update status");
+      }
+    } catch {
+      toast.error("Network error updating status");
+    }
+  };
+
+  const handleOpenArchiveModal = (student: any) => {
+    setStudentToArchive(student);
+    setArchiveReason("Archived by administrator");
+    setShowArchiveModal(true);
+  };
+
+  const handleConfirmArchive = async () => {
+    if (!studentToArchive) return;
+    setIsArchiving(true);
+    try {
+      const res = await fetch(`/api/admin/students/${studentToArchive.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ action: "archive", reason: archiveReason.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success(`Student ${studentToArchive.full_name} archived successfully.`);
+        setShowArchiveModal(false);
+        fetchStudents();
+        if (selectedStudentId === studentToArchive.id) {
+          loadStudentProfile(studentToArchive.id);
+        }
+      } else {
+        toast.error(data.error || "Failed to archive student");
+      }
+    } catch {
+      toast.error("Network error archiving student");
+    } finally {
+      setIsArchiving(false);
+    }
+  };
+
+  const handleRestoreStudent = async (studentId: string) => {
+    try {
+      const res = await fetch(`/api/admin/students/${studentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ action: "restore" }),
+      });
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success("Student restored to active status!");
+        fetchStudents();
+        if (selectedStudentId === studentId) {
+          loadStudentProfile(studentId);
+        }
+      } else {
+        toast.error(data.error || "Failed to restore student");
+      }
+    } catch {
+      toast.error("Network error restoring student");
+    }
+  };
+
+  const handleOpenDeleteModal = (student: any) => {
+    setStudentToDelete(student);
+    setDeleteBlockReason(null);
+    setShowDeleteSafetyModal(true);
+  };
+
+  const handleConfirmDelete = async (permanent: boolean) => {
+    if (!studentToDelete) return;
+    setIsDeletingStudent(true);
+    setDeleteBlockReason(null);
+    try {
+      const res = await fetch(`/api/admin/students/${studentToDelete.id}?permanent=${permanent}`, {
+        method: "DELETE",
+        headers: getAuthHeader(),
+      });
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success(permanent ? "Student permanently deleted" : "Student safely archived");
+        setShowDeleteSafetyModal(false);
+        if (selectedStudentId === studentToDelete.id) {
+          setSelectedStudentId(null);
+        }
+        fetchStudents();
+      } else if (res.status === 409) {
+        setDeleteBlockReason(data.error || "Cannot permanently delete student because financial or attendance records exist.");
+      } else {
+        toast.error(data.error || "Failed to delete student");
+      }
+    } catch {
+      toast.error("Network error during student deletion");
+    } finally {
+      setIsDeletingStudent(false);
+    }
+  };
 
   // Dynamic Canonical Program Catalog derived from website sources
   const getCatalogForType = useCallback(
@@ -606,27 +876,93 @@ export function AdminStudentsPage() {
                         {st.city ? `${st.city}, ${st.country}` : st.country}
                       </td>
                       <td className="py-3 px-4">
-                        <Badge
-                          variant={st.status === "active" ? "default" : "secondary"}
-                          className={`text-[10px] uppercase font-mono font-bold ${
-                            st.status === "active" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : ""
-                          }`}
-                        >
-                          {st.status}
-                        </Badge>
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant={st.status === "active" ? "default" : "secondary"}
+                            className={`text-[10px] uppercase font-mono font-bold ${
+                              st.status === "active"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : st.status === "graduated" || st.status === "completed"
+                                ? "bg-sky-100 text-sky-800 border-sky-300"
+                                : st.status === "on_hold" || st.status === "paused"
+                                ? "bg-amber-100 text-amber-800 border-amber-300"
+                                : st.status === "withdrawn" || st.status === "dropped"
+                                ? "bg-orange-100 text-orange-800 border-orange-300"
+                                : st.status === "archived"
+                                ? "bg-slate-200 text-slate-800 border-slate-300"
+                                : ""
+                            }`}
+                          >
+                            {st.status}
+                          </Badge>
+                          <select
+                            value={st.status}
+                            onChange={(e) => handleQuickStatusChange(st.id, e.target.value)}
+                            title="Quick Status Change"
+                            className="h-6 text-[10px] bg-slate-50 border border-slate-200 rounded px-1 text-slate-600 hover:border-slate-400 focus:outline-none"
+                          >
+                            <option value="active">Active</option>
+                            <option value="on_hold">On Hold</option>
+                            <option value="graduated">Graduated</option>
+                            <option value="withdrawn">Withdrawn</option>
+                            <option value="archived">Archived</option>
+                          </select>
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-700">
                         Day {st.billing_day} of month
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => loadStudentProfile(st.id)}
-                          className="h-7 px-2.5 text-xs text-sky-700 hover:text-sky-800 hover:bg-sky-50 font-medium"
-                        >
-                          <Eye className="h-3.5 w-3.5 mr-1" /> View Profile
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => loadStudentProfile(st.id)}
+                            className="h-7 px-2 text-xs text-sky-700 hover:text-sky-800 hover:bg-sky-50 font-medium"
+                            title="View Profile"
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" /> Profile
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEditModal(st)}
+                            className="h-7 w-7 p-0 text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                            title="Edit Details"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </Button>
+                          {st.status === "archived" ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRestoreStudent(st.id)}
+                              className="h-7 w-7 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                              title="Restore Student"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleOpenArchiveModal(st)}
+                              className="h-7 w-7 p-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                              title="Archive Student"
+                            >
+                              <Archive className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenDeleteModal(st)}
+                            className="h-7 w-7 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50"
+                            title="Delete Student"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -1349,9 +1685,47 @@ export function AdminStudentsPage() {
                     </div>
                     <h2 className="text-lg font-bold text-white mt-1">{studentDetail.student.full_name}</h2>
                   </div>
-                  <button onClick={() => setSelectedStudentId(null)} className="text-slate-400 hover:text-white p-1">
-                    <X className="h-5 w-5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenEditModal(studentDetail.student)}
+                      className="h-8 px-2.5 text-xs bg-white/10 hover:bg-white/20 text-white border-white/20 gap-1"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-sky-300" /> Edit
+                    </Button>
+                    {studentDetail.student.status === "archived" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRestoreStudent(studentDetail.student.id)}
+                        className="h-8 px-2.5 text-xs bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 border-emerald-700/50 gap-1"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-emerald-400" /> Restore
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleOpenArchiveModal(studentDetail.student)}
+                        className="h-8 px-2.5 text-xs bg-amber-950/40 hover:bg-amber-900/60 text-amber-200 border-amber-700/50 gap-1"
+                      >
+                        <Archive className="w-3.5 h-3.5 text-amber-400" /> Archive
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenDeleteModal(studentDetail.student)}
+                      className="h-8 w-8 p-0 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border-rose-800/50"
+                      title="Delete Student"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                    </Button>
+                    <button onClick={() => setSelectedStudentId(null)} className="text-slate-400 hover:text-white p-1 ml-1">
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Profile Navigation Tabs */}
@@ -1411,6 +1785,34 @@ export function AdminStudentsPage() {
                   {/* TAB 1: OVERVIEW */}
                   {activeTab === "overview" && (
                     <div className="space-y-4">
+                      {/* Archive Status Banner */}
+                      {(studentDetail.student.status === "archived" || studentDetail.student.archived_at) && (
+                        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 font-bold text-xs">
+                              <Archive className="h-4 w-4 text-amber-600" />
+                              Student Record is Archived
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRestoreStudent(studentDetail.student.id)}
+                              className="h-7 text-xs bg-white text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5 mr-1" /> Restore Student
+                            </Button>
+                          </div>
+                          <div className="mt-1 text-[11px] text-amber-800 space-y-0.5">
+                            {studentDetail.student.archived_at && (
+                              <div>Archived on: {new Date(studentDetail.student.archived_at).toLocaleString()}</div>
+                            )}
+                            {studentDetail.student.archive_reason && (
+                              <div>Reason: {studentDetail.student.archive_reason}</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-2 gap-4 rounded-xl border border-slate-200 p-4 bg-slate-50/70">
                         <div>
                           <span className="text-slate-500 block text-[11px] font-medium">Email</span>
@@ -1421,9 +1823,20 @@ export function AdminStudentsPage() {
                           <span className="font-semibold text-slate-900 font-mono">{studentDetail.student.phone}</span>
                         </div>
                         <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Residential Address</span>
+                          <span className="font-semibold text-slate-900">{studentDetail.student.address || "—"}</span>
+                        </div>
+                        <div>
                           <span className="text-slate-500 block text-[11px] font-medium">Location</span>
                           <span className="font-semibold text-slate-900">
                             {studentDetail.student.city ? `${studentDetail.student.city}, ` : ""}{studentDetail.student.country}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[11px] font-medium">Age & Date of Birth</span>
+                          <span className="font-semibold text-slate-900">
+                            {studentDetail.student.age ? `${studentDetail.student.age} yrs` : "—"}{" "}
+                            {studentDetail.student.date_of_birth ? `(${studentDetail.student.date_of_birth})` : ""}
                           </span>
                         </div>
                         <div>
@@ -1754,6 +2167,358 @@ export function AdminStudentsPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+      {/* Edit Student Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-sky-600" />
+                <h3 className="text-base font-bold text-slate-900">Edit Student Details</h3>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="flex-1 overflow-y-auto py-4 space-y-3.5 text-xs">
+              {/* Duplicate Alert */}
+              {editDuplicateWarning && (
+                <div className="rounded-lg bg-amber-50 border border-amber-300 p-3 flex items-start gap-2.5 text-amber-900">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-bold text-xs">Duplicate Contact Warning</div>
+                    <div className="text-[11px] mt-0.5">{editDuplicateWarning}</div>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Full Name *</Label>
+                  <Input
+                    required
+                    value={editFormData.fullName}
+                    onChange={(e) => setEditFormData({ ...editFormData, fullName: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Email Address *</span>
+                    {isCheckingDuplicate && <Loader2 className="w-3 h-3 animate-spin text-sky-600" />}
+                  </Label>
+                  <Input
+                    required
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Phone Number *</span>
+                    {isCheckingDuplicate && <Loader2 className="w-3 h-3 animate-spin text-sky-600" />}
+                  </Label>
+                  <Input
+                    required
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">WhatsApp</Label>
+                  <Input
+                    value={editFormData.whatsapp}
+                    onChange={(e) => setEditFormData({ ...editFormData, whatsapp: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Residential Address</Label>
+                  <Input
+                    value={editFormData.address}
+                    onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                    placeholder="House / Street / Area"
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">City</Label>
+                  <Input
+                    value={editFormData.city}
+                    onChange={(e) => setEditFormData({ ...editFormData, city: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Country</Label>
+                  <Input
+                    value={editFormData.country}
+                    onChange={(e) => setEditFormData({ ...editFormData, country: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Date of Birth</Label>
+                  <Input
+                    type="date"
+                    value={editFormData.dateOfBirth}
+                    onChange={(e) => setEditFormData({ ...editFormData, dateOfBirth: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Age</Label>
+                  <Input
+                    type="number"
+                    min={4}
+                    max={100}
+                    value={editFormData.age}
+                    onChange={(e) => setEditFormData({ ...editFormData, age: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Guardian Name</Label>
+                  <Input
+                    value={editFormData.guardianName}
+                    onChange={(e) => setEditFormData({ ...editFormData, guardianName: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Guardian Phone</Label>
+                  <Input
+                    value={editFormData.guardianPhone}
+                    onChange={(e) => setEditFormData({ ...editFormData, guardianPhone: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Guardian Relationship</Label>
+                  <Input
+                    value={editFormData.guardianRelationship}
+                    onChange={(e) => setEditFormData({ ...editFormData, guardianRelationship: e.target.value })}
+                    placeholder="e.g. Father / Mother"
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Emergency Contact</Label>
+                  <Input
+                    value={editFormData.emergencyContact}
+                    onChange={(e) => setEditFormData({ ...editFormData, emergencyContact: e.target.value })}
+                    placeholder="Name & Contact Number"
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Billing Day of Month (1-28)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={28}
+                    value={editFormData.billingDay}
+                    onChange={(e) => setEditFormData({ ...editFormData, billingDay: Number(e.target.value) })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300 font-mono"
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Student Status</Label>
+                  <select
+                    value={editFormData.status}
+                    onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                    className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="trial">Trial</option>
+                    <option value="on_hold">On Hold</option>
+                    <option value="paused">Paused</option>
+                    <option value="graduated">Graduated</option>
+                    <option value="completed">Completed</option>
+                    <option value="withdrawn">Withdrawn</option>
+                    <option value="dropped">Dropped</option>
+                    <option value="archived">Archived</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Label className="text-xs font-semibold text-slate-700">Internal Operational Notes</Label>
+                  <Input
+                    value={editFormData.notes}
+                    onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                    placeholder="Administrative background notes..."
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2 shrink-0">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={isSavingEdit}
+                  className="bg-sky-600 hover:bg-sky-700 text-white font-medium"
+                >
+                  {isSavingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                  Save Student Changes
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Safety Confirmation Modal */}
+      {showDeleteSafetyModal && studentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <ShieldAlert className="h-5 w-5 text-rose-600" />
+              <h3 className="text-base font-bold text-slate-900">Student Deletion Safety Check</h3>
+            </div>
+
+            <div className="py-4 space-y-3 text-xs">
+              {deleteBlockReason ? (
+                <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 text-rose-900 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-xs text-rose-800">
+                    <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0" />
+                    Permanent Deletion Blocked by Academy Policy
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-rose-700">
+                    {deleteBlockReason}
+                  </p>
+                  <p className="text-[11px] text-slate-600 pt-1 border-t border-rose-200">
+                    To preserve financial audits and legal records, active ledger data cannot be erased. You should archive this student instead.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-slate-700">
+                    You requested to delete student <strong className="text-slate-900 font-mono">{studentToDelete.student_id} ({studentToDelete.full_name})</strong>.
+                  </p>
+                  <p className="text-slate-500 text-[11px]">
+                    Permanent deletion is strictly restricted to system owners and will be blocked if any invoices, payment receipts, or attendance records exist.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDeleteSafetyModal(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+
+              {deleteBlockReason ? (
+                <Button
+                  size="sm"
+                  disabled={isDeletingStudent}
+                  onClick={() => handleConfirmDelete(false)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold"
+                >
+                  {isDeletingStudent ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Archive className="w-3.5 h-3.5 mr-1" />}
+                  Archive Student Instead
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    size="sm"
+                    disabled={isDeletingStudent}
+                    onClick={() => handleConfirmDelete(false)}
+                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium"
+                  >
+                    {isDeletingStudent ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Archive className="w-3.5 h-3.5 mr-1" />}
+                    Archive (Safe & Recommended)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    disabled={isDeletingStudent}
+                    onClick={() => handleConfirmDelete(true)}
+                    className="text-xs font-semibold"
+                  >
+                    {isDeletingStudent ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Trash2 className="w-3.5 h-3.5 mr-1" />}
+                    Permanently Delete (Owner Only)
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Reason Modal */}
+      {showArchiveModal && studentToArchive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Archive className="h-5 w-5 text-amber-600" />
+              <h3 className="text-base font-bold text-slate-900">Archive Student Record</h3>
+            </div>
+
+            <div className="py-4 space-y-3 text-xs">
+              <p className="text-slate-700">
+                Archiving <strong className="text-slate-900">{studentToArchive.full_name}</strong> will hide them from active rosters while preserving all enrollments, billing plans, fee invoices, and attendance logs.
+              </p>
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Archive Reason / Memo</Label>
+                <Input
+                  value={archiveReason}
+                  onChange={(e) => setArchiveReason(e.target.value)}
+                  placeholder="e.g. Relocated abroad / Course completed"
+                  className="mt-1 h-9 text-xs bg-white border-slate-300"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowArchiveModal(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                disabled={isArchiving || !archiveReason.trim()}
+                onClick={handleConfirmArchive}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold"
+              >
+                {isArchiving ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                Confirm Archive
+              </Button>
+            </div>
           </div>
         </div>
       )}

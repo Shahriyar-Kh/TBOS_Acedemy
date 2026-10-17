@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { updateStudentSchema } from "@/lib/crmSchemas";
-import { logCrmAction } from "@/lib/crm.server";
+import { logCrmAction, checkStudentDuplicate, archiveStudentTx, deleteStudentSafeTx } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/students/$id")({
   server: {
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/admin/students/$id")({
           });
         }
 
-        // Fetch enrollments, invoices, payments, attendance, billing plans, recurring schedules, and class sessions
+        // Fetch enrollments, invoices, payments, attendance, billing plans, recurring schedules, class sessions, and lead
         const [
           { data: enrollments },
           { data: invoices },
@@ -117,11 +117,33 @@ export const Route = createFileRoute("/api/admin/students/$id")({
           );
         }
 
+        const d = parsed.data;
+
+        // Proactive duplicate detection if email or phone is updated
+        if (d.email || d.phone) {
+          const dup = await checkStudentDuplicate({
+            email: d.email,
+            phone: d.phone,
+            excludeStudentId: studentId,
+          });
+
+          if (dup.isDuplicate) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: `Another student is already registered with this ${dup.matchedBy} (${dup.existingStudent?.student_id}: ${dup.existingStudent?.full_name}).`,
+                matchedBy: dup.matchedBy,
+                existingStudent: dup.existingStudent,
+              }),
+              { status: 409, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
         const updates: Record<string, unknown> = {
           updated_at: new Date().toISOString(),
         };
 
-        const d = parsed.data;
         if (d.fullName !== undefined) updates.full_name = d.fullName;
         if (d.email !== undefined) updates.email = d.email.toLowerCase().trim();
         if (d.phone !== undefined) updates.phone = d.phone;
@@ -129,6 +151,11 @@ export const Route = createFileRoute("/api/admin/students/$id")({
         if (d.guardianName !== undefined) updates.guardian_name = d.guardianName;
         if (d.guardianPhone !== undefined) updates.guardian_phone = d.guardianPhone;
         if (d.guardianEmail !== undefined) updates.guardian_email = d.guardianEmail;
+        if (d.guardianRelationship !== undefined) updates.guardian_relationship = d.guardianRelationship;
+        if (d.emergencyContact !== undefined) updates.emergency_contact = d.emergencyContact;
+        if (d.dateOfBirth !== undefined) updates.date_of_birth = d.dateOfBirth;
+        if (d.age !== undefined) updates.age = d.age;
+        if (d.address !== undefined) updates.address = d.address;
         if (d.country !== undefined) updates.country = d.country;
         if (d.city !== undefined) updates.city = d.city;
         if (d.timezone !== undefined) updates.timezone = d.timezone;
@@ -166,9 +193,8 @@ export const Route = createFileRoute("/api/admin/students/$id")({
         );
       },
 
-      DELETE: async ({ request, params }: { request: Request; params: { id: string } }) => {
-        // Soft archive instead of cascade destructive delete
-        const auth = await verifyAdminRequest(request, ["owner", "admin"]);
+      POST: async ({ request, params }: { request: Request; params: { id: string } }) => {
+        const auth = await verifyAdminRequest(request, ["owner", "admin", "admissions"]);
         if (!auth.ok) {
           return new Response(JSON.stringify({ ok: false, error: auth.error }), {
             status: auth.status,
@@ -185,32 +211,185 @@ export const Route = createFileRoute("/api/admin/students/$id")({
         }
 
         const studentId = params.id;
-        const { error } = await client
-          .from("students")
-          .update({ status: "cancelled", updated_at: new Date().toISOString() })
-          .eq("id", studentId);
-
-        if (error) {
-          return new Response(JSON.stringify({ ok: false, error: "Failed to archive student" }), {
-            status: 500,
+        let body: any = {};
+        try {
+          body = await request.json();
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: "Malformed JSON" }), {
+            status: 400,
             headers: { "Content-Type": "application/json" },
           });
         }
 
-        await logCrmAction({
-          adminUserId: auth.admin.user.id,
-          actorEmail: auth.admin.user.email,
-          action: "archive_student",
-          entity: "students",
-          entityId: studentId,
-        });
+        // Action: Archive Student
+        if (body.action === "archive") {
+          try {
+            const result = await archiveStudentTx({
+              studentId,
+              reason: body.reason || "Archived by administrator",
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            });
 
-        return new Response(
-          JSON.stringify({ ok: true, message: "Student archived successfully" }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        );
+            return new Response(
+              JSON.stringify({ ok: true, success: true, ...result }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            return new Response(
+              JSON.stringify({ ok: false, error: err.message || "Failed to archive student" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
+        // Action: Restore Student
+        if (body.action === "restore") {
+          const nowIso = new Date().toISOString();
+          const { data: restored, error: restErr } = await client
+            .from("students")
+            .update({ status: "active", archived_at: null, archived_by: null, archive_reason: null, updated_at: nowIso })
+            .eq("id", studentId)
+            .select()
+            .single();
+
+          if (restErr || !restored) {
+            return new Response(JSON.stringify({ ok: false, error: "Failed to restore student" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          await logCrmAction({
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            action: "restore_student",
+            entity: "students",
+            entityId: studentId,
+          });
+
+          return new Response(
+            JSON.stringify({ ok: true, success: true, student: restored }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Action: Quick Status Update
+        if (body.action === "update-status" && body.status) {
+          const targetStatus = body.status;
+          const { data: updated, error: updErr } = await client
+            .from("students")
+            .update({ status: targetStatus, updated_at: new Date().toISOString() })
+            .eq("id", studentId)
+            .select()
+            .single();
+
+          if (updErr || !updated) {
+            return new Response(JSON.stringify({ ok: false, error: "Failed to update student status" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          await logCrmAction({
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            action: "update_student_status",
+            entity: "students",
+            entityId: studentId,
+            details: { newStatus: targetStatus },
+          });
+
+          return new Response(
+            JSON.stringify({ ok: true, success: true, student: updated }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        return new Response(JSON.stringify({ ok: false, error: "Unsupported action" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+
+      DELETE: async ({ request, params }: { request: Request; params: { id: string } }) => {
+        const studentId = params.id;
+        const url = new URL(request.url);
+        const isPermanent = url.searchParams.get("permanent") === "true";
+
+        if (isPermanent) {
+          // Owner-only permanent deletion with financial safety verification
+          const auth = await verifyAdminRequest(request, ["owner"]);
+          if (!auth.ok) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                error: auth.status === 403
+                  ? "Only system owners can permanently delete student records."
+                  : auth.error,
+              }),
+              { status: auth.status, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          try {
+            const result = await deleteStudentSafeTx({
+              studentId,
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            });
+
+            return new Response(
+              JSON.stringify({ ok: true, success: true, ...result }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            if (errMsg.includes("STUDENT_HAS_OPERATIONAL_HISTORY") || errMsg.includes("Cannot permanently delete student")) {
+              return new Response(
+                JSON.stringify({
+                  ok: false,
+                  hasHistory: true,
+                  error: errMsg.replace(/^.*STUDENT_HAS_OPERATIONAL_HISTORY:\s*/, ""),
+                }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            return new Response(
+              JSON.stringify({ ok: false, error: errMsg || "Failed to delete student" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
+        // Soft archive instead of permanent deletion
+        const auth = await verifyAdminRequest(request, ["owner", "admin"]);
+        if (!auth.ok) {
+          return new Response(JSON.stringify({ ok: false, error: auth.error }), {
+            status: auth.status,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        try {
+          const result = await archiveStudentTx({
+            studentId,
+            reason: "Archived via delete action",
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+          });
+
+          return new Response(
+            JSON.stringify({ ok: true, message: "Student archived successfully", ...result }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        } catch (err: any) {
+          return new Response(
+            JSON.stringify({ ok: false, error: err.message || "Failed to archive student" }),
+            { status: 500, headers: { "Content-Type": "application/json" } },
+          );
+        }
       },
     },
   },
 });
-

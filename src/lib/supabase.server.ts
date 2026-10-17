@@ -41,6 +41,13 @@ export interface AdmissionsRequestRecord {
   last_contacted_at?: string | null;
   closed_reason?: string | null;
 
+  // Phase 18 Enhancements
+  converted_student_id?: string | null;
+  enrollment_date?: string | null;
+  demo_instructor_id?: string | null;
+  demo_class_session_id?: string | null;
+  demo_outcome?: string | null;
+
   status?: string;
   created_at?: string;
   updated_at?: string;

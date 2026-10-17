@@ -23,6 +23,8 @@ import {
   Download,
   RefreshCw,
   ShieldAlert,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateIcsCalendar, downloadIcsFile } from "@/lib/icalendar";
@@ -76,6 +78,29 @@ function AdminTimetablePage() {
   const [attendanceRoster, setAttendanceRoster] = useState<any[]>([]);
   const [isAttendanceLoading, setIsAttendanceLoading] = useState(false);
   const [isSavingAttendance, setIsSavingAttendance] = useState(false);
+
+  // Reschedule Modal State
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [selectedSessionToReschedule, setSelectedSessionToReschedule] = useState<any | null>(null);
+  const [rescheduleForm, setRescheduleForm] = useState({
+    sessionDate: "",
+    startTime: "",
+    endTime: "",
+    reason: "",
+  });
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  const [rescheduleClash, setRescheduleClash] = useState<{ error: string; conflicts: any[] } | null>(null);
+  const [rescheduleOverrideReason, setRescheduleOverrideReason] = useState("Approved schedule adjustment");
+  const [showRescheduleClashModal, setShowRescheduleClashModal] = useState(false);
+
+  // Cancellation Modal State
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedSessionToCancel, setSelectedSessionToCancel] = useState<any | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // Sync Retry State
+  const [retryingSyncSessionId, setRetryingSyncSessionId] = useState<string | null>(null);
 
   const fetchBatches = useCallback(async () => {
     try {
@@ -274,16 +299,18 @@ function AdminTimetablePage() {
     if (!activeSession) return;
     setIsSavingAttendance(true);
     try {
+      const attendees = attendanceRoster.map((r) => ({
+        studentId: r.studentId,
+        status: r.status,
+        notes: r.notes,
+      }));
       const res = await fetch(`/api/admin/timetable/${activeSession.id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({
           action: "record-attendance",
-          records: attendanceRoster.map((r) => ({
-            studentId: r.studentId,
-            status: r.status,
-            notes: r.notes,
-          })),
+          attendees,
+          records: attendees,
         }),
       });
       const data = await res.json();
@@ -298,6 +325,125 @@ function AdminTimetablePage() {
       toast.error("Network error saving attendance");
     } finally {
       setIsSavingAttendance(false);
+    }
+  };
+
+  const handleRetryCalendarSync = async (sessionId: string) => {
+    setRetryingSyncSessionId(sessionId);
+    try {
+      const res = await fetch(`/api/admin/timetable/${sessionId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({ action: "retry-calendar-sync" }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Google Calendar & Meet synced successfully!");
+        fetchSessions();
+      } else {
+        toast.error(data.error || "Google Meet sync failed. Check calendar credentials.");
+        fetchSessions();
+      }
+    } catch {
+      toast.error("Network error retrying Google Calendar sync");
+    } finally {
+      setRetryingSyncSessionId(null);
+    }
+  };
+
+  const handleOpenReschedule = (sess: any) => {
+    setSelectedSessionToReschedule(sess);
+    setRescheduleForm({
+      sessionDate: sess.session_date,
+      startTime: sess.start_time,
+      endTime: sess.end_time,
+      reason: "",
+    });
+    setRescheduleClash(null);
+    setShowRescheduleModal(true);
+  };
+
+  const handleConfirmReschedule = async (isOverride: boolean = false) => {
+    if (!selectedSessionToReschedule) return;
+    setIsRescheduling(true);
+    try {
+      const payload: Record<string, any> = {
+        action: "reschedule",
+        newSessionDate: rescheduleForm.sessionDate,
+        newStartTime: rescheduleForm.startTime,
+        newEndTime: rescheduleForm.endTime,
+        reason: rescheduleForm.reason.trim() || "Rescheduled by administration",
+      };
+      if (isOverride) {
+        payload.override = true;
+        payload.overrideReason = rescheduleOverrideReason.trim() || "Approved schedule adjustment";
+      }
+
+      const res = await fetch(`/api/admin/timetable/${selectedSessionToReschedule.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.status === 409) {
+        setRescheduleClash({
+          error: data.error || "Schedule clash detected with existing classes.",
+          conflicts: data.conflicts || [],
+        });
+        setShowRescheduleClashModal(true);
+        return;
+      }
+
+      if (res.ok && (data.ok || data.success)) {
+        toast.success("Class session rescheduled successfully!");
+        setShowRescheduleModal(false);
+        setShowRescheduleClashModal(false);
+        fetchSessions();
+      } else {
+        toast.error(data.error || "Failed to reschedule session");
+      }
+    } catch {
+      toast.error("Network error rescheduling session");
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  const handleOpenCancel = (sess: any) => {
+    setSelectedSessionToCancel(sess);
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!selectedSessionToCancel) return;
+    if (!cancelReason.trim()) {
+      toast.error("Cancellation reason is mandatory");
+      return;
+    }
+    setIsCancelling(true);
+    try {
+      const res = await fetch(
+        `/api/admin/timetable/${selectedSessionToCancel.id}?reason=${encodeURIComponent(cancelReason.trim())}`,
+        {
+          method: "DELETE",
+          headers: getAuthHeader(),
+        }
+      );
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success("Session cancelled and reminders cleaned up.");
+        setShowCancelModal(false);
+        fetchSessions();
+      } else {
+        toast.error(data.error || "Failed to cancel session");
+      }
+    } catch {
+      toast.error("Network error cancelling session");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -402,8 +548,13 @@ function AdminTimetablePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {sessions.map((sess) => {
+                const isDemo = sess.session_type === "demo" || sess.title?.toLowerCase().includes("demo");
                 const isOneOnOne = !sess.batch_id && sess.student_id;
-                const batchOrStudentLabel = sess.batches?.name || (sess.students?.full_name ? `1-on-1: ${sess.students.full_name}` : "Special Session");
+                const batchOrStudentLabel = isDemo
+                  ? `Demo: ${sess.students?.full_name || "Prospect"}`
+                  : isOneOnOne
+                  ? `1-on-1: ${sess.students?.full_name || "Special Session"}`
+                  : sess.batches?.name || "Batch Class";
 
                 return (
                   <div
@@ -411,11 +562,44 @@ function AdminTimetablePage() {
                     className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between"
                   >
                     <div>
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <span className="text-[11px] font-mono font-semibold text-[#008DDA] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded truncate max-w-[200px]">
+                      <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+                        <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded truncate max-w-[200px] ${
+                          isDemo
+                            ? "text-purple-700 bg-purple-50 border border-purple-200"
+                            : isOneOnOne
+                            ? "text-indigo-700 bg-indigo-50 border border-indigo-200"
+                            : "text-[#008DDA] bg-blue-50 border border-blue-200"
+                        }`}>
                           {batchOrStudentLabel}
                         </span>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {sess.google_calendar_sync_status === "synced" && (
+                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px] gap-1 flex items-center">
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              Synced
+                            </Badge>
+                          )}
+                          {sess.google_calendar_sync_status === "failed" && (
+                            <button
+                              type="button"
+                              onClick={() => handleRetryCalendarSync(sess.id)}
+                              disabled={retryingSyncSessionId === sess.id}
+                              title={sess.google_calendar_error || "Google Meet sync failed. Click to retry."}
+                              className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors"
+                            >
+                              {retryingSyncSessionId === sess.id ? (
+                                <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                              ) : (
+                                <RefreshCw className="w-2.5 h-2.5" />
+                              )}
+                              Sync Failed &bull; Retry
+                            </button>
+                          )}
+                          {sess.google_calendar_sync_status === "pending" && (
+                            <Badge className="bg-slate-100 text-slate-600 border-slate-200 text-[10px]">
+                              Syncing...
+                            </Badge>
+                          )}
                           {sess.is_override && (
                             <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-[10px]" title={sess.override_reason || "Clash Override"}>
                               Override
@@ -427,6 +611,8 @@ function AdminTimetablePage() {
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : sess.status === "cancelled"
                                 ? "bg-rose-50 text-rose-700 border-rose-200"
+                                : sess.status === "rescheduled"
+                                ? "bg-purple-50 text-purple-700 border-purple-200"
                                 : "bg-blue-50 text-blue-700 border-blue-200"
                             }`}
                           >
@@ -462,20 +648,20 @@ function AdminTimetablePage() {
                       </div>
                     </div>
 
-                    <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
+                    <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
                         {(sess.meeting_link || sess.meeting_url) ? (
                           <a
                             href={sess.meeting_link || sess.meeting_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-[#008DDA] hover:underline font-medium"
+                            className="inline-flex items-center gap-1 text-xs text-[#008DDA] hover:underline font-medium mr-1"
                           >
                             <Video className="w-3.5 h-3.5" />
                             Join
                           </a>
                         ) : (
-                          <span className="text-xs text-slate-400">No URL</span>
+                          <span className="text-xs text-slate-400 mr-1">No URL</span>
                         )}
                         <Button
                           size="sm"
@@ -486,13 +672,33 @@ function AdminTimetablePage() {
                         >
                           <Download className="w-3.5 h-3.5" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleOpenReschedule(sess)}
+                          className="h-7 px-1.5 text-xs text-slate-500 hover:text-slate-800"
+                          title="Reschedule Class Session"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleOpenCancel(sess)}
+                          disabled={sess.status === "cancelled"}
+                          className="h-7 px-1.5 text-xs text-rose-500 hover:text-rose-700 disabled:opacity-30"
+                          title="Cancel Session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
 
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => openAttendanceModal(sess)}
-                        className="h-7 text-xs border-slate-200 text-slate-700 hover:bg-slate-50"
+                        disabled={sess.status === "cancelled"}
+                        className="h-7 text-xs border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                       >
                         <UserCheck className="w-3 h-3 mr-1 text-emerald-600" />
                         Attendance
@@ -789,6 +995,231 @@ function AdminTimetablePage() {
               >
                 {isSavingAttendance ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
                 Save Attendance
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && selectedSessionToReschedule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Edit3 className="w-5 h-5 text-[#008DDA]" />
+                Reschedule Class Session
+              </h3>
+              <button onClick={() => setShowRescheduleModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleConfirmReschedule(false);
+              }}
+              className="space-y-4 mt-4 text-xs"
+            >
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <p className="font-semibold text-slate-800">{selectedSessionToReschedule.title}</p>
+                <p className="text-slate-500 text-[11px] mt-0.5">
+                  Currently: {selectedSessionToReschedule.session_date} ({selectedSessionToReschedule.start_time} - {selectedSessionToReschedule.end_time})
+                </p>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-700 font-medium">New Session Date *</Label>
+                <Input
+                  type="date"
+                  required
+                  value={rescheduleForm.sessionDate}
+                  onChange={(e) => setRescheduleForm({ ...rescheduleForm, sessionDate: e.target.value })}
+                  className="mt-1 text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-slate-700 font-medium">New Start Time (PKT) *</Label>
+                  <Input
+                    type="time"
+                    required
+                    value={rescheduleForm.startTime}
+                    onChange={(e) => setRescheduleForm({ ...rescheduleForm, startTime: e.target.value })}
+                    className="mt-1 text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-700 font-medium">New End Time (PKT) *</Label>
+                  <Input
+                    type="time"
+                    required
+                    value={rescheduleForm.endTime}
+                    onChange={(e) => setRescheduleForm({ ...rescheduleForm, endTime: e.target.value })}
+                    className="mt-1 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-700 font-medium">Reschedule Reason *</Label>
+                <Input
+                  required
+                  placeholder="e.g. Instructor emergency or student requested slot change"
+                  value={rescheduleForm.reason}
+                  onChange={(e) => setRescheduleForm({ ...rescheduleForm, reason: e.target.value })}
+                  className="mt-1 text-xs"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Google Calendar event will be updated and reminders will be recalibrated.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowRescheduleModal(false)}
+                  className="text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isRescheduling}
+                  className="bg-[#008DDA] hover:bg-[#0070b8] text-white text-xs font-medium"
+                >
+                  {isRescheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                  Confirm Reschedule
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reschedule Clash Modal */}
+      {showRescheduleClashModal && rescheduleClash && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-amber-300 rounded-xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-amber-200 text-amber-700">
+              <ShieldAlert className="w-6 h-6 text-amber-600" />
+              <h3 className="text-base font-bold">Schedule Clash On Reschedule</h3>
+            </div>
+
+            <div className="my-4 space-y-3 text-xs">
+              <p className="text-slate-700 font-medium">
+                The new slot conflicts with an existing class or instructor commitment:
+              </p>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900 space-y-1">
+                <div className="font-semibold">{rescheduleClash.error}</div>
+                {rescheduleClash.conflicts.map((c: any, i: number) => (
+                  <div key={i} className="text-slate-600 mt-1 pl-2 border-l-2 border-amber-400">
+                    &bull; {c.message || c}
+                  </div>
+                ))}
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-700 font-medium">
+                  Override Justification / Reason *
+                </Label>
+                <Input
+                  type="text"
+                  required
+                  value={rescheduleOverrideReason}
+                  onChange={(e) => setRescheduleOverrideReason(e.target.value)}
+                  placeholder="e.g. Approved clash override for special coaching"
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRescheduleClashModal(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                disabled={isRescheduling || !rescheduleOverrideReason.trim()}
+                onClick={() => handleConfirmReschedule(true)}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold"
+              >
+                {isRescheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                Confirm & Override Clash
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Session Confirmation Modal */}
+      {showCancelModal && selectedSessionToCancel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white border border-rose-200 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-rose-100">
+              <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+                Cancel Class Session
+              </h3>
+              <button onClick={() => setShowCancelModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="my-4 space-y-3 text-xs">
+              <p className="text-slate-700">
+                Are you sure you want to cancel{" "}
+                <span className="font-semibold text-slate-900">
+                  {selectedSessionToCancel.title}
+                </span>{" "}
+                scheduled for {selectedSessionToCancel.session_date}?
+              </p>
+              <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-rose-800 text-[11px] space-y-1">
+                <p className="font-semibold">Automated Cleanup Actions:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>Marks class session as cancelled</li>
+                  <li>Cancels Google Calendar event & Meet meeting</li>
+                  <li>Cleans up all pending scheduled automated reminders</li>
+                </ul>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-700 font-medium">Cancellation Reason *</Label>
+                <Input
+                  required
+                  placeholder="e.g. Instructor illness, public holiday, or class rescheduled"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="mt-1 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowCancelModal(false)}
+                className="text-xs"
+              >
+                Keep Session
+              </Button>
+              <Button
+                type="button"
+                disabled={isCancelling || !cancelReason.trim()}
+                onClick={handleConfirmCancel}
+                className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold"
+              >
+                {isCancelling ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+                Confirm Cancellation
               </Button>
             </div>
           </div>

@@ -113,6 +113,32 @@ function AdminAdmissionsPage() {
   const [convertMonthlyFee, setConvertMonthlyFee] = useState(20000);
   const [convertBillingDay, setConvertBillingDay] = useState(1);
   const [isConverting, setIsConverting] = useState(false);
+  const [convertMode, setConvertMode] = useState<"new_student" | "link_existing">("new_student");
+  const [existingStudentsList, setExistingStudentsList] = useState<any[]>([]);
+  const [selectedExistingStudentId, setSelectedExistingStudentId] = useState("");
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
+
+  // Schedule Demo Modal state
+  const [showScheduleDemoModal, setShowScheduleDemoModal] = useState(false);
+  const [instructorsList, setInstructorsList] = useState<any[]>([]);
+  const [demoForm, setDemoForm] = useState({
+    instructorId: "",
+    instructorName: "",
+    sessionDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    startTime: "18:00",
+    endTime: "19:00",
+    title: "",
+    meetingLink: "",
+  });
+  const [isSchedulingDemo, setIsSchedulingDemo] = useState(false);
+
+  // Demo Outcome Modal state
+  const [showOutcomeModal, setShowOutcomeModal] = useState(false);
+  const [outcomeForm, setOutcomeForm] = useState({
+    outcome: "completed" as "completed" | "no_show" | "cancelled" | "rescheduled",
+    notes: "",
+  });
+  const [isSubmittingOutcome, setIsSubmittingOutcome] = useState(false);
 
   const fetchBatchesForConvert = async () => {
     try {
@@ -129,24 +155,171 @@ function AdminAdmissionsPage() {
     }
   };
 
-  const handleConvertToStudent = async (e: React.FormEvent) => {
+  const fetchStudentsForLink = async () => {
+    setIsLoadingStudents(true);
+    try {
+      const res = await fetch("/api/admin/students?limit=100", { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json();
+        setExistingStudentsList(data.students || []);
+        if (data.students?.length > 0 && !selectedExistingStudentId) {
+          setSelectedExistingStudentId(data.students[0].id);
+        }
+      }
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingStudents(false);
+    }
+  };
+
+  const fetchInstructors = async () => {
+    try {
+      const res = await fetch("/api/admin/users", { headers: getAuthHeader() });
+      if (res.ok) {
+        const data = await res.json();
+        setInstructorsList(data.users || []);
+        if (data.users?.length > 0 && !demoForm.instructorId) {
+          setDemoForm((prev) => ({
+            ...prev,
+            instructorId: data.users[0].id,
+            instructorName: data.users[0].full_name || data.users[0].email,
+          }));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleOpenScheduleDemoModal = () => {
+    if (!detailData) return;
+    setDemoForm({
+      instructorId: instructorsList[0]?.id || "",
+      instructorName: instructorsList[0]?.full_name || instructorsList[0]?.email || "Assigned Faculty",
+      sessionDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      startTime: "18:00",
+      endTime: "19:00",
+      title: `TBOS Demo: ${detailData.student_name} - ${detailData.selected_program_title}`,
+      meetingLink: detailData.demo_meeting_link || "",
+    });
+    fetchInstructors();
+    setShowScheduleDemoModal(true);
+  };
+
+  const handleScheduleDemo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedId) return;
-    setIsConverting(true);
+    setIsSchedulingDemo(true);
     try {
       const res = await fetch(`/api/admin/admissions/${selectedId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...getAuthHeader() },
         body: JSON.stringify({
-          action: "convert-to-student",
-          batchId: convertBatchId || undefined,
-          monthlyFee: Number(convertMonthlyFee),
-          billingDay: Number(convertBillingDay),
+          action: "schedule-demo",
+          instructorId: demoForm.instructorId || null,
+          instructorName: demoForm.instructorName || null,
+          sessionDate: demoForm.sessionDate,
+          startTime: demoForm.startTime,
+          endTime: demoForm.endTime,
+          title: demoForm.title.trim(),
+          meetingLink: demoForm.meetingLink.trim() || undefined,
         }),
+      });
+
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success("Demo class session scheduled & reminders queued!");
+        setShowScheduleDemoModal(false);
+        loadDetail(selectedId);
+        fetchAdmissions();
+      } else {
+        toast.error(data.error || "Failed to schedule demo");
+      }
+    } catch {
+      toast.error("Network error scheduling demo");
+    } finally {
+      setIsSchedulingDemo(false);
+    }
+  };
+
+  const handleOpenOutcomeModal = (outcome: "completed" | "no_show" | "cancelled" | "rescheduled") => {
+    setOutcomeForm({
+      outcome,
+      notes: "",
+    });
+    setShowOutcomeModal(true);
+  };
+
+  const handleSaveDemoOutcome = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedId) return;
+    setIsSubmittingOutcome(true);
+    try {
+      const res = await fetch(`/api/admin/admissions/${selectedId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify({
+          action: "update-demo-outcome",
+          outcome: outcomeForm.outcome,
+          notes: outcomeForm.notes.trim() || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && (data.ok || data.success)) {
+        toast.success(`Demo outcome recorded as ${outcomeForm.outcome}`);
+        setShowOutcomeModal(false);
+        loadDetail(selectedId);
+        fetchAdmissions();
+      } else {
+        toast.error(data.error || "Failed to record outcome");
+      }
+    } catch {
+      toast.error("Network error saving demo outcome");
+    } finally {
+      setIsSubmittingOutcome(false);
+    }
+  };
+
+  const handleConvertToStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedId) return;
+    setIsConverting(true);
+    try {
+      const payload: Record<string, any> = {
+        action: "convert-to-student",
+        batchId: convertBatchId || undefined,
+        billingDay: Number(convertBillingDay),
+      };
+
+      if (convertMode === "link_existing") {
+        if (!selectedExistingStudentId) {
+          toast.error("Please select an existing student record to link.");
+          setIsConverting(false);
+          return;
+        }
+        payload.existingStudentId = selectedExistingStudentId;
+        payload.agreedFee = Number(convertMonthlyFee);
+        payload.programSlug = detailData?.selected_program_slug || "specialization-course";
+        payload.programTitle = detailData?.selected_program_title || "Enrolled Program";
+        payload.mode = "group";
+      } else {
+        payload.monthlyFee = Number(convertMonthlyFee);
+      }
+
+      const res = await fetch(`/api/admin/admissions/${selectedId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAuthHeader() },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (res.ok && data.ok) {
-        toast.success(`Converted to student ${data.student?.student_id || ""}! Initial invoice generated.`);
+        toast.success(
+          convertMode === "link_existing"
+            ? `Successfully linked lead to student and enrolled in program!`
+            : `Converted to student ${data.student?.student_id || ""}! Initial invoice generated.`
+        );
         setShowConvertModal(false);
         setSelectedId(null);
         fetchAdmissions();
@@ -951,65 +1124,98 @@ function AdminAdmissionsPage() {
                   </div>
 
                   {/* Demo Scheduling Fields */}
-                  <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 space-y-2">
+                  <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-3 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-purple-900 flex items-center gap-1">
-                        <Video className="h-3.5 w-3.5 text-purple-600" />
+                      <span className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
+                        <Video className="h-4 w-4 text-purple-600" />
                         Free Demo Trial Management
                       </span>
                       <Button
                         type="button"
-                        variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setEditStatus("demo_scheduled");
-                        }}
-                        className="h-6 text-[11px] text-purple-700 hover:bg-purple-100"
+                        onClick={handleOpenScheduleDemoModal}
+                        className="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white font-medium gap-1 shadow-xs"
                       >
-                        Quick Set "Demo Scheduled"
+                        <Calendar className="w-3.5 h-3.5" /> Schedule Interactive Demo
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="crm-demo-time" className="text-[11px] text-slate-600">
-                          Demo Scheduled Time
-                        </Label>
-                        <Input
-                          id="crm-demo-time"
-                          type="datetime-local"
-                          value={editDemoScheduled}
-                          onChange={(e) => setEditDemoScheduled(e.target.value)}
-                          className="h-8 text-xs bg-white border-slate-300"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="crm-demo-link" className="text-[11px] text-slate-600">
-                          Demo Meeting Link (Google Meet / Zoom)
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="crm-demo-link"
-                            type="url"
-                            placeholder="https://meet.google.com/..."
-                            value={editDemoLink}
-                            onChange={(e) => setEditDemoLink(e.target.value)}
-                            className="h-8 text-xs bg-white border-slate-300 pr-8"
-                          />
-                          {editDemoLink && (
-                            <a
-                              href={editDemoLink}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="absolute right-2 top-1/2 -translate-y-1/2 text-purple-600 hover:text-purple-800"
-                              title="Test meeting link"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </a>
+                    {detailData.demo_scheduled_at && (
+                      <div className="rounded-md bg-white border border-purple-200 p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-slate-700">Scheduled Session:</span>
+                          {detailData.demo_outcome ? (
+                            <Badge className="text-[10px] uppercase font-mono bg-purple-100 text-purple-800 border-purple-300">
+                              Outcome: {detailData.demo_outcome}
+                            </Badge>
+                          ) : (
+                            <Badge className="text-[10px] uppercase font-mono bg-amber-100 text-amber-800 border-amber-300">
+                              Trial Pending
+                            </Badge>
                           )}
                         </div>
+                        <div className="text-xs text-slate-800 font-medium">
+                          {new Date(detailData.demo_scheduled_at).toLocaleString()}
+                        </div>
+                        {detailData.demo_meeting_link && (
+                          <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+                            <a
+                              href={detailData.demo_meeting_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs text-purple-600 hover:underline flex items-center gap-1 font-medium"
+                            >
+                              <Video className="w-3.5 h-3.5" /> Join Demo Classroom
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Quick Outcome Recording Buttons */}
+                        <div className="pt-2 border-t border-purple-100">
+                          <span className="text-[10px] font-semibold text-slate-500 uppercase block mb-1.5">
+                            Record Demo Outcome
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenOutcomeModal("completed")}
+                              className="h-6 px-2 text-[11px] bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                            >
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Completed
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenOutcomeModal("no_show")}
+                              className="h-6 px-2 text-[11px] bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                            >
+                              <AlertTriangle className="w-3 h-3 mr-1" /> No Show
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={handleOpenScheduleDemoModal}
+                              className="h-6 px-2 text-[11px] bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                            >
+                              <RefreshCw className="w-3 h-3 mr-1" /> Reschedule
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleOpenOutcomeModal("cancelled")}
+                              className="h-6 px-2 text-[11px] bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100"
+                            >
+                              <X className="w-3 h-3 mr-1" /> Cancelled
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Closed reason if closed */}
@@ -1420,15 +1626,69 @@ function AdminAdmissionsPage() {
                 </div>
               </div>
 
+              {/* Conversion Mode Radio Toggle */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-300">Conversion Strategy</Label>
+                <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-950 rounded-lg border border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setConvertMode("new_student")}
+                    className={`py-2 px-3 rounded text-xs font-semibold transition-colors ${
+                      convertMode === "new_student"
+                        ? "bg-emerald-600 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Create New Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConvertMode("link_existing");
+                      fetchStudentsForLink();
+                    }}
+                    className={`py-2 px-3 rounded text-xs font-semibold transition-colors ${
+                      convertMode === "link_existing"
+                        ? "bg-emerald-600 text-white"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Link to Existing Student
+                  </button>
+                </div>
+              </div>
+
+              {convertMode === "link_existing" && (
+                <div>
+                  <Label className="text-xs text-slate-300">Select Existing Student Record *</Label>
+                  {isLoadingStudents ? (
+                    <div className="text-xs text-slate-400 py-2">Loading students roster...</div>
+                  ) : (
+                    <select
+                      required
+                      value={selectedExistingStudentId}
+                      onChange={(e) => setSelectedExistingStudentId(e.target.value)}
+                      className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="">Select an enrolled student...</option>
+                      {existingStudentsList.map((st) => (
+                        <option key={st.id} value={st.id}>
+                          {st.student_id} — {st.full_name} ({st.email})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
               <div>
-                <Label className="text-xs text-slate-300">Assign Live Batch / Cohort *</Label>
+                <Label className="text-xs text-slate-300">Assign Live Batch / Cohort (Optional for 1-on-1)</Label>
                 <select
-                  required
                   value={convertBatchId}
                   onChange={(e) => setConvertBatchId(e.target.value)}
                   className="w-full mt-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-md text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 >
-                  <option value="">Select a batch...</option>
+                  <option value="">Select a batch (or leave blank)...</option>
                   {availableBatches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name} ({b.batch_code})
@@ -1458,12 +1718,14 @@ function AdminAdmissionsPage() {
                   max="28"
                   value={convertBillingDay}
                   onChange={(e) => setConvertBillingDay(Number(e.target.value))}
-                  className="mt-1 bg-slate-950 border-slate-800 text-white"
+                  className="mt-1 bg-slate-950 border-slate-800 text-white font-mono"
                 />
               </div>
 
               <div className="p-2.5 bg-emerald-950/30 border border-emerald-900/40 rounded-lg text-emerald-300 text-[11px]">
-                Upon conversion, this creates an active student record with sequential ID (TBOS-YYYY-XXXX), enrolls them in the selected batch, generates the initial tuition fee invoice, and updates this lead status to "enrolled".
+                {convertMode === "link_existing"
+                  ? "This links the applicant directly to the existing student canonical profile, creates a new program enrollment and monthly billing plan without creating a duplicate record."
+                  : "Upon conversion, this creates an active student record with sequential ID (TBOS-YYYY-XXXX), enrolls them in the selected batch, generates the initial tuition fee invoice, and updates this lead status to 'enrolled'."}
               </div>
 
               <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
@@ -1481,7 +1743,186 @@ function AdminAdmissionsPage() {
                   className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold"
                 >
                   {isConverting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Confirm & Enroll Student
+                  {convertMode === "link_existing" ? "Link & Enroll Student" : "Confirm & Enroll Student"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Interactive Demo Modal */}
+      {showScheduleDemoModal && detailData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Video className="w-5 h-5 text-purple-600" />
+                <h3 className="text-base font-bold text-slate-900">Schedule Interactive Demo</h3>
+              </div>
+              <button onClick={() => setShowScheduleDemoModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleScheduleDemo} className="space-y-3.5 mt-4 text-xs">
+              <div className="rounded-lg bg-purple-50/70 border border-purple-200 p-3 text-purple-950 space-y-1">
+                <div>Lead: <strong className="font-semibold text-slate-900">{detailData.student_name}</strong></div>
+                <div className="text-[11px] text-slate-600">Program: {detailData.selected_program_title} &bull; Email: {detailData.email}</div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Session Topic / Title *</Label>
+                <Input
+                  required
+                  value={demoForm.title}
+                  onChange={(e) => setDemoForm({ ...demoForm, title: e.target.value })}
+                  className="mt-1 h-9 text-xs bg-white border-slate-300"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Assign Faculty / Instructor</Label>
+                <select
+                  value={demoForm.instructorId}
+                  onChange={(e) => {
+                    const inst = instructorsList.find((i) => i.id === e.target.value);
+                    setDemoForm({
+                      ...demoForm,
+                      instructorId: e.target.value,
+                      instructorName: inst?.full_name || inst?.email || "Faculty Mentor",
+                    });
+                  }}
+                  className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select faculty member...</option>
+                  {instructorsList.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.full_name ? `${i.full_name} (${i.email})` : i.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Date *</Label>
+                  <Input
+                    type="date"
+                    required
+                    value={demoForm.sessionDate}
+                    onChange={(e) => setDemoForm({ ...demoForm, sessionDate: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">Start Time (PKT) *</Label>
+                  <Input
+                    type="time"
+                    required
+                    value={demoForm.startTime}
+                    onChange={(e) => setDemoForm({ ...demoForm, startTime: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-slate-700">End Time (PKT) *</Label>
+                  <Input
+                    type="time"
+                    required
+                    value={demoForm.endTime}
+                    onChange={(e) => setDemoForm({ ...demoForm, endTime: e.target.value })}
+                    className="mt-1 h-9 text-xs bg-white border-slate-300"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Custom Google Meet Link (Optional)</Label>
+                <Input
+                  type="url"
+                  placeholder="Leave empty to auto-generate via Google Calendar API"
+                  value={demoForm.meetingLink}
+                  onChange={(e) => setDemoForm({ ...demoForm, meetingLink: e.target.value })}
+                  className="mt-1 h-9 text-xs bg-white border-slate-300"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Scheduling automatically creates a timetable session and queues 24h, 1h, 15m student reminders and 10m instructor alerts.
+                </p>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowScheduleDemoModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSchedulingDemo}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                >
+                  {isSchedulingDemo ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <Calendar className="w-3.5 h-3.5 mr-1" />}
+                  Schedule Demo Session
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Record Demo Outcome Modal */}
+      {showOutcomeModal && detailData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-900 capitalize">
+                Record Demo Outcome: {outcomeForm.outcome.replace(/_/g, " ")}
+              </h3>
+              <button onClick={() => setShowOutcomeModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveDemoOutcome} className="space-y-3.5 mt-4 text-xs">
+              <p className="text-slate-600">
+                Record trial session outcome for <strong className="text-slate-900">{detailData.student_name}</strong>.
+              </p>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Outcome Status</Label>
+                <select
+                  value={outcomeForm.outcome}
+                  onChange={(e) => setOutcomeForm({ ...outcomeForm, outcome: e.target.value as any })}
+                  className="mt-1 w-full h-9 rounded-md border border-slate-300 bg-white px-3 text-xs text-slate-900 capitalize focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="completed">Completed (Trial Successful)</option>
+                  <option value="no_show">No Show (Learner Absent)</option>
+                  <option value="rescheduled">Rescheduled</option>
+                  <option value="cancelled">Cancelled (Closed)</option>
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-xs font-semibold text-slate-700">Instructor Notes / Evaluation</Label>
+                <Textarea
+                  rows={3}
+                  value={outcomeForm.notes}
+                  onChange={(e) => setOutcomeForm({ ...outcomeForm, notes: e.target.value })}
+                  placeholder="Learner feedback, skill assessment, or rescheduling justification..."
+                  className="mt-1 text-xs bg-white border-slate-300"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowOutcomeModal(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingOutcome}
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-semibold"
+                >
+                  {isSubmittingOutcome ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                  Save Demo Outcome
                 </Button>
               </div>
             </form>

@@ -21,6 +21,9 @@ import {
   Loader2,
   DollarSign,
   Plus,
+  UserCheck,
+  Bell,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -122,10 +125,13 @@ function AdminDashboardPage() {
 
       if (timetableRes.ok) {
         const data = await timetableRes.json();
-        setTodayClasses(data.todaySessions || []);
+        const sorted = (data.todaySessions || []).slice().sort((a: any, b: any) =>
+          String(a.start_time || "").localeCompare(String(b.start_time || ""))
+        );
+        setTodayClasses(sorted);
         setStats((prev) => ({
           ...prev,
-          todayClasses: (data.todaySessions || []).length,
+          todayClasses: sorted.length,
         }));
       }
 
@@ -140,6 +146,66 @@ function AdminDashboardPage() {
       setIsLoading(false);
     }
   }, [getAuthHeader]);
+
+  const getSessionTimingBadge = (cls: any) => {
+    if (cls.status === "completed") {
+      return (
+        <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">
+          Completed
+        </Badge>
+      );
+    }
+    if (cls.status === "cancelled") {
+      return (
+        <Badge className="bg-rose-50 text-rose-700 border-rose-200 text-[10px]">
+          Cancelled
+        </Badge>
+      );
+    }
+
+    if (!cls.start_time) return null;
+
+    try {
+      const now = new Date();
+      const [startH, startM] = cls.start_time.split(":").map(Number);
+      const sessionStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startH, startM, 0);
+
+      const [endH, endM] = (cls.end_time || "23:59").split(":").map(Number);
+      const sessionEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endH, endM, 0);
+
+      const diffMinutes = Math.floor((sessionStart.getTime() - now.getTime()) / (1000 * 60));
+
+      if (diffMinutes <= 10 && diffMinutes >= 0) {
+        return (
+          <span className="inline-flex items-center gap-1 bg-amber-500 text-white font-bold px-2 py-0.5 rounded text-[10px] animate-pulse shadow-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+            Starts in {diffMinutes}m (10m Alert)
+          </span>
+        );
+      }
+
+      if (diffMinutes < 0 && now.getTime() <= sessionEnd.getTime()) {
+        return (
+          <span className="inline-flex items-center gap-1 bg-emerald-600 text-white font-bold px-2 py-0.5 rounded text-[10px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+            Live Class Now
+          </span>
+        );
+      }
+
+      return (
+        <Badge variant="outline" className="text-[10px] uppercase font-mono">
+          {cls.status}
+        </Badge>
+      );
+    } catch {
+      return (
+        <Badge variant="outline" className="text-[10px] uppercase font-mono">
+          {cls.status}
+        </Badge>
+      );
+    }
+  };
 
   useEffect(() => {
     if (admin) {
@@ -182,6 +248,45 @@ function AdminDashboardPage() {
       }
     >
       <div className="space-y-6">
+        {/* Operational Alerts Ribbon */}
+        {(stats.overduePayments > 0 || stats.scheduledDemos > 0 || stats.followUpsDue > 0) && (
+          <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs shadow-sm">
+            <div className="flex items-center gap-2.5 text-amber-900 font-semibold">
+              <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+              <span>Operational Action Items Required:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {stats.overduePayments > 0 && (
+                <Link
+                  to="/admin/fees"
+                  className="inline-flex items-center gap-1 text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 px-2.5 py-1 rounded-md font-medium transition-colors"
+                >
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {stats.overduePayments} Overdue Invoices
+                </Link>
+              )}
+              {stats.scheduledDemos > 0 && (
+                <Link
+                  to="/admin/admissions"
+                  className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 px-2.5 py-1 rounded-md font-medium transition-colors"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  {stats.scheduledDemos} Demos Scheduled
+                </Link>
+              )}
+              {stats.followUpsDue > 0 && (
+                <Link
+                  to="/admin/admissions"
+                  className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 px-2.5 py-1 rounded-md font-medium transition-colors"
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  {stats.followUpsDue} Admissions Follow-ups Due
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
           <div className="rounded-xl border border-blue-100 bg-white p-3.5 shadow-sm hover:shadow transition-shadow">
@@ -252,7 +357,7 @@ function AdminDashboardPage() {
           <div className="rounded-xl border border-rose-100 bg-white p-3.5 shadow-sm hover:shadow transition-shadow">
             <div className="flex items-center justify-between text-xs font-semibold text-rose-600">
               <span>Overdue Fees</span>
-              <AlertCircle className="h-4 w-4 text-rose-400" />
+              <AlertCircle className="w-4 h-4 text-rose-400" />
             </div>
             <div className="mt-2 text-2xl font-bold text-rose-600">{stats.overduePayments}</div>
             <div className="text-[10px] text-slate-400 mt-0.5">Unpaid invoices</div>
@@ -283,28 +388,50 @@ function AdminDashboardPage() {
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {todayClasses.map((cls) => (
-                    <div key={cls.id} className="py-3 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-xs text-slate-900 truncate">{cls.title}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">
-                          {cls.start_time} - {cls.end_time} · {cls.instructor_name || "TBOS Mentor"}
+                  {todayClasses.map((cls) => {
+                    const isDemo = cls.session_type === "demo" || cls.title?.toLowerCase().includes("demo");
+                    const isOneOnOne = !cls.batch_id && cls.student_id;
+                    const classLabel = isDemo
+                      ? `Demo Trial: ${cls.students?.full_name || "Prospect"}`
+                      : isOneOnOne
+                      ? `1-on-1: ${cls.students?.full_name || "Student"}`
+                      : cls.batches?.name || "Batch Session";
+
+                    return (
+                      <div key={cls.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-xs text-slate-900 truncate">{cls.title}</span>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${
+                              isDemo ? "bg-purple-50 text-purple-700 border border-purple-200" : "bg-blue-50 text-blue-700 border border-blue-200"
+                            }`}>
+                              {classLabel}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-slate-700">{cls.start_time} - {cls.end_time} PKT</span>
+                            <span>&bull;</span>
+                            <span>{cls.instructor_name || "TBOS Mentor"}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          {getSessionTimingBadge(cls)}
+                          {cls.meeting_link && (
+                            <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+                              <a href={cls.meeting_link} target="_blank" rel="noreferrer">
+                                <Video className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Join Meet
+                              </a>
+                            </Button>
+                          )}
+                          <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs border-slate-200 text-slate-700 hover:bg-slate-50">
+                            <Link to="/admin/timetable">
+                              <UserCheck className="w-3 h-3 mr-1 text-emerald-600" /> Attendance
+                            </Link>
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {cls.meeting_link && (
-                          <Button asChild size="sm" variant="outline" className="h-7 px-2.5 text-xs text-emerald-700 border-emerald-300 hover:bg-emerald-50">
-                            <a href={cls.meeting_link} target="_blank" rel="noreferrer">
-                              <Video className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Join Meet
-                            </a>
-                          </Button>
-                        )}
-                        <Badge variant="outline" className="text-[10px] uppercase font-mono">
-                          {cls.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

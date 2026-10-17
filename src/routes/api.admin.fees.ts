@@ -1,8 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
-import { recordPaymentSchema } from "@/lib/crmSchemas";
-import { generateInvoiceNumber, logCrmAction, recordPaymentTx } from "@/lib/crm.server";
+import {
+  recordPaymentSchema,
+  createManualInvoiceSchema,
+  updateInvoiceSchema,
+  voidInvoiceSchema,
+  reversePaymentSchema,
+} from "@/lib/crmSchemas";
+import {
+  generateInvoiceNumber,
+  logCrmAction,
+  recordPaymentTx,
+  reverseFeePaymentTx,
+  voidFeeInvoiceTx,
+} from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/fees")({
   server: {
@@ -27,7 +39,6 @@ export const Route = createFileRoute("/api/admin/fees")({
         const url = new URL(request.url);
         const statusFilter = url.searchParams.get("status") || "all";
         const monthFilter = url.searchParams.get("month") || "";
-        const search = url.searchParams.get("q")?.trim() || "";
 
         let invQuery = client
           .from("fee_invoices")
@@ -46,12 +57,12 @@ export const Route = createFileRoute("/api/admin/fees")({
           });
         }
 
-        // Fetch recent payments
+        // Fetch recent payments with reversal details
         const { data: payments } = await client
           .from("fee_payments")
           .select("*, students(id, student_id, full_name), fee_invoices(invoice_number, billing_month)")
           .order("payment_date", { ascending: false })
-          .limit(50);
+          .limit(60);
 
         // Calculate KPI revenue statistics
         const allInvoices = invoices || [];
@@ -61,6 +72,14 @@ export const Route = createFileRoute("/api/admin/fees")({
         const overdueCount = allInvoices.filter((inv) => inv.status === "overdue" || (inv.balance > 0 && new Date(inv.due_date) < new Date())).length;
         const todayStr = new Date().toISOString().split("T")[0];
         const dueTodayCount = allInvoices.filter((inv) => inv.due_date === todayStr && inv.balance > 0).length;
+
+        // Current Month Metrics
+        const currentMonthStr = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+        const currentMonthInvoices = allInvoices.filter((inv) => inv.billing_month === currentMonthStr && inv.status !== "voided");
+        const monthInvoiced = currentMonthInvoices.reduce((acc, inv) => acc + (Number(inv.amount_due) || 0), 0);
+        const monthCollected = currentMonthInvoices.reduce((acc, inv) => acc + (Number(inv.amount_paid) || 0), 0);
+        const monthOutstanding = currentMonthInvoices.reduce((acc, inv) => acc + (Number(inv.balance) || 0), 0);
+        const collectionRate = monthInvoiced > 0 ? Math.round((monthCollected / monthInvoiced) * 100) : 0;
 
         return new Response(
           JSON.stringify({
@@ -79,6 +98,11 @@ export const Route = createFileRoute("/api/admin/fees")({
               outstandingBalance,
               overdueCount,
               dueTodayCount,
+              currentMonth: currentMonthStr,
+              monthInvoiced,
+              monthCollected,
+              monthOutstanding,
+              collectionRate,
             },
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
@@ -110,6 +134,222 @@ export const Route = createFileRoute("/api/admin/fees")({
             status: 400,
             headers: { "Content-Type": "application/json" },
           });
+        }
+
+        // Action: Create Manual Invoice
+        if (body.action === "create-invoice") {
+          const parsed = createManualInvoiceSchema.safeParse(body);
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message || "Validation failed" }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          const d = parsed.data;
+          const invoiceNumber = await generateInvoiceNumber();
+
+          const { data: newInvoice, error: insErr } = await client
+            .from("fee_invoices")
+            .insert({
+              invoice_number: invoiceNumber,
+              student_id: d.studentId,
+              enrollment_id: d.enrollmentId || null,
+              billing_month: d.billingMonth,
+              amount_due: d.amountDue,
+              amount_paid: 0,
+              balance: d.amountDue,
+              due_date: d.dueDate,
+              status: "due",
+              notes: d.notes || null,
+            })
+            .select("*, students(id, student_id, full_name, email)")
+            .single();
+
+          if (insErr || !newInvoice) {
+            console.error("Create invoice error:", insErr);
+            return new Response(
+              JSON.stringify({ ok: false, error: insErr?.message || "Failed to create invoice" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          await logCrmAction({
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email,
+            action: "create_fee_invoice",
+            entity: "fee_invoices",
+            entityId: newInvoice.id,
+            details: { invoiceNumber, amountDue: d.amountDue, studentId: d.studentId },
+          });
+
+          return new Response(
+            JSON.stringify({ ok: true, success: true, invoice: newInvoice }),
+            { status: 201, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Action: Update Unpaid Invoice
+        if (body.action === "update-invoice") {
+          const parsed = updateInvoiceSchema.safeParse(body);
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message || "Validation failed" }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          const { invoiceId, amountDue, dueDate, notes } = parsed.data;
+
+          // Fetch existing invoice
+          const { data: existing, error: findErr } = await client
+            .from("fee_invoices")
+            .select("*")
+            .eq("id", invoiceId)
+            .single();
+
+          if (findErr || !existing) {
+            return new Response(JSON.stringify({ ok: false, error: "Invoice not found" }), {
+              status: 404,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (existing.status === "voided" || existing.status === "paid") {
+            return new Response(
+              JSON.stringify({ ok: false, error: `Cannot edit ${existing.status} invoice.` }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          const newAmountDue = amountDue !== undefined ? amountDue : Number(existing.amount_due);
+          const currentPaid = Number(existing.amount_paid) || 0;
+          if (newAmountDue < currentPaid) {
+            return new Response(
+              JSON.stringify({ ok: false, error: "New amount cannot be less than already paid amount." }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          const newBalance = Math.max(0, newAmountDue - currentPaid);
+          const updates: Record<string, any> = {
+            amount_due: newAmountDue,
+            balance: newBalance,
+            updated_at: new Date().toISOString(),
+          };
+          if (dueDate !== undefined) updates.due_date = dueDate;
+          if (notes !== undefined) updates.notes = notes;
+
+          const { data: updated, error: updErr } = await client
+            .from("fee_invoices")
+            .update(updates)
+            .eq("id", invoiceId)
+            .select()
+            .single();
+
+          if (updErr || !updated) {
+            return new Response(JSON.stringify({ ok: false, error: "Failed to update invoice" }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          await logCrmAction({
+            adminUserId: auth.admin.user.id,
+            actorEmail: auth.admin.user.email,
+            action: "update_fee_invoice",
+            entity: "fee_invoices",
+            entityId: invoiceId,
+            details: updates,
+          });
+
+          return new Response(
+            JSON.stringify({ ok: true, success: true, invoice: updated }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        }
+
+        // Action: Void Invoice (with mandatory reason)
+        if (body.action === "void-invoice") {
+          const parsed = voidInvoiceSchema.safeParse(body);
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message || "Validation failed" }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          try {
+            const result = await voidFeeInvoiceTx({
+              invoiceId: parsed.data.invoiceId,
+              reason: parsed.data.reason,
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            });
+
+            return new Response(
+              JSON.stringify({ ok: true, success: true, ...result }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            if (errMsg.includes("CANNOT_VOID_INVOICE_WITH_ACTIVE_PAYMENTS")) {
+              return new Response(
+                JSON.stringify({
+                  ok: false,
+                  error: "Active payments exist on this invoice. Please reverse all active payments before voiding.",
+                }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            return new Response(
+              JSON.stringify({ ok: false, error: errMsg || "Failed to void invoice" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
+        // Action: Reverse Payment (Mistake correction without overwriting ledger history)
+        if (body.action === "reverse-payment") {
+          const parsed = reversePaymentSchema.safeParse(body);
+          if (!parsed.success) {
+            return new Response(
+              JSON.stringify({ ok: false, error: parsed.error.errors[0]?.message || "Validation failed" }),
+              { status: 422, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
+          try {
+            const result = await reverseFeePaymentTx({
+              paymentId: parsed.data.paymentId,
+              reason: parsed.data.reason,
+              adminUserId: auth.admin.user.id,
+              actorEmail: auth.admin.user.email || "admin@techbuiltos.online",
+            });
+
+            return new Response(
+              JSON.stringify({ ok: true, success: true, ...result }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            if (errMsg.includes("PAYMENT_ALREADY_REVERSED")) {
+              return new Response(
+                JSON.stringify({ ok: false, error: "This payment has already been reversed." }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            if (errMsg.includes("CANNOT_REVERSE_A_REVERSAL")) {
+              return new Response(
+                JSON.stringify({ ok: false, error: "A reversal entry cannot be reversed." }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            return new Response(
+              JSON.stringify({ ok: false, error: errMsg || "Failed to reverse payment" }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
         }
 
         // Action: Record Payment
@@ -186,10 +426,9 @@ export const Route = createFileRoute("/api/admin/fees")({
         if (body.action === "generate-monthly-dues") {
           const targetMonth = body.billingMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
 
-          // Find active enrollments
           const { data: activeEnrollments, error: enrErr } = await client
             .from("enrollments")
-            .select("*, students(id, status, full_name)")
+            .select("*, students(id, status, full_name, billing_day)")
             .eq("status", "active")
             .gt("agreed_fee", 0);
 
@@ -204,13 +443,11 @@ export const Route = createFileRoute("/api/admin/fees")({
           let skippedCount = 0;
 
           for (const enr of activeEnrollments) {
-            // Check if student is active
             if (enr.students?.status !== "active") {
               skippedCount++;
               continue;
             }
 
-            // Check if invoice for this student, enrollment and month already exists
             const { data: existing } = await client
               .from("fee_invoices")
               .select("id")
@@ -224,9 +461,8 @@ export const Route = createFileRoute("/api/admin/fees")({
               continue;
             }
 
-            // Calculate due date (billing_day of targetMonth)
             const [yearStr, monthStr] = targetMonth.split("-");
-            const billingDay = Math.min(28, Math.max(1, enr.billing_day || 1));
+            const billingDay = Math.min(28, Math.max(1, enr.students?.billing_day || enr.billing_day || 1));
             const dueDate = `${yearStr}-${monthStr}-${String(billingDay).padStart(2, "0")}`;
             const invNumber = await generateInvoiceNumber();
 
@@ -323,4 +559,3 @@ export const Route = createFileRoute("/api/admin/fees")({
     },
   },
 });
-
