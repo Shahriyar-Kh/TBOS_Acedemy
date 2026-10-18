@@ -240,6 +240,7 @@ export const recordPaymentSchema = z.object({
   paymentDate: z.string().default(() => new Date().toISOString().split("T")[0]),
   paymentMethod: z.enum(PAYMENT_METHODS),
   referenceNumber: z.string().max(100).optional().nullable(),
+  transactionRef: z.string().max(100).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
 });
 

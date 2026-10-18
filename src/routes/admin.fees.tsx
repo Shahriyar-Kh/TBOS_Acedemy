@@ -222,6 +222,10 @@ function AdminFeesPage() {
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!paymentForm.invoiceId || !paymentForm.studentId) {
+      toast.error("Please select a valid unpaid invoice first");
+      return;
+    }
     const amt = parseFloat(paymentForm.amount);
     if (isNaN(amt) || amt <= 0) {
       toast.error("Please enter a valid payment amount");
@@ -238,6 +242,7 @@ function AdminFeesPage() {
           studentId: paymentForm.studentId,
           amount: amt,
           paymentMethod: paymentForm.paymentMethod,
+          referenceNumber: paymentForm.transactionRef,
           transactionRef: paymentForm.transactionRef,
           paymentDate: paymentForm.paymentDate,
           notes: paymentForm.notes,
@@ -958,10 +963,22 @@ function AdminFeesPage() {
             </div>
 
             <form onSubmit={handleRecordPayment} className="space-y-4 mt-4 text-xs">
-              {selectedInvoice && (
+              {selectedInvoice ? (
                 <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
-                  <div className="text-slate-600">
-                    Invoice: <span className="text-slate-900 font-mono font-semibold">{selectedInvoice.invoice_number}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="text-slate-600">
+                      Invoice: <span className="text-slate-900 font-mono font-semibold">{selectedInvoice.invoice_number}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInvoice(null);
+                        setPaymentForm((prev) => ({ ...prev, invoiceId: "", studentId: "", amount: "" }));
+                      }}
+                      className="text-[11px] text-[#008DDA] hover:underline font-medium"
+                    >
+                      Change Invoice
+                    </button>
                   </div>
                   <div className="text-slate-600">
                     Student: <span className="text-slate-900 font-semibold">{selectedInvoice.students?.full_name}</span> (
@@ -976,6 +993,49 @@ function AdminFeesPage() {
                       ).toLocaleString()}
                     </span>
                   </div>
+                </div>
+              ) : (
+                <div>
+                  <Label className="text-xs text-slate-700 font-medium">Select Target Invoice *</Label>
+                  <select
+                    required
+                    value={paymentForm.invoiceId}
+                    onChange={(e) => {
+                      const invId = e.target.value;
+                      const inv = invoices.find((i) => i.id === invId);
+                      if (inv) {
+                        setSelectedInvoice(inv);
+                        const bal = Math.max(0, Number(inv.amount_due) - Number(inv.amount_paid));
+                        setPaymentForm((prev) => ({
+                          ...prev,
+                          invoiceId: inv.id,
+                          studentId: inv.student_id,
+                          amount: String(bal),
+                        }));
+                      } else {
+                        setSelectedInvoice(null);
+                        setPaymentForm((prev) => ({ ...prev, invoiceId: "", studentId: "", amount: "" }));
+                      }
+                    }}
+                    className="w-full mt-1 px-3 py-2 bg-white border border-slate-200 rounded-md text-xs text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#008DDA]"
+                  >
+                    <option value="">-- Select an unpaid or due invoice --</option>
+                    {invoices
+                      .filter((inv) => inv.status !== "paid" && inv.status !== "voided")
+                      .map((inv) => {
+                        const bal = Math.max(0, Number(inv.amount_due) - Number(inv.amount_paid));
+                        return (
+                          <option key={inv.id} value={inv.id}>
+                            {inv.invoice_number} &bull; {inv.students?.full_name || "Student"} ({inv.students?.student_id || ""}) &bull; PKR {bal.toLocaleString()} Due ({inv.due_date})
+                          </option>
+                        );
+                      })}
+                  </select>
+                  {invoices.filter((inv) => inv.status !== "paid" && inv.status !== "voided").length === 0 && (
+                    <p className="text-[11px] text-amber-600 mt-1">
+                      No unpaid invoices available. Please create an invoice first.
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -362,7 +362,7 @@ export const Route = createFileRoute("/api/admin/fees")({
             );
           }
 
-          const { invoiceId, studentId, amount, paymentDate, paymentMethod, referenceNumber, notes } = parsed.data;
+          const { invoiceId, studentId, amount, paymentDate, paymentMethod, referenceNumber, transactionRef, notes } = parsed.data;
           const idempotencyKey = body.idempotencyKey || null;
 
           try {
@@ -372,7 +372,7 @@ export const Route = createFileRoute("/api/admin/fees")({
               amount,
               paymentMethod,
               paymentDate,
-              referenceNumber,
+              referenceNumber: referenceNumber || transactionRef || null,
               notes,
               recordedBy: auth.admin.user.id,
               idempotencyKey,
