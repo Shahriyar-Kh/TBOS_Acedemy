@@ -31,6 +31,9 @@ export const STUDENT_STATUSES = [
   "completed",
   "dropped",
   "cancelled",
+  "graduated",
+  "withdrawn",
+  "archived",
 ] as const;
 export type StudentStatus = (typeof STUDENT_STATUSES)[number];
 
@@ -47,6 +50,7 @@ export type BatchStatus = (typeof BATCH_STATUSES)[number];
 
 // Fee Payment Statuses
 export const INVOICE_STATUSES = [
+  "draft",
   "upcoming",
   "due",
   "partially_paid",
@@ -54,6 +58,8 @@ export const INVOICE_STATUSES = [
   "overdue",
   "waived",
   "refunded",
+  "voided",
+  "cancelled",
 ] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
@@ -119,6 +125,7 @@ export const createStudentSchema = z.object({
   emergencyContact: z.string().max(100).optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
   age: z.number().int().min(4).max(120).optional().nullable(),
+  address: z.string().max(250).optional().nullable(),
   country: z.string().default("Pakistan"),
   city: z.string().max(80).optional().nullable(),
   timezone: z.string().default("Asia/Karachi"),
@@ -145,6 +152,7 @@ export const createStudentFullSchema = z.object({
   emergencyContact: z.string().max(100).optional().nullable(),
   dateOfBirth: z.string().optional().nullable(),
   age: z.number().int().min(4).max(120).optional().nullable(),
+  address: z.string().max(250).optional().nullable(),
   country: z.string().default("Pakistan"),
   city: z.string().max(80).optional().nullable(),
   timezone: z.string().default("Asia/Karachi"),
@@ -232,6 +240,7 @@ export const recordPaymentSchema = z.object({
   paymentDate: z.string().default(() => new Date().toISOString().split("T")[0]),
   paymentMethod: z.enum(PAYMENT_METHODS),
   referenceNumber: z.string().max(100).optional().nullable(),
+  transactionRef: z.string().max(100).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
 });
 
@@ -295,3 +304,78 @@ export const sendCommunicationSchema = z.object({
   content: z.string().min(1, "Message content is required"),
   templateCategory: z.string().optional(),
 });
+
+// ============================================================================
+// Phase 18 Operations Schemas
+// ============================================================================
+
+export const archiveStudentSchema = z.object({
+  studentId: z.string().uuid("Student ID must be a valid UUID"),
+  reason: z.string().max(500).optional().nullable(),
+});
+
+export const deleteStudentSafeSchema = z.object({
+  studentId: z.string().uuid("Student ID must be a valid UUID"),
+});
+
+export const checkDuplicateStudentSchema = z.object({
+  email: z.string().email().optional().nullable().or(z.literal("")),
+  phone: z.string().optional().nullable().or(z.literal("")),
+  excludeStudentId: optionalUuid,
+});
+
+export const reversePaymentSchema = z.object({
+  paymentId: z.string().uuid("Payment ID is required"),
+  reason: z.string().min(3, "Reversal reason must be at least 3 characters").max(500),
+});
+
+export const voidInvoiceSchema = z.object({
+  invoiceId: z.string().uuid("Invoice ID is required"),
+  reason: z.string().min(3, "Void reason must be at least 3 characters").max(500),
+});
+
+export const createManualInvoiceSchema = z.object({
+  studentId: z.string().uuid("Student ID is required"),
+  enrollmentId: optionalUuid,
+  billingMonth: z.string().regex(/^\d{4}-\d{2}$/, "Billing month must be YYYY-MM"),
+  amountDue: z.number().positive("Amount due must be positive"),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Due date must be YYYY-MM-DD"),
+  notes: z.string().max(1000).optional().nullable(),
+});
+
+export const updateInvoiceSchema = z.object({
+  invoiceId: z.string().uuid("Invoice ID is required"),
+  amountDue: z.number().positive("Amount due must be positive").optional(),
+  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Due date must be YYYY-MM-DD").optional(),
+  notes: z.string().max(1000).optional().nullable(),
+});
+
+export const scheduleDemoSchema = z.object({
+  leadId: z.string().uuid("Lead ID is required"),
+  instructorId: optionalUuid,
+  instructorName: z.string().optional().nullable(),
+  sessionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Session date must be YYYY-MM-DD"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be HH:mm"),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/, "End time must be HH:mm"),
+  title: z.string().max(150).optional().nullable(),
+  meetingLink: z.string().url().optional().nullable().or(z.literal("")),
+  override: z.boolean().default(false),
+  overrideReason: z.string().max(500).optional().nullable(),
+});
+
+export const updateDemoOutcomeSchema = z.object({
+  outcome: z.enum(["completed", "no_show", "cancelled", "rescheduled"]),
+  notes: z.string().max(1000).optional().nullable(),
+  nextFollowUpAt: z.string().optional().nullable(),
+});
+
+export const rescheduleClassSessionSchema = z.object({
+  sessionId: z.string().uuid("Session ID is required"),
+  newSessionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Session date must be YYYY-MM-DD"),
+  newStartTime: z.string().regex(/^\d{2}:\d{2}$/, "Start time must be HH:mm"),
+  newEndTime: z.string().regex(/^\d{2}:\d{2}$/, "End time must be HH:mm"),
+  reason: z.string().min(3, "Reschedule reason must be at least 3 characters").max(500),
+  override: z.boolean().default(false),
+  overrideReason: z.string().max(500).optional().nullable(),
+});
+

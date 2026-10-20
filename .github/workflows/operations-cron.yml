@@ -2,8 +2,8 @@ name: Academy Automated Operations Schedules
 
 on:
   schedule:
-    # Phase 16 CRM reminders: every 15 minutes, 05:00-23:00 PKT
-    - cron: "*/15 0-18 * * *"
+    # Phase 18 CRM reminders: every 10 minutes, 05:00-23:00 PKT
+    - cron: "*/10 0-18 * * *"
     # Phase 17 recurring sessions: 01:15 PKT daily
     - cron: "15 20 * * *"
     # Phase 17 monthly dues: 01:30 PKT daily
@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Process CRM Reminders
-        if: ${{ (github.event_name == 'schedule' && github.event.schedule == '*/15 0-18 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'reminders')) }}
+        if: ${{ (github.event_name == 'schedule' && github.event.schedule == '*/10 0-18 * * *') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'all' || inputs.job == 'reminders')) }}
         run: |
           echo "Running CRM reminders"
           curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --connect-timeout 10 --max-time 60 \

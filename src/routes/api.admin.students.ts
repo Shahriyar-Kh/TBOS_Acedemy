@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { createStudentSchema, createStudentFullSchema } from "@/lib/crmSchemas";
-import { generateStudentId, logCrmAction, createStudentFullTx } from "@/lib/crm.server";
+import { generateStudentId, logCrmAction, createStudentFullTx, checkStudentDuplicate } from "@/lib/crm.server";
 
 export const Route = createFileRoute("/api/admin/students")({
   server: {
@@ -25,6 +25,25 @@ export const Route = createFileRoute("/api/admin/students")({
         }
 
         const url = new URL(request.url);
+
+        // Sub-action: Proactive Duplicate Detection Pre-flight
+        if (url.searchParams.get("action") === "check-duplicate" || url.searchParams.has("checkDuplicate")) {
+          const email = url.searchParams.get("email");
+          const phone = url.searchParams.get("phone");
+          const excludeId = url.searchParams.get("excludeId");
+
+          const dupResult = await checkStudentDuplicate({
+            email,
+            phone,
+            excludeStudentId: excludeId,
+          });
+
+          return new Response(JSON.stringify({ ok: true, ...dupResult }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
         const search = url.searchParams.get("q")?.trim() || "";
         const statusFilter = url.searchParams.get("status")?.trim() || "";
         const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
@@ -60,15 +79,19 @@ export const Route = createFileRoute("/api/admin/students")({
           });
         }
 
-        // Stats
+        // Aggregate Status Metrics
         const [
           { count: activeCount },
-          { count: pausedCount },
-          { count: completedCount },
+          { count: onHoldCount },
+          { count: graduatedCount },
+          { count: withdrawnCount },
+          { count: archivedCount },
         ] = await Promise.all([
           client.from("students").select("*", { count: "exact", head: true }).eq("status", "active"),
-          client.from("students").select("*", { count: "exact", head: true }).eq("status", "paused"),
-          client.from("students").select("*", { count: "exact", head: true }).eq("status", "completed"),
+          client.from("students").select("*", { count: "exact", head: true }).in("status", ["on_hold", "paused"]),
+          client.from("students").select("*", { count: "exact", head: true }).in("status", ["graduated", "completed"]),
+          client.from("students").select("*", { count: "exact", head: true }).in("status", ["withdrawn", "dropped", "cancelled"]),
+          client.from("students").select("*", { count: "exact", head: true }).eq("status", "archived"),
         ]);
 
         return new Response(
@@ -81,8 +104,10 @@ export const Route = createFileRoute("/api/admin/students")({
             stats: {
               total: totalCount || 0,
               active: activeCount || 0,
-              paused: pausedCount || 0,
-              completed: completedCount || 0,
+              onHold: onHoldCount || 0,
+              graduated: graduatedCount || 0,
+              withdrawn: withdrawnCount || 0,
+              archived: archivedCount || 0,
             },
           }),
           { status: 200, headers: { "Content-Type": "application/json" } },
@@ -116,7 +141,20 @@ export const Route = createFileRoute("/api/admin/students")({
           });
         }
 
-        // Check if this is a bulk CSV import
+        // Check Duplicate Action via POST
+        if (body.action === "check-duplicate") {
+          const dupResult = await checkStudentDuplicate({
+            email: body.email,
+            phone: body.phone,
+            excludeStudentId: body.excludeId,
+          });
+          return new Response(JSON.stringify({ ok: true, ...dupResult }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+
+        // Bulk CSV import
         if (body.action === "import-csv" && Array.isArray(body.rows)) {
           const rows = body.rows;
           const inserted: any[] = [];
@@ -132,6 +170,7 @@ export const Route = createFileRoute("/api/admin/students")({
               guardianName: rawRow.guardianName,
               guardianPhone: rawRow.guardianPhone,
               guardianEmail: rawRow.guardianEmail,
+              address: rawRow.address,
               country: rawRow.country || "Pakistan",
               city: rawRow.city,
               status: rawRow.status || "active",
@@ -148,18 +187,17 @@ export const Route = createFileRoute("/api/admin/students")({
               continue;
             }
 
-            // Check duplicate by email
-            const { data: existing } = await client
-              .from("students")
-              .select("id, student_id")
-              .eq("email", parsed.data.email.toLowerCase().trim())
-              .maybeSingle();
+            // Check duplicate
+            const dup = await checkStudentDuplicate({
+              email: parsed.data.email,
+              phone: parsed.data.phone,
+            });
 
-            if (existing) {
+            if (dup.isDuplicate) {
               failed.push({
                 row: i + 1,
                 data: rawRow,
-                errors: [`Student with email ${parsed.data.email} already exists (${existing.student_id})`],
+                errors: [`Student with ${dup.matchedBy} already exists (${dup.existingStudent?.student_id})`],
               });
               continue;
             }
@@ -176,6 +214,7 @@ export const Route = createFileRoute("/api/admin/students")({
                 guardian_name: parsed.data.guardianName || null,
                 guardian_phone: parsed.data.guardianPhone || null,
                 guardian_email: parsed.data.guardianEmail || null,
+                address: parsed.data.address || null,
                 country: parsed.data.country || "Pakistan",
                 city: parsed.data.city || null,
                 timezone: parsed.data.timezone || "Asia/Karachi",
@@ -232,6 +271,25 @@ export const Route = createFileRoute("/api/admin/students")({
             );
           }
 
+          // Proactive duplicate detection
+          const dup = await checkStudentDuplicate({
+            email: parsed.data.email,
+            phone: parsed.data.phone,
+          });
+
+          if (dup.isDuplicate) {
+            return new Response(
+              JSON.stringify({
+                ok: false,
+                success: false,
+                error: `A student with this ${dup.matchedBy} is already registered (${dup.existingStudent?.student_id}: ${dup.existingStudent?.full_name}).`,
+                matchedBy: dup.matchedBy,
+                existingStudent: dup.existingStudent,
+              }),
+              { status: 409, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
           try {
             const result = await createStudentFullTx({
               ...parsed.data,
@@ -272,18 +330,19 @@ export const Route = createFileRoute("/api/admin/students")({
           );
         }
 
-        // Check for duplicate by email
-        const { data: existing } = await client
-          .from("students")
-          .select("id, student_id")
-          .eq("email", parsed.data.email.toLowerCase().trim())
-          .maybeSingle();
+        // Proactive duplicate check
+        const dup = await checkStudentDuplicate({
+          email: parsed.data.email,
+          phone: parsed.data.phone,
+        });
 
-        if (existing) {
+        if (dup.isDuplicate) {
           return new Response(
             JSON.stringify({
               ok: false,
-              error: `Student with email ${parsed.data.email} already exists (${existing.student_id}).`,
+              error: `Student with this ${dup.matchedBy} already exists (${dup.existingStudent?.student_id}).`,
+              matchedBy: dup.matchedBy,
+              existingStudent: dup.existingStudent,
             }),
             { status: 409, headers: { "Content-Type": "application/json" } },
           );
@@ -301,8 +360,11 @@ export const Route = createFileRoute("/api/admin/students")({
             guardian_name: parsed.data.guardianName || null,
             guardian_phone: parsed.data.guardianPhone || null,
             guardian_email: parsed.data.guardianEmail || null,
+            guardian_relationship: parsed.data.guardianRelationship || null,
+            emergency_contact: parsed.data.emergencyContact || null,
             date_of_birth: parsed.data.dateOfBirth || null,
             age: parsed.data.age || null,
+            address: parsed.data.address || null,
             country: parsed.data.country || "Pakistan",
             city: parsed.data.city || null,
             timezone: parsed.data.timezone || "Asia/Karachi",
@@ -340,4 +402,3 @@ export const Route = createFileRoute("/api/admin/students")({
     },
   },
 });
-

@@ -3,6 +3,7 @@ import { verifyAdminRequest } from "@/lib/adminAuth.server";
 import { getSupabaseServerClient } from "@/lib/supabase.server";
 import { createClassSessionSchema } from "@/lib/crmSchemas";
 import { checkClassScheduleConflicts, logCrmAction, createClassSessionsTx } from "@/lib/crm.server";
+import { createGoogleCalendarEvent } from "@/lib/googleCalendar.server";
 
 export const Route = createFileRoute("/api/admin/timetable")({
   server: {
@@ -159,9 +160,53 @@ export const Route = createFileRoute("/api/admin/timetable")({
           );
         }
 
+        // Google Calendar & Meet Integration (with graceful fallback)
+        let effectiveMeetLink = d.meetingLink || null;
+        let calEventId: string | null = null;
+        let calSyncStatus: "synced" | "pending" | "failed" = "pending";
+        let calError: string | null = null;
+
+        try {
+          const attendees: string[] = [];
+          if (d.instructorId) {
+            const { data: inst } = await client.from("admin_users").select("email").eq("id", d.instructorId).maybeSingle();
+            if (inst?.email) attendees.push(inst.email);
+          }
+          if (d.studentId) {
+            const { data: st } = await client.from("students").select("email").eq("id", d.studentId).maybeSingle();
+            if (st?.email) attendees.push(st.email);
+          }
+
+          const calResult = await createGoogleCalendarEvent({
+            title: d.title,
+            sessionDate: d.sessionDate,
+            startTime: d.startTime,
+            endTime: d.endTime,
+            timezone: d.timezone || "Asia/Karachi",
+            attendees,
+            createMeetConference: true,
+          });
+
+          if (calResult.success) {
+            calEventId = calResult.eventId || null;
+            calSyncStatus = "synced";
+            if (calResult.meetLink) {
+              effectiveMeetLink = calResult.meetLink;
+            }
+          } else {
+            calSyncStatus = calResult.configured ? "failed" : "pending";
+            calError = calResult.error || null;
+          }
+        } catch (calErr: any) {
+          console.warn("Google Calendar integration fallback:", calErr?.message);
+          calSyncStatus = "failed";
+          calError = calErr?.message || "Calendar integration error";
+        }
+
         // Atomic transactional creation of single or recurring sessions
         const repeatWeeks = Math.min(12, Math.max(1, Number(body.repeatWeeks) || 1));
         const overrideReason = d.overrideReason || body.overrideReason || null;
+        const sessionType = body.sessionType || (repeatWeeks > 1 ? "recurring_occurrence" : "single_session");
 
         try {
           const txResult = await createClassSessionsTx({
@@ -175,7 +220,7 @@ export const Route = createFileRoute("/api/admin/timetable")({
             startTime: d.startTime,
             endTime: d.endTime,
             timezone: d.timezone || "Asia/Karachi",
-            meetingLink: d.meetingLink || null,
+            meetingLink: effectiveMeetLink,
             status: d.status || "scheduled",
             topicCovered: d.topicCovered || null,
             homework: d.homework || null,
@@ -187,6 +232,19 @@ export const Route = createFileRoute("/api/admin/timetable")({
             adminEmail: auth.admin.user.email,
           });
 
+          // Update created sessions with calendar metadata and session_type
+          if (txResult.session_ids && txResult.session_ids.length > 0) {
+            await client
+              .from("class_sessions")
+              .update({
+                session_type: sessionType,
+                google_calendar_event_id: calEventId,
+                google_calendar_sync_status: calSyncStatus,
+                google_calendar_error: calError,
+              })
+              .in("id", txResult.session_ids);
+          }
+
           return new Response(
             JSON.stringify({
               ok: true,
@@ -194,6 +252,9 @@ export const Route = createFileRoute("/api/admin/timetable")({
               count: txResult.created_count,
               sessionIds: txResult.session_ids,
               isOverride: txResult.is_override,
+              meetingLink: effectiveMeetLink,
+              calendarSyncStatus: calSyncStatus,
+              calendarEventId: calEventId,
             }),
             { status: 201, headers: { "Content-Type": "application/json" } },
           );
@@ -227,4 +288,3 @@ export const Route = createFileRoute("/api/admin/timetable")({
     },
   },
 });
-

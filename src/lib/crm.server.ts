@@ -17,14 +17,18 @@ export interface StudentRecord {
   guardian_email?: string | null;
   date_of_birth?: string | null;
   age?: number | null;
+  address?: string | null;
   country: string;
   city?: string | null;
   timezone: string;
-  status: "active" | "trial" | "paused" | "on_hold" | "completed" | "dropped" | "cancelled";
+  status: "active" | "trial" | "paused" | "on_hold" | "completed" | "dropped" | "cancelled" | "graduated" | "withdrawn" | "archived";
   enrollment_date: string;
   billing_day: number;
   notes?: string | null;
   lead_id?: string | null;
+  archived_at?: string | null;
+  archived_by?: string | null;
+  archive_reason?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -83,7 +87,10 @@ export interface FeeInvoiceRecord {
   amount_paid: number;
   balance: number;
   due_date: string;
-  status: "upcoming" | "due" | "partially_paid" | "paid" | "overdue" | "waived" | "refunded";
+  status: "draft" | "upcoming" | "due" | "partially_paid" | "paid" | "overdue" | "waived" | "refunded" | "voided" | "cancelled";
+  voided_at?: string | null;
+  voided_by?: string | null;
+  void_reason?: string | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;
@@ -95,12 +102,17 @@ export interface FeePaymentRecord {
   student_id: string;
   amount: number;
   payment_date: string;
-  payment_method: "bank_transfer" | "jazzcash" | "easypaisa" | "cash" | "other";
+  payment_method: "bank_transfer" | "jazzcash" | "easypaisa" | "cash" | "card" | "other";
   reference_number?: string | null;
   receipt_number?: string | null;
   idempotency_key?: string | null;
   notes?: string | null;
   recorded_by?: string | null;
+  is_reversal?: boolean;
+  reversed_payment_id?: string | null;
+  reversal_reason?: string | null;
+  reversed_by?: string | null;
+  reversed_at?: string | null;
   created_at: string;
 }
 
@@ -108,6 +120,7 @@ export interface ClassSessionRecord {
   id: string;
   batch_id?: string | null;
   enrollment_id?: string | null;
+  student_id?: string | null;
   instructor_id?: string | null;
   instructor_name?: string | null;
   title: string;
@@ -117,6 +130,11 @@ export interface ClassSessionRecord {
   timezone: string;
   meeting_link?: string | null;
   status: "scheduled" | "completed" | "rescheduled" | "cancelled" | "missed";
+  session_type?: "recurring_occurrence" | "single_session" | "demo" | "rescheduled" | "makeup";
+  google_calendar_event_id?: string | null;
+  google_calendar_sync_status?: "pending" | "synced" | "failed" | "cancelled";
+  google_calendar_error?: string | null;
+  sync_retry_count?: number;
   topic_covered?: string | null;
   homework?: string | null;
   instructor_notes?: string | null;
@@ -1169,5 +1187,156 @@ export async function createClassSessionsTx(params: {
 
   return data;
 }
+
+// ============================================================================
+// Phase 18 Operations Functions
+// ============================================================================
+
+export async function checkStudentDuplicate(params: {
+  email?: string | null;
+  phone?: string | null;
+  excludeStudentId?: string | null;
+}): Promise<{
+  isDuplicate: boolean;
+  matchedBy: "email" | "phone" | null;
+  existingStudent: { id: string; student_id: string; full_name: string; email: string; phone: string } | null;
+}> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const cleanEmail = params.email ? params.email.trim().toLowerCase() : null;
+  const cleanPhone = params.phone ? params.phone.replace(/[\s-]/g, "") : null;
+
+  if (!cleanEmail && !cleanPhone) {
+    return { isDuplicate: false, matchedBy: null, existingStudent: null };
+  }
+
+  // 1. Check by email
+  if (cleanEmail) {
+    let emailQuery = client
+      .from("students")
+      .select("id, student_id, full_name, email, phone")
+      .ilike("email", cleanEmail);
+
+    if (params.excludeStudentId) {
+      emailQuery = emailQuery.neq("id", params.excludeStudentId);
+    }
+
+    const { data: byEmail } = await emailQuery.maybeSingle();
+    if (byEmail) {
+      return { isDuplicate: true, matchedBy: "email", existingStudent: byEmail };
+    }
+  }
+
+  // 2. Check by phone
+  if (cleanPhone) {
+    let phoneQuery = client
+      .from("students")
+      .select("id, student_id, full_name, email, phone")
+      .eq("phone", cleanPhone);
+
+    if (params.excludeStudentId) {
+      phoneQuery = phoneQuery.neq("id", params.excludeStudentId);
+    }
+
+    const { data: byPhone } = await phoneQuery.maybeSingle();
+    if (byPhone) {
+      return { isDuplicate: true, matchedBy: "phone", existingStudent: byPhone };
+    }
+  }
+
+  return { isDuplicate: false, matchedBy: null, existingStudent: null };
+}
+
+export async function reverseFeePaymentTx(params: {
+  paymentId: string;
+  reason: string;
+  adminUserId: string;
+  actorEmail: string;
+}): Promise<any> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("reverse_fee_payment_tx", {
+    p_payment_id: params.paymentId,
+    p_reason: params.reason,
+    p_admin_user_id: params.adminUserId,
+    p_actor_email: params.actorEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function voidFeeInvoiceTx(params: {
+  invoiceId: string;
+  reason: string;
+  adminUserId: string;
+  actorEmail: string;
+}): Promise<any> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("void_fee_invoice_tx", {
+    p_invoice_id: params.invoiceId,
+    p_reason: params.reason,
+    p_admin_user_id: params.adminUserId,
+    p_actor_email: params.actorEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function deleteStudentSafeTx(params: {
+  studentId: string;
+  adminUserId: string;
+  actorEmail: string;
+}): Promise<any> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("delete_student_safe_tx", {
+    p_student_id: params.studentId,
+    p_admin_user_id: params.adminUserId,
+    p_actor_email: params.actorEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function archiveStudentTx(params: {
+  studentId: string;
+  reason?: string | null;
+  adminUserId: string;
+  actorEmail: string;
+}): Promise<any> {
+  const { client } = getSupabaseServerClient();
+  if (!client) throw new Error("Database unavailable");
+
+  const { data, error } = await client.rpc("archive_student_tx", {
+    p_student_id: params.studentId,
+    p_reason: params.reason || "Archived by administrator",
+    p_admin_user_id: params.adminUserId,
+    p_actor_email: params.actorEmail,
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 
 
