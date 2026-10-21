@@ -275,7 +275,7 @@ export const specializationTags: Record<string, string[]> = {
   "python-developer": ["Python", "FastAPI", "Django", "PostgreSQL", "pytest"],
   "full-stack-developer": ["React", "Next.js", "Django REST", "PostgreSQL", "JWT"],
   "backend-developer": ["Django", "DRF", "FastAPI", "PostgreSQL", "JWT"],
-  "frontend-developer": ["React", "Next.js", "TypeScript", "CSS Grid", "Git"],
+  "frontend-developer": ["HTML5", "CSS3", "JavaScript", "React", "Vercel"],
   "data-analyst": ["SQL", "Pandas", "NumPy", "Matplotlib", "EDA"],
   "ai-machine-learning": ["Regression", "Classification", "K-Means", "Model tuning"],
 };
