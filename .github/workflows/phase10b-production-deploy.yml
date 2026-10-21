@@ -120,6 +120,7 @@ jobs:
             tests/e2e/mobile-cta-whatsapp.spec.ts \
             tests/e2e/phase12e-conversion-reliability.spec.ts \
             tests/e2e/phase13-final-acceptance.spec.ts \
+            tests/e2e/fullstack-react-django-curriculum.spec.ts \
             --workers=1
 
       - name: Run 84-route production audit
