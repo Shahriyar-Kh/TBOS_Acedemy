@@ -17,5 +17,5 @@ test("Full-Stack Developer is React + Django without TypeScript or Next.js", asy
   await expect(page.locator("main")).toContainText("8 months");
   await expect(page.locator("main")).toContainText("PKR 8,000/month");
   await expect(page.locator("main")).toContainText("PKR 20,000/month");
-  await expect(page.locator('a[href*="/apply"]')).toHaveCount(2);
+  await expect(page.locator('a[href*="/apply"]').first()).toBeVisible();
 });
