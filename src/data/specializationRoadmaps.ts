@@ -23,7 +23,7 @@ export interface SpecializationRoadmap {
 }
 
 type CourseReference =
-  | { courseSlug: string; project?: string }
+  | { courseSlug: string; title?: string; duration?: string; chapters?: string[]; project?: string }
   | {
       title: string;
       duration: string;
@@ -56,9 +56,9 @@ function resolveCourse(reference: CourseReference): SpecializationCoursePlan {
 
   return {
     courseSlug: reference.courseSlug,
-    title: course.title,
-    duration: roadmap.duration,
-    chapters: roadmap.chapters.map((chapter) => chapter.title),
+    title: reference.title ?? course.title,
+    duration: reference.duration ?? roadmap.duration,
+    chapters: reference.chapters ?? roadmap.chapters.map((chapter) => chapter.title),
     project: reference.project ?? roadmap.capstoneProject,
   };
 }
@@ -85,20 +85,102 @@ function specialization(
 export const specializationRoadmaps: Record<string, SpecializationRoadmap> = {
   "frontend-developer": specialization(
     [
-      { courseSlug: "html5" },
-      { courseSlug: "css3" },
-      { courseSlug: "bootstrap-5" },
-      { courseSlug: "javascript" },
-      { courseSlug: "typescript" },
-      { courseSlug: "react" },
-      { courseSlug: "nextjs" },
-      { courseSlug: "git-github" },
       {
-        courseSlug: "rest-apis",
-        project: "Integrate authenticated API data into the final frontend application.",
+        courseSlug: "html5",
+        title: "Stage 1 — HTML5: Web Development Foundations",
+        duration: "Weeks 1–3 · 12 classes",
+        chapters: [
+          "Web fundamentals, VS Code and HTML document setup",
+          "Semantic HTML5, headings, paragraphs, lists and links",
+          "Images, tables, multimedia and organized page structure",
+          "Forms, input types and built-in browser validation",
+          "Accessibility, meaningful markup and basic on-page SEO",
+        ],
+        project: "Build a structured multi-page academy or local business website.",
+      },
+      {
+        courseSlug: "css3",
+        title: "Stage 2 — CSS3: Responsive Web Design",
+        duration: "Weeks 4–7 · 16 classes",
+        chapters: [
+          "Selectors, cascade, specificity and the CSS box model",
+          "Colors, typography, spacing and CSS custom properties",
+          "Modern layouts using Flexbox and CSS Grid",
+          "Mobile-first layouts, breakpoints and media queries",
+          "Reusable design patterns, transitions and animations",
+          "Accessibility, cross-browser and responsive testing",
+        ],
+        project: "Style a professional responsive business landing page for mobile, tablet and desktop.",
+      },
+      {
+        courseSlug: "javascript",
+        title: "Stage 3 — JavaScript: Fundamentals to Interactive Websites",
+        duration: "Weeks 8–13 · 24 classes",
+        chapters: [
+          "Variables, data types, operators, conditions and loops",
+          "Functions, scope, arrays, objects and modern ES6+ syntax",
+          "DOM manipulation, browser events and event delegation",
+          "Forms, validation, localStorage and browser debugging",
+          "JSON, promises, async/await, Fetch API and error handling",
+          "Modules, clean functions and basic code organization",
+        ],
+        project: "Build an interactive expense tracker or task manager with browser storage.",
+      },
+      {
+        courseSlug: "git-github",
+        title: "Stage 4 — Git & GitHub: Developer Workflow",
+        duration: "Week 14 · 4 classes",
+        chapters: [
+          "Git installation, repositories, staging and commits",
+          "Branches, merging and pull-request fundamentals",
+          "GitHub repositories, README files and project documentation",
+          "Publish and review a JavaScript project with version control",
+        ],
+        project: "Publish and document the JavaScript project on GitHub.",
+      },
+      {
+        courseSlug: "react",
+        title: "Stage 5 — React.js: Core Application Development",
+        duration: "Weeks 15–19 · 20 classes",
+        chapters: [
+          "Create React projects with Vite, JSX and project structure",
+          "Components, props, composition and reusable UI patterns",
+          "Events, useState, conditional rendering and lists",
+          "useEffect fundamentals, forms and controlled inputs",
+          "React Router, navigation and multi-page SPA layouts",
+          "Responsive component styling and debugging",
+        ],
+        project: "Capstone 1 — Build a complete responsive multi-page React business website with reusable components, routing and accessible contact forms.",
+      },
+      {
+        title: "Stage 6 — Advanced React & REST API Integration",
+        duration: "Weeks 20–24 · 20 classes",
+        chapters: [
+          "Custom hooks, useReducer and state management patterns",
+          "Context API, shared state and component composition",
+          "Consume REST APIs with Fetch or Axios and JSON",
+          "Data loading, error, empty and retry states",
+          "Search, filtering, pagination and supported frontend CRUD flows",
+          "React form validation, accessibility and frontend testing",
+          "Performance optimization, memoization basics and code splitting",
+        ],
+        project: "Capstone 2 — Build an API-integrated React student learning dashboard with courses, search, filters, stateful forms and reliable data states.",
+      },
+      {
+        title: "Stage 7 — GitHub, Vercel Deployment & Portfolio Launch",
+        duration: "Weeks 25–26 · 8 classes",
+        chapters: [
+          "Project cleanup, README documentation and production builds",
+          "Connect GitHub repositories to Vercel and publish live URLs",
+          "Configure React Router SPA rewrites and verify deep-link refreshes",
+          "Set public environment variables and production API endpoints safely",
+          "Test mobile layouts, accessibility, page speed and error handling",
+          "Final portfolio presentation and deployment verification for both capstones",
+        ],
+        project: "Deploy both React capstones live on Vercel and document their URLs in GitHub repositories.",
       },
     ],
-    "Design, build, test, and deploy a production-ready frontend application with responsive UI, routing, forms, API integration, SEO, and a documented Git workflow.",
+    "Two portfolio capstones: (1) a responsive multi-page React business website; (2) an API-integrated React student learning dashboard. Both must include GitHub documentation and verified live Vercel deployments.",
   ),
 
   "website-developer": specialization(
