@@ -261,9 +261,10 @@ function SpecializationDetail() {
               <ProgramCoursesRoadmap
                 courses={structuredRoadmap.courses}
                 capstoneProject={structuredRoadmap.capstoneProject}
+                capstoneLabel={spec.slug === "frontend-developer" ? "Two Portfolio Capstones" : undefined}
                 eyebrow="SPECIALIZATION COURSE ARCHITECTURE"
                 title="Included Courses, Chapters & Projects"
-                description="This specialization is a complete pathway made from individual courses. Every course has its own chapter roadmap and practical project before the final specialization capstone."
+                description={spec.slug === "frontend-developer" ? "Seven progressive learning stages across 26 weeks (104 live classes), practical projects, two React portfolio capstones, and GitHub-to-Vercel deployment. Linked standalone course pages may have different independent durations." : "This specialization is a complete pathway made from individual courses. Every course has its own chapter roadmap and practical project before the final specialization capstone."}
               />
             ) : (
               <Reveal>
