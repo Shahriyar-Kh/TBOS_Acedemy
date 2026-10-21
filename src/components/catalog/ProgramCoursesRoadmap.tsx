@@ -15,6 +15,7 @@ export interface ProgramCourseCard {
 export function ProgramCoursesRoadmap({
   courses,
   capstoneProject,
+  capstoneLabel = "Final Integrated Capstone",
   eyebrow = "COURSE-BY-COURSE ROADMAP",
   title = "Courses, Chapters & Projects",
   description = "Each course follows a clear chapter sequence and ends with a practical project before the final integrated capstone.",
@@ -22,6 +23,7 @@ export function ProgramCoursesRoadmap({
 }: {
   courses: ProgramCourseCard[];
   capstoneProject: string;
+  capstoneLabel?: string;
   eyebrow?: string;
   title?: string;
   description?: string;
@@ -159,7 +161,7 @@ export function ProgramCoursesRoadmap({
             </span>
             <div>
               <p className="font-mono text-[10px] font-semibold uppercase tracking-wider text-gold-foreground">
-                Final Integrated Capstone
+                {capstoneLabel}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {capstoneProject}
